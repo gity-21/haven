@@ -45,16 +45,6 @@ En kolay yol projedeki `start_windows.bat` dosyasına çift tıklamaktır. Bu sc
 bash start.sh
 ```
 
-## 📦 Paketleme (Build)
-
-Uygulamayı tek bir dosya haline getirmek için:
-
-### Windows (EXE / Portable)
-```bash
-npm run build:win
-```
-Çıktı `dist/` klasöründe oluşur.
-
 ## 🔒 Güvenlik Notu
 
 - Tüm mesajlar veritabanında SQLite ile saklanır.
