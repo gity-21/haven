@@ -356,7 +356,7 @@ html[data-theme="antigravity"] #settings-modal label,
 html[data-theme="antigravity"] #settings-modal span,
 html[data-theme="antigravity"] #chat-settings-modal p,
 html[data-theme="antigravity"] #chat-settings-modal label,
-html[data-theme="antigravity"] #chat-settings-modal span,
+html[data-theme="antigravity"] #chat-settings-modal span:not(#chat-color-preview-text),
 html[data-theme="antigravity"] .modal p {
     color: #5f6368 !important;
 }

@@ -533,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tabCreate && tabCreate.classList.contains('active')) {
             if (window.electronAPI && window.electronAPI.startHost) {
                 try {
-                    document.getElementById('login-submit').textContent = 'Bağlantı Kuruluyor...';
+                    document.getElementById('login-submit').textContent = window.i18n ? window.i18n.t('connecting') : 'Bağlantı Kuruluyor...';
                     const tunnelUrl = await window.electronAPI.startHost();
                     serverUrl = await window.electronAPI.getLocalServerUrl(); // Host, kendi sunucusuna localhost üzerinden bağlanır
 
@@ -610,7 +610,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitBtn = document.getElementById('login-submit');
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Yükleniyor...';
+            submitBtn.textContent = window.i18n ? window.i18n.t('loading') : 'Yükleniyor...';
         }
 
         // Sohbet ekranına yönlendir (Electron IPC veya tarayıcı)
@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const copyToClipboard = (text, btn) => {
         navigator.clipboard.writeText(text).then(() => {
             const originalText = btn.textContent;
-            btn.textContent = 'Kopyalandı!';
+            btn.textContent = window.i18n ? window.i18n.t('btn_copied') : 'Kopyalandı!';
             setTimeout(() => btn.textContent = originalText, 2000);
         });
     };

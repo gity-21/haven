@@ -323,12 +323,21 @@ function connectSocket() {
 
     // Sunucu yöneticisi mevcut odayı silerse
     state.socket.on('room-deleted', (data) => {
+        let displayMessage = data.message;
+        if (window.i18n) {
+            if (displayMessage.includes('Bu oda sunucu yöneticisi tarafından')) {
+                displayMessage = window.i18n.t('msg_room_deleted_single');
+            } else if (displayMessage.includes('Tüm odalar')) {
+                displayMessage = window.i18n.t('msg_room_deleted_all');
+            }
+        }
+
         if (window.showConfirmModal) {
-            window.showConfirmModal(data.message, () => {
+            window.showConfirmModal(displayMessage, () => {
                 window.location.href = 'login.html';
             }, true);
         } else {
-            alert(data.message);
+            alert(displayMessage);
             window.location.href = 'login.html';
         }
     });
@@ -950,7 +959,7 @@ function formatDateSeparator(dateParam) {
 
 function appendMessage(msg) {
     const msgDate = new Date(msg.created_at || new Date());
-    
+
     // Separatör karşılaştırması için locale'den bağımsız olarak string yapalım veya hep aynı locale kullanalım (ör: en-CA yyyy-mm-dd)
     const msgDateString = msgDate.getFullYear() + "-" + msgDate.getMonth() + "-" + msgDate.getDate();
 
@@ -1613,7 +1622,7 @@ function setupEventListeners() {
 
     // Oturum Kapatma (Login ekranına dön)
     el.btnLogout.addEventListener('click', () => {
-        window.showConfirmModal('Gizli odadan çıkmak istediğinize emin misiniz?', () => {
+        window.showConfirmModal(window.i18n ? window.i18n.t('msg_leave_room') : 'Gizli odadan çıkmak istediğinize emin misiniz?', () => {
             localStorage.removeItem('dc_nickname');
             localStorage.removeItem('dc_room');
             localStorage.removeItem('dc_auth_key');
@@ -1647,16 +1656,17 @@ function setupEventListeners() {
     // Chat Ayarları Modalı
     if (el.btnChatSettings && el.chatSettingsModal) {
         // Renk paleti oluşturma
-        const colors = ['#6366f1', '#ef4444', '#10b981', '#f59e0b', '#0ea5e9', '#ec4899', '#8b5cf6', '#14b8a6'];
+        const colors = ['#6366f1', '#ef4444', '#10b981', '#f59e0b', '#0ea5e9', '#ec4899', '#8b5cf6', '#14b8a6', '#000000'];
         colors.forEach(color => {
             const btn = document.createElement('div');
+            btn.dataset.color = color;
             btn.style.width = '24px';
             btn.style.height = '24px';
             btn.style.borderRadius = '50%';
             btn.style.backgroundColor = color;
             btn.style.cursor = 'pointer';
             btn.style.border = color === state.avatarColor ? '2px solid white' : '2px solid transparent';
-            btn.style.boxShadow = color === state.avatarColor ? `0 0 10px ${color} 80` : 'none';
+            btn.style.boxShadow = color === state.avatarColor ? `0 0 10px ${color}80` : 'none';
             btn.style.transition = '0.2s';
 
             btn.onclick = () => {
@@ -1665,7 +1675,7 @@ function setupEventListeners() {
                     c.style.boxShadow = 'none';
                 });
                 btn.style.border = '2px solid white';
-                btn.style.boxShadow = `0 0 10px ${color} 80`;
+                btn.style.boxShadow = `0 0 10px ${color}80`;
                 el.chatAvatarColorInput.value = color;
                 if (el.chatColorPreviewText) {
                     el.chatColorPreviewText.style.color = color;
@@ -1863,6 +1873,19 @@ function setupEventListeners() {
             el.chatColorPreviewText.textContent = state.nickname || (window.i18n ? window.i18n.t('sample_user') : 'Örnek Kullanıcı');
             el.chatColorPreviewText.style.color = state.avatarColor || '#6366f1';
 
+            if (el.chatColorPickerContainer) {
+                const currentColor = state.avatarColor || '#6366f1';
+                Array.from(el.chatColorPickerContainer.children).forEach(c => {
+                    if (c.dataset.color === currentColor) {
+                        c.style.border = '2px solid white';
+                        c.style.boxShadow = `0 0 10px ${c.dataset.color}80`;
+                    } else {
+                        c.style.border = '2px solid transparent';
+                        c.style.boxShadow = 'none';
+                    }
+                });
+            }
+
             if (el.chatThemeSelector) {
                 el.chatThemeSelector.value = localStorage.getItem('dc_login_theme') || 'space';
             }
@@ -1997,14 +2020,30 @@ function setupEventListeners() {
             if (micSelect?.value) localStorage.setItem('dc_mic_device', micSelect.value);
             if (speakerSelect?.value) localStorage.setItem('dc_speaker_device', speakerSelect.value);
 
-            // Ekrandaki eski mesajlardaki kullanıcı adlarını güncelle
-            if (oldNickname && oldNickname !== state.nickname) {
-                document.querySelectorAll('.message-username').forEach(usernameEl => {
-                    if (usernameEl.textContent === oldNickname) {
-                        usernameEl.textContent = state.nickname;
+            // Ekrandaki eski mesajlardaki kullanıcı adlarını ve renklerini anında güncelle
+            const nicknameToCheck = oldNickname || state.nickname;
+            document.querySelectorAll('.message-group').forEach(groupEl => {
+                const usernameEl = groupEl.querySelector('.message-username');
+                if (usernameEl && (usernameEl.textContent === nicknameToCheck || usernameEl.textContent === state.nickname)) {
+                    usernameEl.textContent = state.nickname;
+                    usernameEl.style.color = state.avatarColor;
+
+                    const avatarEl = groupEl.querySelector('.message-avatar');
+                    if (avatarEl) {
+                        if (state.profilePic) {
+                            avatarEl.style.backgroundImage = `url('${state.profilePic}')`;
+                            avatarEl.style.backgroundColor = 'transparent';
+                            avatarEl.style.color = 'transparent';
+                            avatarEl.textContent = '';
+                        } else {
+                            avatarEl.style.backgroundImage = 'none';
+                            avatarEl.style.backgroundColor = state.avatarColor;
+                            avatarEl.style.color = 'white';
+                            avatarEl.textContent = state.nickname.charAt(0).toUpperCase();
+                        }
                     }
-                });
-            }
+                }
+            });
 
             if (state.socket) {
                 state.socket.emit('update-profile', {
@@ -2117,7 +2156,10 @@ async function sendMessage() {
     };
 
     if (hasImages) {
-        window.showConfirmModal(`${state.pendingImages.length} adet görseli göndermek istediğinize emin misiniz?`, doSend);
+        const msgMulti = window.i18n
+            ? window.i18n.t('msg_send_multiple_images').replace('{count}', state.pendingImages.length)
+            : `${state.pendingImages.length} adet görseli göndermek istediğinize emin misiniz?`;
+        window.showConfirmModal(msgMulti, doSend);
     } else {
         await doSend();
     }
@@ -2152,7 +2194,7 @@ window.initiateReply = (msgId, username, content) => {
     previewEl.innerHTML = `
         <div>
             <strong style="color:var(--text-primary); margin-right:6px;">${escapeHtml(username)}</strong> 
-            <span>${escapeHtml(maxContent)} yanıtlanıyor</span>
+            <span>${escapeHtml(maxContent)} ${window.i18n ? window.i18n.t('msg_replying') : 'yanıtlanıyor'}</span>
         </div>
         <button onclick="window.cancelReply()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;">✕</button>
     `;
@@ -2174,14 +2216,14 @@ function renderUsersModal() {
     if (!el.usersModalList) return;
     el.usersModalList.innerHTML = state.users.map(u => {
         const initial = u.username[0].toUpperCase();
-        const avatarStyle = u.profile_pic ? `background-image: url('${u.profile_pic}'); background-size: cover; background-position: center; color: transparent; border: 1px solid rgba(255, 255, 255, 0.1);` : `background-color:${u.avatarColor};`;
+        const avatarStyle = u.profilePic ? `background-image: url('${u.profilePic}'); background-size: cover; background-position: center; color: transparent; border: 1px solid rgba(255, 255, 255, 0.1);` : `background-color:${u.avatarColor};`;
         return `
             <div class="user-list-item" style="display:flex; align-items:center; gap:12px; padding:10px; border-bottom:1px solid rgba(255,255,255,0.05);">
                 <div class="message-avatar" style="${avatarStyle} width:32px; height:32px; font-size:14px; position:relative; box-shadow:none;">
-                    ${u.profile_pic ? '' : initial}
+                    ${u.profilePic ? '' : initial}
                     <div style="position:absolute; bottom:0; right:0; width:10px; height:10px; background-color:var(--accent-success); border-radius:50%; border:2px solid var(--bg-dark);"></div>
                 </div>
-                <span style="font-weight:600;">${escapeHtml(u.username)} ${u.username === state.nickname ? '(Sen)' : ''}</span>
+                <span style="font-weight:600;">${escapeHtml(u.username)} ${u.username === state.nickname ? (window.i18n ? `(${window.i18n.t('you')})` : '(Sen)') : ''}</span>
             </div>`;
     }).join('');
 }
@@ -3030,7 +3072,7 @@ function createMediaElement(userId, username, color, isLocal = false, stream = n
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;">
             ${avatarContent}
             <span style="font-size:14px; color:var(--text-primary); font-weight:600; text-align:center; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-              ${escapeHtml(username)} ${isLocal ? '(Sen)' : ''}
+              ${escapeHtml(username)} ${isLocal ? (window.i18n ? `(${window.i18n.t('you')})` : '(Sen)') : ''}
             </span>
         </div>
         ${videoContent}
@@ -3049,13 +3091,13 @@ function createMediaElement(userId, username, color, isLocal = false, stream = n
 // Global silme onayı
 window.deleteMessage = function (messageId, roomId) {
     if (window.showConfirmModal) {
-        window.showConfirmModal('Bu mesajı silmek istediğinize emin misiniz?', () => {
+        window.showConfirmModal(window.i18n ? window.i18n.t('msg_delete_message') : 'Bu mesajı silmek istediğinize emin misiniz?', () => {
             if (state.socket) {
                 state.socket.emit('delete-message', { messageId, roomId });
             }
         });
     } else {
-        if (confirm('Bu mesajı silmek istediğinize emin misiniz?')) {
+        if (confirm(window.i18n ? window.i18n.t('msg_delete_message') : 'Bu mesajı silmek istediğinize emin misiniz?')) {
             if (state.socket) {
                 state.socket.emit('delete-message', { messageId, roomId });
             }
@@ -3245,7 +3287,8 @@ window.openUserMenu = function (e, userId) {
             ctx.clearRect(0, 0, w, h);
 
             ctx.lineWidth = 2;
-            ctx.strokeStyle = '#8496a0';
+            const theme = document.documentElement.getAttribute('data-theme');
+            ctx.strokeStyle = theme === 'antigravity' ? '#000000' : '#8496a0';
             ctx.beginPath();
 
             const sliceWidth = w / bufferLength;
@@ -3465,7 +3508,9 @@ function drawStaticWaveform(audioId, progress) {
         const y = (h - barHeight) / 2;
 
         // Çalınan kısım accent rengi, çalınmamış kısım soluk tema rengi
-        ctx.fillStyle = i < progressBar ? '#14b8a6' : 'rgba(255, 255, 255, 0.2)';
+        const theme = document.documentElement.getAttribute('data-theme') || 'space';
+        const unfills = theme === 'antigravity' ? 'rgba(0,0,0,0.6)' : 'rgba(255, 255, 255, 0.2)';
+        ctx.fillStyle = i < progressBar ? '#14b8a6' : unfills;
         ctx.fillRect(x, y, barWidth, barHeight);
     }
 }
@@ -3641,10 +3686,10 @@ async function loadAdminRooms() {
                 <div style="display:flex; flex-direction:column; gap:4px;">
                     <span style="font-weight:600; font-size:14px;">#${room.room_key}</span>
                     <span style="font-size:11px; color:var(--text-muted);">
-                        ${room.message_count} mesaj • ${room.online_count} çevrimiçi • ${dateStr}
+                        ${room.message_count} ${window.i18n ? window.i18n.t('admin_msg_count') : 'mesaj'} • ${room.online_count} ${window.i18n ? window.i18n.t('admin_online_count') : 'çevrimiçi'} • ${dateStr}
                     </span>
                 </div>
-                <button title="Bu odayı sil" class="admin-del-room-btn" data-key="${room.room_key}" style="background:rgba(239, 68, 68, 0.15); border:none; color:var(--accent-danger); width:32px; height:32px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:0.2s;">
+                <button title="${window.i18n ? window.i18n.t('admin_del_room') : 'Bu odayı sil'}" class="admin-del-room-btn" data-key="${room.room_key}" style="background:rgba(239, 68, 68, 0.15); border:none; color:var(--accent-danger); width:32px; height:32px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:0.2s;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
             `;
@@ -3656,7 +3701,7 @@ async function loadAdminRooms() {
         delBtns.forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const roomKey = e.currentTarget.dataset.key;
-                if (confirm(`'${roomKey}' odasını ve tüm mesajlarını silmek istediğine emin misin?`)) {
+                if (confirm(window.i18n ? window.i18n.t('admin_confirm_del').replace('{key}', roomKey) : `'${roomKey}' odasını ve tüm mesajlarını silmek istediğine emin misin?`)) {
                     await fetch(`${state.serverUrl}/api/admin/rooms/${roomKey}`, { method: 'DELETE' });
                     loadAdminRooms();
                 }
@@ -3664,7 +3709,7 @@ async function loadAdminRooms() {
         });
 
     } catch (err) {
-        listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:20px;">Sunucuya bağlanılamadı.</div>';
+        listContainer.innerHTML = `<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:20px;">${window.i18n ? window.i18n.t('admin_server_error') : 'Sunucuya bağlanılamadı.'}</div>`;
     }
 }
 
@@ -3673,12 +3718,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnDeleteAll = document.getElementById('btn-admin-delete-all');
     if (btnDeleteAll) {
         btnDeleteAll.addEventListener('click', async () => {
-            if (confirm("DİKKAT! Sunucudaki TÜM odalar ve mesajlar silinecek. Emin misiniz?")) {
+            if (confirm(window.i18n ? window.i18n.t('admin_confirm_del_all') : "DİKKAT! Sunucudaki TÜM odalar ve mesajlar silinecek. Emin misiniz?")) {
                 try {
                     await fetch(`${state.serverUrl}/api/admin/rooms`, { method: 'DELETE' });
                     loadAdminRooms();
                 } catch (e) {
-                    alert("Bir hata oluştu.");
+                    alert(window.i18n ? window.i18n.t('admin_error') : "Bir hata oluştu.");
                 }
             }
         });

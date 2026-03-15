@@ -36,9 +36,9 @@
             <span>Haven</span>
         </div>
         <div class="titlebar-controls">
-            <button class="titlebar-btn" id="btn-minimize" title="Küçült">─</button>
-            <button class="titlebar-btn" id="btn-maximize" title="Büyüt">□</button>
-            <button class="titlebar-btn close" id="btn-close" title="Kapat">✕</button>
+            <button class="titlebar-btn" id="btn-minimize" title="Küçült" data-lang-title="title_minimize">─</button>
+            <button class="titlebar-btn" id="btn-maximize" title="Büyüt" data-lang-title="title_maximize">□</button>
+            <button class="titlebar-btn close" id="btn-close" title="Kapat" data-lang-title="title_close">✕</button>
         </div>
     </div>
 
@@ -373,7 +373,7 @@
     <div class="modal-overlay" id="modal-users">
         <div class="modal">
             <div class="modal-header">
-                <h2>Odada Kimler Var?</h2>
+                <h2 data-lang-key="users_in_room">Odada Kimler Var?</h2>
                 <button class="modal-close" id="btn-close-users-modal">✕</button>
             </div>
             <div class="modal-body">
@@ -430,13 +430,13 @@
                 style="width:48px; height:48px; border-radius:50%; background-color:rgba(245, 158, 11, 0.1); color:var(--accent-warning); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; margin:0 auto 16px;">
                 ?
             </div>
-            <h3 id="custom-confirm-title" style="margin-bottom:8px; color:var(--text-primary); font-size:18px;">Emin
+            <h3 id="custom-confirm-title" data-lang-key="confirm_title" style="margin-bottom:8px; color:var(--text-primary); font-size:18px;">Emin
                 misiniz?</h3>
             <p id="custom-confirm-message" style="color:var(--text-muted); font-size:14px; margin-bottom:24px;"></p>
             <div style="display:flex; gap:12px; justify-content:center;">
-                <button id="btn-custom-confirm-cancel"
+                <button id="btn-custom-confirm-cancel" data-lang-key="btn_cancel"
                     style="flex:1; padding:10px; background:var(--bg-light); border:1px solid var(--border-medium); border-radius:8px; color:var(--text-primary); cursor:pointer; font-weight:600; transition:0.2s;">İptal</button>
-                <button id="btn-custom-confirm-ok"
+                <button id="btn-custom-confirm-ok" data-lang-key="btn_yes"
                     style="flex:1; padding:10px; background:var(--accent-danger); border:none; border-radius:8px; color:white; cursor:pointer; font-weight:600; transition:0.2s;">Evet</button>
             </div>
         </div>
@@ -598,7 +598,7 @@
                 <!-- Sadece sunucu sahibine gösterilecek (JS ile)-->
                 <div id="admin-tab-separator"
                     style="display:none; height:1px; background:rgba(255,255,255,0.06); margin:8px 12px;"></div>
-                <span id="admin-tab-label"
+                <span id="admin-tab-label" data-lang-key="admin_label"
                     style="display:none; font-size: 10px; text-transform: uppercase; color: var(--accent-danger); font-weight: 700; letter-spacing: 0.5px; padding: 8px 12px;">Yönetici</span>
                 <button class="settings-tab" data-tab="admin" id="admin-tab-btn"
                     style="display:none; text-align: left; padding: 8px 12px; border-radius: 6px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 13px; font-weight: 500; transition: 0.15s; align-items: center; gap: 8px;">
@@ -650,8 +650,7 @@
                         <div
                             style="display:flex; align-items:center; gap: 8px; margin-bottom: 12px; background:rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 8px;">
                             <span style="font-size:12px; color:var(--text-muted);" data-lang-key="color_preview_text">Önizleme:</span>
-                            <span id="chat-color-preview-text" style="font-weight:600; font-size:14px;" data-lang-key="sample_user">Örnek
-                                Kullanıcı</span>
+                            <span id="chat-color-preview-text" style="font-weight:600; font-size:14px;">Örnek Kullanıcı</span>
                         </div>
                         <div class="color-picker-container" id="chat-color-picker"
                             style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;"></div>
@@ -767,14 +766,14 @@
                             <line x1="6" y1="6" x2="6.01" y2="6"></line>
                             <line x1="6" y1="18" x2="6.01" y2="18"></line>
                         </svg>
-                        Sunucu Yönetimi
+                        <span data-lang-key="tab_admin">Sunucu Yönetimi</span>
                     </h2>
-                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;">Sunucunuzdaki tüm odaları
+                    <p data-lang-key="admin_desc" style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;">Sunucunuzdaki tüm odaları
                         buradan yönetebilirsiniz. Bu panel sadece sunucu sahibine görünür.</p>
 
                     <div id="admin-rooms-list"
                         style="display:flex; flex-direction:column; gap:8px; max-height:340px; overflow-y:auto; padding-right:4px;">
-                        <div style="color:var(--text-muted); font-size:12px; text-align:center; margin-top:20px;">
+                        <div data-lang-key="admin_loading" style="color:var(--text-muted); font-size:12px; text-align:center; margin-top:20px;">
                             Yükleniyor...</div>
                     </div>
 
@@ -788,7 +787,7 @@
                                     d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
                                 </path>
                             </svg>
-                            Tüm Odaları Sil
+                            <span data-lang-key="btn_delete_all_rooms">Tüm Odaları Sil</span>
                         </button>
                     </div>
                 </div>
