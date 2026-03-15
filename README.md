@@ -24,7 +24,7 @@ Haven, Electron.js tabanlı, tamamen oda anahtarı ve uçtan uca şifreleme mant
 ## 📁 Dosya Yapısı
 
 ```
-dc/
+haven/
 ├── package.json          # Proje yapılandırması ve paketler
 ├── app/
 │   ├── main.js           # Electron Ana İşlem (Tünel ve Pencere Yönetimi)
