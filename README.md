@@ -70,4 +70,4 @@ npm run build:win
 - **UI**: Vanilla CSS (Premium Glassmorphism)
 
 ---
-**DC Team** tarafından geliştirilmiştir.
+**GITY Team** tarafından geliştirilmiştir.
