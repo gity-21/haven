@@ -1,0 +1,74 @@
+{
+    "name": "dc-private-chat",
+    "version": "1.0.0",
+    "description": "Private desktop chat application - Premium Discord-like invite-only rooms",
+    "homepage": "https://github.com/haven-chat/haven",
+    "main": "app/main.js",
+    "scripts": {
+        "start": "electron .",
+        "server": "node server/index.js",
+        "dev": "electron . --dev",
+        "build:win": "electron-builder --win",
+        "build:linux": "electron-builder --linux"
+    },
+    "build": {
+        "appId": "com.dc.private-chat",
+        "productName": "Haven",
+        "asar": true,
+        "directories": {
+            "output": "dist"
+        },
+        "files": [
+            "app/**/*",
+            "server/**/*",
+            "assets/**/*",
+            "node_modules/**/*",
+            "package.json"
+        ],
+        "win": {
+            "target": [
+                "zip"
+            ],
+            "icon": "assets/icon.png",
+            "signtoolOptions": {
+                "publisherName": "DC Team"
+            }
+        },
+        "linux": {
+            "target": [
+                "AppImage",
+                "deb"
+            ],
+            "icon": "assets/icon.png",
+            "category": "Network"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true
+        }
+    },
+    "dependencies": {
+        "bcryptjs": "^2.4.3",
+        "cloudflared": "^0.7.1",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.7",
+        "express": "^4.21.2",
+        "express-rate-limit": "^8.2.1",
+        "multer": "^2.0.2",
+        "sanitize-html": "^2.17.1",
+        "socket.io": "^4.8.3",
+        "socket.io-client": "^4.8.3",
+        "sql.js": "^1.11.0",
+        "uuid": "^11.0.5"
+    },
+    "devDependencies": {
+        "concurrently": "^9.1.2",
+        "electron": "^34.2.0",
+        "electron-builder": "^25.1.8"
+    },
+    "author": {
+        "name": "DC Team",
+        "email": "haven@dcteam.dev"
+    },
+    "license": "MIT"
+}

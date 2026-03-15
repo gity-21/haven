@@ -1,0 +1,431 @@
+/* =========================================
+   ANTIGRAVITY THEME - LIGHT MODE
+   ========================================= */
+
+/* GLOBAL & CHAT AREA */
+html[data-theme="antigravity"] {
+    --text-primary: #202124 !important;
+    --text-muted: #5f6368 !important;
+    --text-secondary: #3c4043 !important;
+    --bg-dark: #ffffff !important;
+    --bg-light: #f8f9fa !important;
+    --border-light: rgba(0, 0, 0, 0.1) !important;
+    --bg-hover: rgba(0, 0, 0, 0.05) !important;
+}
+
+html[data-theme="antigravity"],
+html[data-theme="antigravity"] body {
+    background: #ffffff !important;
+    color: var(--text-primary) !important;
+    font-family: 'Inter', -apple-system, sans-serif !important;
+}
+
+html[data-theme="antigravity"] .app-container {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="antigravity"] .app-container::before {
+    display: none !important;
+}
+
+html[data-theme="antigravity"] .chat-area {
+    background: transparent !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.03) !important;
+}
+
+html[data-theme="antigravity"] .chat-header {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+html[data-theme="antigravity"] .chat-header-info span,
+html[data-theme="antigravity"] #room-name-display {
+    color: #202124 !important;
+    text-shadow: none !important;
+    font-weight: 600;
+}
+
+html[data-theme="antigravity"] .chat-header-actions button {
+    color: #5f6368 !important;
+}
+
+html[data-theme="antigravity"] .chat-header-actions button:hover {
+    color: #1a73e8 !important;
+    background: rgba(26, 115, 232, 0.08) !important;
+    text-shadow: none !important;
+}
+
+html[data-theme="antigravity"] .header-user-count {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    color: #202124 !important;
+}
+
+/* MESSAGES */
+html[data-theme="antigravity"] .message-group {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    border-radius: 12px !important;
+}
+
+html[data-theme="antigravity"] .message-group:hover {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="antigravity"] .message-group.continuation {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="antigravity"] .message-group.continuation:hover {
+    background: rgba(0, 0, 0, 0.03) !important;
+}
+
+html[data-theme="antigravity"] .message-avatar {
+    background-color: #f0f2f5 !important;
+    border: none !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+    text-shadow: none !important;
+}
+
+html[data-theme="antigravity"] .message-username {
+    text-shadow: none !important;
+    font-weight: 700;
+}
+
+html[data-theme="antigravity"] .message-text {
+    color: #3c4043 !important;
+    text-shadow: none !important;
+}
+
+html[data-theme="antigravity"] .message-timestamp {
+    color: #80868b !important;
+}
+
+/* Tarih ayırıcıları */
+html[data-theme="antigravity"] .date-separator span {
+    background: #ffffff !important;
+    color: #80868b !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="antigravity"] .date-separator::before,
+html[data-theme="antigravity"] .date-separator::after {
+    background: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Mesaj alanı arka planı temiz */
+html[data-theme="antigravity"] .chat-messages {
+    background: transparent !important;
+}
+
+/* Emoji reaksiyonları */
+html[data-theme="antigravity"] .reaction-btn {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    color: #3c4043 !important;
+}
+
+html[data-theme="antigravity"] .reaction-btn:hover {
+    background: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Mesaj input container */
+html[data-theme="antigravity"] .chat-input-container {
+    background: transparent !important;
+}
+
+/* Context menu */
+html[data-theme="antigravity"] .context-menu,
+html[data-theme="antigravity"] #message-context-menu {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+    color: #202124 !important;
+}
+
+/* Typing indicator */
+html[data-theme="antigravity"] .typing-indicator {
+    background: transparent !important;
+    color: #5f6368 !important;
+}
+
+/* Toast */
+html[data-theme="antigravity"] .toast {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    color: #202124 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* INPUT AREA */
+html[data-theme="antigravity"] .chat-input-wrapper {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05) !important;
+}
+
+html[data-theme="antigravity"] .chat-input {
+    color: #202124 !important;
+}
+
+html[data-theme="antigravity"] .chat-input::placeholder {
+    color: #80868b !important;
+}
+
+html[data-theme="antigravity"] #btn-send {
+    background: #1a73e8 !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 2px 6px rgba(26, 115, 232, 0.3) !important;
+}
+
+html[data-theme="antigravity"] #btn-send:hover {
+    background: #174ea6 !important;
+    box-shadow: 0 4px 12px rgba(26, 115, 232, 0.5) !important;
+}
+
+/* LOGIN SCREEN OVERRIDES */
+html[data-theme="antigravity"] .soft-wrapper {
+    background: transparent !important;
+}
+
+html[data-theme="antigravity"] .login-bg-effects,
+html[data-theme="antigravity"] .soft-bg-lines {
+    display: none !important;
+    /* Arka plan baloncuklarını gizle */
+}
+
+html[data-theme="antigravity"] .soft-glass-panel {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.5) !important;
+}
+
+html[data-theme="antigravity"] .soft-header h1 {
+    color: #202124 !important;
+    text-shadow: none !important;
+}
+
+html[data-theme="antigravity"] .soft-header p {
+    color: #5f6368 !important;
+    text-shadow: none !important;
+}
+
+html[data-theme="antigravity"] .soft-tabs {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+html[data-theme="antigravity"] .soft-tab {
+    color: #5f6368 !important;
+}
+
+html[data-theme="antigravity"] .soft-tab:hover {
+    color: #202124 !important;
+}
+
+html[data-theme="antigravity"] .soft-tab.active {
+    background: #ffffff !important;
+    color: #1a73e8 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+html[data-theme="antigravity"] .soft-label {
+    color: #5f6368 !important;
+}
+
+html[data-theme="antigravity"] .soft-input {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    color: #202124 !important;
+}
+
+html[data-theme="antigravity"] .soft-input:focus {
+    border-color: #1a73e8 !important;
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2) !important;
+}
+
+html[data-theme="antigravity"] .soft-input::placeholder {
+    color: #80868b !important;
+}
+
+html[data-theme="antigravity"] .soft-btn-submit {
+    background: #1a73e8 !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+html[data-theme="antigravity"] .soft-btn-submit:hover {
+    background: #174ea6 !important;
+    box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3) !important;
+}
+
+html[data-theme="antigravity"] .soft-logo svg,
+html[data-theme="antigravity"] .logo-icon svg {
+    stroke: #1a73e8 !important;
+    filter: none !important;
+}
+
+/* SETTINGS AND MODALS */
+html[data-theme="antigravity"] #settings-modal>div,
+html[data-theme="antigravity"] #chat-settings-modal>div,
+html[data-theme="antigravity"] #invite-modal>div,
+html[data-theme="antigravity"] .modal {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Chat Settings Sol Sidebar ve Genel Düzeni */
+html[data-theme="antigravity"] #chat-settings-modal>div>div:first-child {
+    background: #f8f9fa !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Profil Fotoğrafı Yükleme Kutusu ve Önizleme Kutusu (Gri Arkaplanlı) */
+html[data-theme="antigravity"] label[for="chat-avatar-upload"],
+html[data-theme="antigravity"] label[for="avatar-upload"] {
+    background: #f8f9fa !important;
+    border: 2px dashed rgba(0, 0, 0, 0.2) !important;
+}
+
+html[data-theme="antigravity"] #chat-settings-modal .settings-tab {
+    color: #5f6368 !important;
+    background: transparent !important;
+}
+
+html[data-theme="antigravity"] #chat-settings-modal .settings-tab:hover:not(.active) {
+    background: #e8eaed !important;
+    color: #202124 !important;
+}
+
+html[data-theme="antigravity"] #chat-settings-modal .settings-tab.active {
+    background: #e8f0fe !important;
+    color: #1a73e8 !important;
+}
+
+/* Önizleme Kutusunun Rengi */
+html[data-theme="antigravity"] #chat-settings-modal div[style*="background:rgba(0,0,0,0.2)"] {
+    background: #f1f3f4 !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Ayarlar Kapatma Butonu ve Kamera İkonu */
+html[data-theme="antigravity"] #btn-close-chat-settings,
+html[data-theme="antigravity"] #btn-close-settings {
+    color: #5f6368 !important;
+    border-radius: 50% !important;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+html[data-theme="antigravity"] #btn-close-chat-settings:hover,
+html[data-theme="antigravity"] #btn-close-settings:hover {
+    color: #202124 !important;
+    background: rgba(0, 0, 0, 0.05) !important;
+}
+
+html[data-theme="antigravity"] #chat-avatar-upload-icon {
+    opacity: 0.8 !important;
+}
+
+html[data-theme="antigravity"] #settings-modal h2,
+html[data-theme="antigravity"] #chat-settings-modal h2,
+html[data-theme="antigravity"] #invite-modal h2,
+html[data-theme="antigravity"] .modal h3 {
+    color: #202124 !important;
+    text-shadow: none !important;
+}
+
+html[data-theme="antigravity"] #settings-modal p,
+html[data-theme="antigravity"] #settings-modal label,
+html[data-theme="antigravity"] #settings-modal span,
+html[data-theme="antigravity"] #chat-settings-modal p,
+html[data-theme="antigravity"] #chat-settings-modal label,
+html[data-theme="antigravity"] #chat-settings-modal span,
+html[data-theme="antigravity"] .modal p {
+    color: #5f6368 !important;
+}
+
+html[data-theme="antigravity"] #settings-modal input,
+html[data-theme="antigravity"] #settings-modal select,
+html[data-theme="antigravity"] #chat-settings-modal select {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    color: #202124 !important;
+}
+
+html[data-theme="antigravity"] select option {
+    background-color: #ffffff !important;
+    color: #202124 !important;
+}
+
+html[data-theme="antigravity"] #settings-modal .form-submit,
+html[data-theme="antigravity"] #chat-settings-modal .form-submit,
+html[data-theme="antigravity"] .modal .btn-confirm {
+    background: #1a73e8 !important;
+    color: white !important;
+    border: none !important;
+}
+
+html[data-theme="antigravity"] #settings-modal .form-submit:hover,
+html[data-theme="antigravity"] .modal .btn-confirm:hover {
+    background: #174ea6 !important;
+}
+
+html[data-theme="antigravity"] #btn-settings {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    color: #1a73e8 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+    animation: none !important;
+}
+
+html[data-theme="antigravity"] #btn-settings+span {
+    color: #202124 !important;
+    text-shadow: none !important;
+}
+
+/* INVITE MODAL OVERRIDES (Odanız Kuruldu) */
+html[data-theme="antigravity"] #invite-modal input {
+    background: #f8f9fa !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    color: #202124 !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+
+html[data-theme="antigravity"] #invite-modal input:focus {
+    border-color: #1a73e8 !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02), 0 0 0 2px rgba(26, 115, 232, 0.2) !important;
+}
+
+html[data-theme="antigravity"] #invite-modal .form-submit,
+html[data-theme="antigravity"] #invite-modal #btn-copy-all,
+html[data-theme="antigravity"] #invite-modal #btn-start-chat {
+    background: #1a73e8 !important;
+    color: #ffffff !important;
+    border: none !important;
+    text-shadow: none !important;
+    box-shadow: 0 2px 4px rgba(26, 115, 232, 0.2) !important;
+}
+
+html[data-theme="antigravity"] #invite-modal .form-submit:hover,
+html[data-theme="antigravity"] #invite-modal #btn-copy-all:hover,
+html[data-theme="antigravity"] #invite-modal #btn-start-chat:hover {
+    background: #174ea6 !important;
+    box-shadow: 0 4px 8px rgba(26, 115, 232, 0.3) !important;
+}

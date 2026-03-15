@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DC Private Chat - Gizli Oda</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/soft-login.css">
+    <link rel="stylesheet" href="css/antigravity.css">
+    <script>
+        // Tema ayarlarını render olmadan önce yükle (FOUC Engelleme)
+        const savedTheme = localStorage.getItem('dc_login_theme') || 'space';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    <script src="js/matrix.js"></script>
+    <script src="js/antigravity.js"></script>
+</head>
+
+<body>
+
+
+
+    <!-- Custom Titlebar (Masaüstü) -->
+    <div class="titlebar">
+        <a href="https://example.com" target="_blank" class="titlebar-title" style="text-decoration: none;">
+            <div class="logo-icon"
+                style="background: transparent; display: flex; align-items: center; justify-content: center;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+            </div>
+            <span>Haven</span>
+        </a>
+        <div class="titlebar-controls">
+            <button class="titlebar-btn" id="btn-minimize" title="Küçült">─</button>
+            <button class="titlebar-btn" id="btn-maximize" title="Büyüt">□</button>
+            <button class="titlebar-btn close" id="btn-close" title="Kapat">✕</button>
+        </div>
+    </div>
+
+    <!-- Ayarlar Butonu -->
+    <style>
+        @keyframes settingsGlow {
+            0% {
+                box-shadow: 0 0 10px rgba(255, 255, 255, 0.2), inset 0 0 5px rgba(255, 255, 255, 0.1);
+            }
+
+            100% {
+                box-shadow: 0 0 20px rgba(255, 255, 255, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        #btn-settings:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.15) !important;
+        }
+    </style>
+    <div
+        style="position: absolute; top: 60px; left: 30px; z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <button id="btn-settings" title="Ayarlar"
+            style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 50%; width: 44px; height: 44px; cursor: pointer; display: flex; justify-content: center; align-items: center; color: white; transition: all 0.3s ease; animation: settingsGlow 2s infinite alternate;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                </path>
+            </svg>
+        </button>
+        <span style="font-size: 13px; font-weight: 600; color: #fff; letter-spacing: 0.5px;">Ayarlar</span>
+    </div>
+
+    <!-- Soft Elegant Login GUI -->
+    <div class="soft-wrapper">
+
+        <div class="login-bg-effects">
+            <div class="orb"></div>
+            <div class="orb"></div>
+            <div class="orb"></div>
+        </div>
+        <div class="soft-bg-lines"></div>
+
+        <div class="soft-glass-panel">
+
+            <div class="soft-logo" style="display: flex; align-items: center; justify-content: center;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)"
+                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+            </div>
+
+            <div class="soft-header">
+                <h1>Haven</h1>
+                <p>Güvenli ve Anonim İletişim Ağı</p>
+            </div>
+
+            <div class="soft-tabs">
+                <button type="button" class="soft-tab" id="tab-create">Ağ Kur</button>
+                <button type="button" class="soft-tab active" id="tab-join">Ağa Katıl</button>
+            </div>
+
+            <form id="form-login">
+                <div class="soft-group" id="server-group">
+                    <label class="soft-label" for="login-server">Sunucu Bağlantısı</label>
+                    <div class="soft-input-box">
+                        <input class="soft-input" type="text" id="login-server"
+                            placeholder="Uzak sunucu adresi (localhost/davet)">
+                    </div>
+                </div>
+
+                <div class="soft-group">
+                    <label class="soft-label" for="login-room">Ağ Anahtarı</label>
+                    <div class="soft-input-box">
+                        <input class="soft-input" type="text" id="login-room" placeholder="Doğrulanmış ağ kimliği"
+                            autocomplete="off" required>
+                    </div>
+                </div>
+
+                <div class="soft-group">
+                    <label class="soft-label" for="login-password">Erişim Şifresi (E2EE)</label>
+                    <div class="soft-input-box">
+                        <input class="soft-input" type="password" id="login-password"
+                            placeholder="Şifrenizi güvenle girin" autocomplete="off" required>
+                    </div>
+                </div>
+
+                <button class="soft-btn-submit" type="submit" id="login-submit">Bağlan</button>
+                <div class="form-error" id="login-error"></div>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- Ayarlar Modalı - Sekmeli -->
+    <div id="settings-modal"
+        style="display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease;">
+        <div
+            style="background: rgba(18, 18, 22, 0.75); border-radius: 20px; width: 680px; max-height: 85vh; border: 1px solid rgba(255, 255, 255, 0.08); position: relative; box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05); display: flex; overflow: hidden; backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);">
+
+            <!-- Sol Sidebar (Sekmeler) -->
+            <div
+                style="width: 200px; background: rgba(0,0,0,0.4); border-right: 1px solid rgba(255, 255, 255, 0.04); padding: 28px 16px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;">
+                <span
+                    style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px; padding: 8px 12px;">Ayarlar</span>
+                <button class="login-settings-tab active" data-tab="profil"
+                    style="text-align: left; padding: 8px 12px; border-radius: 6px; border: none; background: rgba(255,255,255,0.08); color: var(--text-primary); cursor: pointer; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Profil
+                </button>
+
+                <button class="login-settings-tab" data-tab="ses"
+                    style="text-align: left; padding: 8px 12px; border-radius: 6px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                    Ses
+                </button>
+
+                <button class="login-settings-tab" data-tab="gorunum"
+                    style="text-align: left; padding: 8px 12px; border-radius: 6px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path>
+                        <path d="M12 2v20"></path>
+                    </svg>
+                    Görünüm
+                </button>
+            </div>
+
+            <!-- Sağ İçerik Alanı -->
+            <div style="flex: 1; padding: 24px 32px; overflow-y: auto; max-height: 85vh;">
+                <button type="button" id="btn-close-settings"
+                    style="position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; transition: 0.2s; z-index: 10;">✕</button>
+
+                <!-- ===== PROFİL SEKMESİ ===== -->
+                <div class="login-settings-panel active" id="login-panel-profil">
+                    <h2 style="margin-bottom: 4px; font-size: 20px; font-weight: 700;">Profil</h2>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 12px;">Kullanıcı adınızı, profil
+                        resminizi ve rengini buradan düzenleyebilirsiniz.</p>
+
+                    <div class="form-group"
+                        style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 12px;">
+                        <label for="login-avatar-upload"
+                            style="cursor: pointer; position: relative; width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; overflow: hidden; transition: 0.2s;">
+                            <span id="avatar-upload-icon"
+                                style="font-size: 28px; color: var(--text-muted); opacity: 0.5;">📷</span>
+                            <img id="avatar-preview-img"
+                                style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                        </label>
+                        <span style="font-size: 11px; color: var(--text-muted);">Tıklayarak profil görseli yükle</span>
+                        <input type="file" id="login-avatar-upload" accept="image/*" style="display: none;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label" for="login-username" style="margin-bottom: 4px;">Takma Ad <span
+                                style="color:var(--accent-danger)">*</span></label>
+                        <input class="form-input"
+                            style="padding: 10px 14px; height: 44px; min-height: unset; font-size: 14px;" type="text"
+                            id="login-username" placeholder="Örn: Mehmet" autocomplete="off" value="Kullanıcı">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label">Takma Ad Rengi</label>
+                        <div
+                            style="display:flex; align-items:center; gap: 8px; margin-bottom: 12px; background:rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 8px;">
+                            <span style="font-size:12px; color:var(--text-muted);">Önizleme:</span>
+                            <span id="color-preview-text" style="font-weight:600; font-size:14px;">Örnek
+                                Kullanıcı</span>
+                        </div>
+                        <div class="color-picker-container" id="color-picker"
+                            style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;"></div>
+                        <input type="hidden" id="login-avatar-color" value="#6366f1">
+                    </div>
+                </div>
+
+
+
+                <!-- ===== SES SEKMESİ ===== -->
+                <div class="login-settings-panel" id="login-panel-ses" style="display: none;">
+                    <h2 style="margin-bottom: 4px; font-size: 20px; font-weight: 700;">Ses Ayarları</h2>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;">Ses giriş ve çıkış
+                        cihazlarınızı seçin ve test edin.</p>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            </svg>
+                            Giriş Aygıtı (Mikrofon)
+                        </label>
+                        <select id="login-mic-select" class="form-input"
+                            style="appearance: auto; cursor: pointer; padding: 10px 14px; height: 44px; min-height: unset; font-size: 14px; background-color: rgba(255,255,255,0.03); color: var(--text-primary); margin-bottom: 10px;">
+                            <option value="">Yükleniyor...</option>
+                        </select>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <button type="button" id="login-btn-test-mic"
+                                style="padding: 8px 16px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-medium); border-radius: 6px; color: var(--text-primary); cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.15s; display: flex; align-items: center; gap: 6px;">
+                                🎙️ Mikrofonu Test Et
+                            </button>
+                            <div id="login-mic-level-container"
+                                style="flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; display: none;">
+                                <div id="login-mic-level-bar"
+                                    style="width: 0%; height: 100%; background: var(--accent-success); transition: width 0.05s; border-radius: 3px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                            </svg>
+                            Çıkış Aygıtı (Hoparlör)
+                        </label>
+                        <select id="login-speaker-select" class="form-input"
+                            style="appearance: auto; cursor: pointer; padding: 10px 14px; height: 44px; min-height: unset; font-size: 14px; background-color: rgba(255,255,255,0.03); color: var(--text-primary); margin-bottom: 10px;">
+                            <option value="">Yükleniyor...</option>
+                        </select>
+                        <button type="button" id="login-btn-test-speaker"
+                            style="padding: 8px 16px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-medium); border-radius: 6px; color: var(--text-primary); cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.15s; display: flex; align-items: center; gap: 6px;">
+                            🔊 Hoparlörü Test Et
+                        </button>
+                    </div>
+
+
+                </div>
+
+                <!-- ===== GÖRÜNÜM SEKMESİ ===== -->
+                <div class="login-settings-panel" id="login-panel-gorunum" style="display: none;">
+                    <h2 style="margin-bottom: 4px; font-size: 20px; font-weight: 700;">Görünüm Ayarları</h2>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;">Uygulamanın görsel
+                        temasını buradan değiştirebilirsiniz.</p>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 2v20"></path>
+                            </svg>
+                            Giriş Ekranı Teması
+                        </label>
+                        <select id="login-theme-select" class="form-input"
+                            style="appearance: auto; cursor: pointer; padding: 10px 14px; height: 44px; min-height: unset; font-size: 14px; background-color: rgba(255,255,255,0.03); color: var(--text-primary); margin-bottom: 10px;">
+                            <option value="space">Klasik</option>
+                            <option value="hacker">Hacker</option>
+                            <option value="antigravity">Beyaz</option>
+                        </select>
+                    </div>
+
+
+                </div>
+
+                <!-- Kaydet Butonu -->
+                <button type="button" id="btn-save-settings" class="form-submit"
+                    style="margin-top: 16px; padding: 12px; margin-bottom: 0px; width: 100%;">Kaydet ve Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Davet Bilgileri Modalı -->
+    <div id="invite-modal"
+        style="display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease;">
+        <div
+            style="background: var(--bg-dark); padding: 32px; border-radius: var(--radius-lg); width: 450px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border-light); position: relative; box-shadow: var(--shadow-lg);">
+
+            <h2
+                style="margin-bottom: 24px; font-size: 20px; font-weight: 700; text-align: center; color: var(--text-primary);">
+                Odanız Kuruldu!</h2>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 24px; font-size: 14px;">Aşağıdaki
+                bilgileri arkadaşınıza göndererek odaya katılmasını sağlayabilirsiniz.</p>
+
+            <div class="form-group">
+                <label class="form-label" style="color: var(--text-primary);">Sunucu Davet Linki</label>
+                <div style="display: flex; gap: 8px;">
+                    <input class="form-input" type="text" id="invite-server" readonly
+                        style="background: rgba(0,0,0,0.2); color: var(--text-primary);">
+                    <button type="button" class="form-submit" id="btn-copy-server"
+                        style="width: auto; padding: 0 20px; margin-top: 0; flex-shrink: 0;">Kopyala</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" style="color: var(--text-primary);">Oda Anahtarı</label>
+                <div style="display: flex; gap: 8px;">
+                    <input class="form-input" type="text" id="invite-room" readonly
+                        style="background: rgba(0,0,0,0.2); color: var(--text-primary);">
+                    <button type="button" class="form-submit" id="btn-copy-room"
+                        style="width: auto; padding: 0 20px; margin-top: 0; flex-shrink: 0;">Kopyala</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" style="color: var(--text-primary);">Oda Şifresi</label>
+                <div style="display: flex; gap: 8px;">
+                    <input class="form-input" type="text" id="invite-password" readonly
+                        style="background: rgba(0,0,0,0.2); color: var(--text-primary);">
+                    <button type="button" class="form-submit" id="btn-copy-password"
+                        style="width: auto; padding: 0 20px; margin-top: 0; flex-shrink: 0;">Kopyala</button>
+                </div>
+            </div>
+
+            <button type="button" id="btn-copy-all" class="form-submit"
+                style="margin-top: 16px; background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid var(--border-light);">Tümünü
+                Kopyala</button>
+
+            <button type="button" id="btn-start-chat" class="form-submit" style="margin-top: 16px;">Sohbete Geç</button>
+        </div>
+    </div>
+
+    <!-- Özel Alert Modalı -->
+    <div class="modal-overlay" id="custom-alert-modal"
+        style="display:none; align-items:center; justify-content:center; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px);">
+        <div class="modal"
+            style="max-width:320px; text-align:center; background:var(--bg-dark); border:1px solid var(--border-light); border-radius:var(--radius-lg); padding:24px;">
+            <div id="custom-alert-icon"
+                style="width:48px; height:48px; border-radius:50%; background-color:rgba(239, 68, 68, 0.1); color:var(--accent-danger); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; margin:0 auto 16px;">
+                !
+            </div>
+            <h3 id="custom-alert-title" style="margin-bottom:8px; color:var(--text-primary); font-size:18px;">Uyarı</h3>
+            <p id="custom-alert-message" style="color:var(--text-muted); font-size:14px; margin-bottom:24px;"></p>
+            <button id="btn-custom-alert-ok"
+                style="width:100%; padding:10px; background:var(--accent-primary); border:none; border-radius:8px; color:var(--text-on-accent, #000); cursor:pointer; font-weight:600; transition:0.2s;">Tamam</button>
+        </div>
+    </div>
+
+    <script src="js/login.js"></script>
+</body>
+
+</html>

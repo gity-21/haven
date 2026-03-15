@@ -1,0 +1,644 @@
+/* soft-login.css - Minimalist Soft Dark GUI */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+body {
+    background: #000000 !important;
+    color: #e2e2e8 !important;
+    font-family: 'Inter', -apple-system, system-ui, sans-serif !important;
+}
+
+/* Base resets for soft theme */
+.soft-wrapper {
+    height: calc(100vh - 36px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000000 url('../../assets/space.svg') no-repeat center center / cover;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle background glowing lines */
+.soft-bg-lines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.15;
+    background-image: linear-gradient(#ffffff 1px, transparent 1px),
+        linear-gradient(90deg, #ffffff 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 60% 60% at 50% 30%, black 10%, transparent 60%);
+    -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 30%, black 10%, transparent 60%);
+    z-index: 0;
+}
+
+/* Floating Space/Hacker Animated Orbs */
+.login-bg-effects {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.login-bg-effects .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.25;
+    animation: floatOrb 15s infinite ease-in-out;
+}
+
+@keyframes floatOrb {
+
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    25% {
+        transform: translate(30px, -30px) scale(1.05);
+    }
+
+    50% {
+        transform: translate(-20px, 20px) scale(0.95);
+    }
+
+    75% {
+        transform: translate(15px, 15px) scale(1.02);
+    }
+}
+
+.login-bg-effects .orb:nth-child(1) {
+    width: 400px;
+    height: 400px;
+    background: #6366f1;
+    top: -100px;
+    right: -100px;
+    animation-delay: 0s;
+}
+
+.login-bg-effects .orb:nth-child(2) {
+    width: 350px;
+    height: 350px;
+    background: #8b5cf6;
+    bottom: -80px;
+    left: -80px;
+    animation-delay: -5s;
+}
+
+.login-bg-effects .orb:nth-child(3) {
+    width: 250px;
+    height: 250px;
+    background: #3b82f6;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation-delay: -10s;
+}
+
+.soft-glass-panel {
+    width: 400px;
+    padding: 50px 48px;
+    border-radius: 28px;
+    background: rgba(22, 22, 28, 0.65);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+}
+
+/* Brand & Logo */
+.soft-logo {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.soft-logo img {
+    width: 65%;
+    height: auto;
+    object-fit: contain;
+    opacity: 0.85;
+}
+
+.soft-header {
+    text-align: center;
+    margin-bottom: 36px;
+    width: 100%;
+}
+
+.soft-header h1 {
+    font-size: 26px;
+    font-weight: 500;
+    letter-spacing: -0.5px;
+    color: #f8f8fc;
+    margin-bottom: 8px;
+}
+
+.soft-header p {
+    font-size: 13px;
+    color: #8b8b98;
+    font-weight: 400;
+    letter-spacing: 0.2px;
+}
+
+/* Segmented Tabs */
+.soft-tabs {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 32px;
+}
+
+.soft-tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #71717a;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.soft-tab:hover {
+    color: #d4d4d8;
+}
+
+.soft-tab.active {
+    background: rgba(255, 255, 255, 0.06);
+    color: #f4f4f5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Form Soft Design */
+#form-login {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.soft-group {
+    margin-bottom: 20px;
+}
+
+.soft-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #a1a1aa;
+    margin-bottom: 8px;
+    letter-spacing: 0.3px;
+}
+
+.soft-input-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.soft-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    color: #f4f4f5;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    outline: none;
+    font-family: inherit;
+}
+
+.soft-input::placeholder {
+    color: #52525b;
+}
+
+.soft-input:focus {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.03);
+}
+
+.soft-btn-submit {
+    width: 100%;
+    padding: 15px;
+    margin-top: 14px;
+    border: none;
+    border-radius: 14px;
+    background: #e2e2e8;
+    color: #0d0d10;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 14px rgba(255, 255, 255, 0.08);
+}
+
+.soft-btn-submit:hover {
+    background: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.12);
+}
+
+.soft-btn-submit:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.06);
+}
+
+.form-error {
+    display: none;
+    padding: 10px 14px;
+    margin-top: 16px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    border-radius: 10px;
+    color: #ef4444;
+    font-size: 13px;
+    text-align: center;
+}
+
+.form-error.visible {
+    display: block;
+}
+
+/* =========================================
+   HACKER (TERMINAL) EKK TEMA
+   ========================================= */
+html[data-theme="hacker"] body {
+    background: #000000 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+}
+
+html[data-theme="hacker"] .soft-wrapper { background: transparent !important; }
+html[data-theme="matrix"] .soft-wrapper { background: transparent !important; }
+
+html[data-theme="hacker"] .login-bg-effects .orb:nth-child(1) {
+    background: #00ff00;
+    opacity: 0.15;
+}
+
+html[data-theme="hacker"] .login-bg-effects .orb:nth-child(2) {
+    background: #00aa00;
+    opacity: 0.15;
+}
+
+html[data-theme="hacker"] .login-bg-effects .orb:nth-child(3) {
+    background: #005500;
+    opacity: 0.15;
+}
+
+html[data-theme="hacker"] .soft-bg-lines {
+    background-image: linear-gradient(rgba(0, 255, 0, 0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 0, 0.4) 1px, transparent 1px);
+    opacity: 0.8 !important;
+}
+
+html[data-theme="hacker"] .soft-glass-panel {
+    background: rgba(0, 10, 0, 0.85);
+    border: 1px solid #00ff00;
+    box-shadow: 0 0 30px rgba(0, 255, 0, 0.15), inset 0 0 10px rgba(0, 255, 0, 0.1);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-radius: 4px;
+}
+
+html[data-theme="hacker"] .soft-logo {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+html[data-theme="hacker"] .soft-logo img {
+    filter: hue-rotate(90deg) drop-shadow(0 0 5px #00ff00);
+}
+
+html[data-theme="hacker"] .soft-header h1 {
+    color: #00ff00;
+    text-shadow: 0 0 5px #00ff00;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+html[data-theme="hacker"] .soft-header p {
+    color: #008800;
+}
+
+html[data-theme="hacker"] .soft-tabs {
+    background: #000;
+    border: 1px solid #004400;
+    border-radius: 4px;
+}
+
+html[data-theme="hacker"] .soft-tab {
+    color: #005500;
+    border-radius: 2px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+html[data-theme="hacker"] .soft-tab:hover {
+    color: #00aa00;
+}
+
+html[data-theme="hacker"] .soft-tab.active {
+    background: rgba(0, 255, 0, 0.15);
+    color: #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+    border: 1px solid #00ff00;
+}
+
+html[data-theme="hacker"] .soft-label {
+    color: #00aa00;
+    text-transform: uppercase;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+html[data-theme="hacker"] .soft-input {
+    background: #000;
+    border: 1px dashed #004400;
+    color: #00ff00;
+    border-radius: 2px;
+}
+
+html[data-theme="hacker"] .soft-input:focus {
+    border: 1px solid #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+}
+
+html[data-theme="hacker"] .soft-input::placeholder {
+    color: #004400;
+}
+
+html[data-theme="hacker"] .soft-btn-submit {
+    background: #002200;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    border-radius: 2px;
+    font-family: 'Courier New', Courier, monospace;
+    text-transform: uppercase;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+}
+
+html[data-theme="hacker"] .soft-btn-submit:hover {
+    background: #00ff00;
+    color: #000;
+    box-shadow: 0 0 25px rgba(0, 255, 0, 0.5);
+}
+
+/* =========================================
+   GENEL SELECT AYARLARI (KOYU TEMA İÇİN)
+   ========================================= */
+select option {
+    background-color: #121216 !important;
+    color: #ffffff !important;
+}
+
+/* =========================================
+   HACKER TEMASI - AYARLAR MENÜSÜ GÖRÜNÜMÜ
+   ========================================= */
+html[data-theme="hacker"] #settings-modal>div {
+    background: rgba(0, 10, 0, 0.9) !important;
+    border: 1px solid #00ff00 !important;
+    box-shadow: 0 0 40px rgba(0, 255, 0, 0.15), inset 0 0 10px rgba(0, 255, 0, 0.1) !important;
+    border-radius: 4px !important;
+}
+
+html[data-theme="hacker"] #settings-modal h2 {
+    color: #00ff00 !important;
+    text-shadow: 0 0 5px #00ff00 !important;
+    letter-spacing: 1px;
+}
+
+html[data-theme="hacker"] #settings-modal p,
+html[data-theme="hacker"] #settings-modal span,
+html[data-theme="hacker"] #settings-modal label,
+html[data-theme="hacker"] #settings-modal .form-label {
+    color: #00aa00 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+}
+
+html[data-theme="hacker"] #settings-modal .login-settings-tab {
+    color: #008800 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    border-radius: 2px !important;
+}
+
+html[data-theme="hacker"] #settings-modal .login-settings-tab>svg {
+    stroke: #00aa00 !important;
+}
+
+html[data-theme="hacker"] #settings-modal .login-settings-tab:hover {
+    color: #00ff00 !important;
+    background: rgba(0, 255, 0, 0.05) !important;
+}
+
+html[data-theme="hacker"] #settings-modal .login-settings-tab.active {
+    background: rgba(0, 255, 0, 0.15) !important;
+    color: #00ff00 !important;
+    border: 1px solid #00ff00 !important;
+    border-right: 5px solid #00ff00 !important;
+}
+
+html[data-theme="hacker"] #settings-modal .login-settings-tab.active>svg {
+    stroke: #00ff00 !important;
+}
+
+html[data-theme="hacker"] #settings-modal input,
+html[data-theme="hacker"] #settings-modal select {
+    background: #000 !important;
+    border: 1px dashed #004400 !important;
+    color: #00ff00 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    border-radius: 2px !important;
+}
+
+html[data-theme="hacker"] #settings-modal input:focus,
+html[data-theme="hacker"] #settings-modal select:focus {
+    border: 1px solid #00ff00 !important;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2) !important;
+}
+
+html[data-theme="hacker"] select option {
+    background-color: #000 !important;
+    color: #00ff00 !important;
+}
+
+html[data-theme="hacker"] #settings-modal>div>div:first-child {
+    background: rgba(0, 0, 0, 0.8) !important;
+    border-right: 1px solid #00ff00 !important;
+}
+
+html[data-theme="hacker"] #settings-modal [style*="border: 1px solid var(--border-light)"],
+html[data-theme="hacker"] #settings-modal [style*="background: rgba(255,255,255,0.03)"] {
+    background: rgba(0, 255, 0, 0.02) !important;
+    border: 1px solid #004400 !important;
+}
+
+html[data-theme="hacker"] #settings-modal .form-submit,
+html[data-theme="hacker"] #settings-modal button[type="button"]:not(#btn-close-settings):not(.login-settings-tab) {
+    background: #002200 !important;
+    color: #00ff00 !important;
+    border: 1px solid #00ff00 !important;
+    border-radius: 2px !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    text-transform: uppercase;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.2) !important;
+}
+
+html[data-theme="hacker"] #settings-modal .form-submit:hover,
+html[data-theme="hacker"] #settings-modal button[type="button"]:not(#btn-close-settings):not(.login-settings-tab):hover {
+    background: #00ff00 !important;
+    color: #000 !important;
+    box-shadow: 0 0 25px rgba(0, 255, 0, 0.5) !important;
+}
+
+html[data-theme="hacker"] #btn-close-settings {
+    color: #008800 !important;
+}
+
+html[data-theme="hacker"] #btn-close-settings:hover {
+    color: #00ff00 !important;
+    text-shadow: 0 0 10px #00ff00 !important;
+}
+
+/* =========================================
+   HACKER TEMASI - DİĞER MODALLAR (ALERT & INVITE)
+   ========================================= */
+html[data-theme="hacker"] #invite-modal>div,
+html[data-theme="hacker"] #custom-alert-modal .modal,
+html[data-theme="hacker"] #custom-confirm-modal .modal {
+    background: rgba(0, 10, 0, 0.95) !important;
+    border: 1px solid #00ff00 !important;
+    box-shadow: 0 0 30px rgba(0, 255, 0, 0.2), inset 0 0 10px rgba(0, 255, 0, 0.1) !important;
+    border-radius: 4px !important;
+    font-family: 'Courier New', Courier, monospace !important;
+}
+
+html[data-theme="hacker"] #invite-modal h2,
+html[data-theme="hacker"] #custom-alert-modal h3,
+html[data-theme="hacker"] #custom-confirm-modal h3 {
+    color: #00ff00 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    text-shadow: 0 0 5px #00ff00 !important;
+    letter-spacing: 1px;
+}
+
+html[data-theme="hacker"] #invite-modal p,
+html[data-theme="hacker"] #custom-alert-modal p,
+html[data-theme="hacker"] #custom-confirm-modal p,
+html[data-theme="hacker"] #invite-modal .form-label {
+    color: #00aa00 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+}
+
+html[data-theme="hacker"] #invite-modal input {
+    background: #000 !important;
+    border: 1px dashed #004400 !important;
+    color: #00ff00 !important;
+    border-radius: 2px !important;
+    font-family: 'Courier New', Courier, monospace !important;
+}
+
+html[data-theme="hacker"] #invite-modal input:focus {
+    border: 1px solid #00ff00 !important;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2) !important;
+}
+
+html[data-theme="hacker"] #invite-modal .form-submit,
+html[data-theme="hacker"] #btn-custom-alert-ok,
+html[data-theme="hacker"] #btn-custom-confirm-ok,
+html[data-theme="hacker"] #btn-custom-confirm-cancel {
+    background: #002200 !important;
+    color: #00ff00 !important;
+    border: 1px solid #00ff00 !important;
+    border-radius: 2px !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    text-transform: uppercase;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.2) !important;
+}
+
+html[data-theme="hacker"] #invite-modal .form-submit:hover,
+html[data-theme="hacker"] #btn-custom-alert-ok:hover,
+html[data-theme="hacker"] #btn-custom-confirm-ok:hover,
+html[data-theme="hacker"] #btn-custom-confirm-cancel:hover {
+    background: #00ff00 !important;
+    color: #000 !important;
+    box-shadow: 0 0 25px rgba(0, 255, 0, 0.5) !important;
+}
+
+html[data-theme="hacker"] #custom-alert-icon,
+html[data-theme="hacker"] #custom-confirm-icon {
+    background-color: rgba(0, 255, 0, 0.1) !important;
+    color: #00ff00 !important;
+    border: 1px dashed #00aa00 !important;
+    text-shadow: 0 0 5px #00ff00 !important;
+}
+
+/* =========================================
+   HACKER TEMASI - AYARLAR BUTONU (LOGİN SOL ÜST)
+   ========================================= */
+html[data-theme="hacker"] #btn-settings {
+    border-color: #00ff00 !important;
+    color: #00ff00 !important;
+    background: rgba(0, 20, 0, 0.4) !important;
+    animation: hackerSettingsGlow 2s infinite alternate !important;
+}
+
+html[data-theme="hacker"] #btn-settings+span {
+    color: #00ff00 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.4) !important;
+}
+
+@keyframes hackerSettingsGlow {
+    0% {
+        box-shadow: 0 0 5px rgba(0, 255, 0, 0.2), inset 0 0 5px rgba(0, 255, 0, 0.1);
+        border-color: rgba(0, 200, 0, 0.5) !important;
+    }
+
+    100% {
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.8), inset 0 0 10px rgba(0, 255, 0, 0.4);
+        border-color: rgba(0, 255, 0, 1) !important;
+    }
+}
+
+/* =========================================
+   HACKER TEMASI - LOGO UYARLAMASI
+   ========================================= */
+html[data-theme="hacker"] .soft-logo,
+html[data-theme="hacker"] .empty-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="hacker"] .soft-logo svg,
+html[data-theme="hacker"] .logo-icon svg,
+html[data-theme="hacker"] .empty-icon svg {
+    stroke: #00ff00 !important;
+    filter: drop-shadow(0 0 8px rgba(0, 255, 0, 0.9)) !important;
+}
+
+
+/* Matrix Overrides */
+html[data-theme="matrix"] .login-bg-effects,
+html[data-theme="matrix"] .soft-bg-lines { display: none !important; }
+
+
+/* Hacker Override for Matrix Animation */
+html[data-theme="hacker"] .login-bg-effects,
+html[data-theme="hacker"] .soft-bg-lines { display: none !important; }
