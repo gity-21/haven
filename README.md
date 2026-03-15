@@ -44,10 +44,6 @@ En kolay yol projedeki `start_windows.bat` dosyasına çift tıklamaktır. Bu sc
 ```bash
 bash start.sh
 ```
-### Çalıştırma (Windows)
-```
-npm start
-```
 
 ## 🔒 Güvenlik Notu
 
