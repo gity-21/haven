@@ -84,6 +84,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     document.documentElement.setAttribute('data-theme', savedTheme);
 
+    // Dil verisini yükle
+    const savedLang = localStorage.getItem('dc_app_lang') || 'tr';
+    const loginLangSelect = document.getElementById('login-lang-select');
+    if (loginLangSelect) {
+        loginLangSelect.value = savedLang;
+    }
+
     // Eski Cloudflare tünel URL'si temizle (artık geçersizdir, her oturumda değişir)
     if (savedServer.includes('trycloudflare.com') || savedServer.includes('ngrok') || savedServer.includes('loca.lt')) {
         savedServer = 'http://localhost:3847';
@@ -445,6 +452,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('dc_login_theme', selectedTheme);
             }
 
+            // Dil
+            const loginLangSelect = document.getElementById('login-lang-select');
+            if (loginLangSelect && window.i18n) {
+                const selectedLang = loginLangSelect.value;
+                window.i18n.setLanguage(selectedLang);
+            }
+
             // Ses cihaz tercihlerini kaydet
             const micSelect = document.getElementById('login-mic-select');
             const speakerSelect = document.getElementById('login-speaker-select');
@@ -464,6 +478,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginThemeSelect) {
         loginThemeSelect.addEventListener('change', (e) => {
             document.documentElement.setAttribute('data-theme', e.target.value);
+        });
+    }
+
+    const loginLangSelectEl = document.getElementById('login-lang-select');
+    if (loginLangSelectEl && window.i18n) {
+        loginLangSelectEl.addEventListener('change', (e) => {
+            window.i18n.setLanguage(e.target.value);
         });
     }
 

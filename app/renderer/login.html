@@ -15,6 +15,7 @@
     </script>
     <script src="js/matrix.js"></script>
     <script src="js/antigravity.js"></script>
+    <script src="js/i18n.js"></script>
 </head>
 
 <body>
@@ -69,7 +70,7 @@
                 </path>
             </svg>
         </button>
-        <span style="font-size: 13px; font-weight: 600; color: #fff; letter-spacing: 0.5px;">Ayarlar</span>
+        <span style="font-size: 13px; font-weight: 600; color: #fff; letter-spacing: 0.5px;" data-lang-key="settings_title">Ayarlar</span>
     </div>
 
     <!-- Soft Elegant Login GUI -->
@@ -92,41 +93,41 @@
             </div>
 
             <div class="soft-header">
-                <h1>Haven</h1>
-                <p>Güvenli ve Anonim İletişim Ağı</p>
+                <h1 data-lang-key="app_title">Haven</h1>
+                <p data-lang-key="app_subtitle">Güvenli ve Anonim İletişim Ağı</p>
             </div>
 
             <div class="soft-tabs">
-                <button type="button" class="soft-tab" id="tab-create">Ağ Kur</button>
-                <button type="button" class="soft-tab active" id="tab-join">Ağa Katıl</button>
+                <button type="button" class="soft-tab" id="tab-create" data-lang-key="tab_create">Ağ Kur</button>
+                <button type="button" class="soft-tab active" id="tab-join" data-lang-key="tab_join">Ağa Katıl</button>
             </div>
 
             <form id="form-login">
                 <div class="soft-group" id="server-group">
-                    <label class="soft-label" for="login-server">Sunucu Bağlantısı</label>
+                    <label class="soft-label" for="login-server" data-lang-key="server_label">Sunucu Bağlantısı</label>
                     <div class="soft-input-box">
                         <input class="soft-input" type="text" id="login-server"
-                            placeholder="Uzak sunucu adresi (localhost/davet)">
+                            data-lang-key="server_placeholder" placeholder="Uzak sunucu adresi (localhost/davet)">
                     </div>
                 </div>
 
                 <div class="soft-group">
-                    <label class="soft-label" for="login-room">Ağ Anahtarı</label>
+                    <label class="soft-label" for="login-room" data-lang-key="room_label">Ağ Anahtarı</label>
                     <div class="soft-input-box">
-                        <input class="soft-input" type="text" id="login-room" placeholder="Doğrulanmış ağ kimliği"
+                        <input class="soft-input" type="text" id="login-room" data-lang-key="room_placeholder" placeholder="Doğrulanmış ağ kimliği"
                             autocomplete="off" required>
                     </div>
                 </div>
 
                 <div class="soft-group">
-                    <label class="soft-label" for="login-password">Erişim Şifresi (E2EE)</label>
+                    <label class="soft-label" for="login-password" data-lang-key="password_label">Erişim Şifresi (E2EE)</label>
                     <div class="soft-input-box">
                         <input class="soft-input" type="password" id="login-password"
-                            placeholder="Şifrenizi güvenle girin" autocomplete="off" required>
+                            data-lang-key="password_placeholder" placeholder="Şifrenizi güvenle girin" autocomplete="off" required>
                     </div>
                 </div>
 
-                <button class="soft-btn-submit" type="submit" id="login-submit">Bağlan</button>
+                <button class="soft-btn-submit" type="submit" id="login-submit" data-lang-key="btn_connect">Bağlan</button>
                 <div class="form-error" id="login-error"></div>
             </form>
 
@@ -142,7 +143,7 @@
             <!-- Sol Sidebar (Sekmeler) -->
             <div
                 style="width: 200px; background: rgba(0,0,0,0.4); border-right: 1px solid rgba(255, 255, 255, 0.04); padding: 28px 16px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;">
-                <span
+                <span data-lang-key="settings_title"
                     style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px; padding: 8px 12px;">Ayarlar</span>
                 <button class="login-settings-tab active" data-tab="profil"
                     style="text-align: left; padding: 8px 12px; border-radius: 6px; border: none; background: rgba(255,255,255,0.08); color: var(--text-primary); cursor: pointer; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
@@ -151,7 +152,7 @@
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
-                    Profil
+                    <span data-lang-key="settings_profile">Profil</span>
                 </button>
 
                 <button class="login-settings-tab" data-tab="ses"
@@ -163,7 +164,7 @@
                         <line x1="12" y1="19" x2="12" y2="23"></line>
                         <line x1="8" y1="23" x2="16" y2="23"></line>
                     </svg>
-                    Ses
+                    <span data-lang-key="settings_audio">Ses</span>
                 </button>
 
                 <button class="login-settings-tab" data-tab="gorunum"
@@ -174,7 +175,7 @@
                         <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path>
                         <path d="M12 2v20"></path>
                     </svg>
-                    Görünüm
+                    <span data-lang-key="settings_appearance">Görünüm</span>
                 </button>
             </div>
 
@@ -185,8 +186,8 @@
 
                 <!-- ===== PROFİL SEKMESİ ===== -->
                 <div class="login-settings-panel active" id="login-panel-profil">
-                    <h2 style="margin-bottom: 4px; font-size: 20px; font-weight: 700;">Profil</h2>
-                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 12px;">Kullanıcı adınızı, profil
+                    <h2 style="margin-bottom: 4px; font-size: 20px; font-weight: 700;" data-lang-key="profile_settings">Profil Ayarları</h2>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 12px;" data-lang-key="profile_settings_desc">Kullanıcı adınızı, profil
                         resminizi ve rengini buradan düzenleyebilirsiniz.</p>
 
                     <div class="form-group"
@@ -203,19 +204,19 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom: 12px;">
-                        <label class="form-label" for="login-username" style="margin-bottom: 4px;">Takma Ad <span
+                        <label class="form-label" for="login-username" style="margin-bottom: 4px;"><span data-lang-key="username_label">Takma Ad</span> <span
                                 style="color:var(--accent-danger)">*</span></label>
-                        <input class="form-input"
+                        <input class="form-input" data-lang-key="username_placeholder"
                             style="padding: 10px 14px; height: 44px; min-height: unset; font-size: 14px;" type="text"
                             id="login-username" placeholder="Örn: Mehmet" autocomplete="off" value="Kullanıcı">
                     </div>
 
                     <div class="form-group" style="margin-bottom: 12px;">
-                        <label class="form-label">Takma Ad Rengi</label>
+                        <label class="form-label" data-lang-key="username_color_label">Takma Ad Rengi</label>
                         <div
                             style="display:flex; align-items:center; gap: 8px; margin-bottom: 12px; background:rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 8px;">
-                            <span style="font-size:12px; color:var(--text-muted);">Önizleme:</span>
-                            <span id="color-preview-text" style="font-weight:600; font-size:14px;">Örnek
+                            <span style="font-size:12px; color:var(--text-muted);" data-lang-key="color_preview_text">Önizleme:</span>
+                            <span id="color-preview-text" style="font-weight:600; font-size:14px;" data-lang-key="sample_user">Örnek
                                 Kullanıcı</span>
                         </div>
                         <div class="color-picker-container" id="color-picker"
@@ -228,8 +229,8 @@
 
                 <!-- ===== SES SEKMESİ ===== -->
                 <div class="login-settings-panel" id="login-panel-ses" style="display: none;">
-                    <h2 style="margin-bottom: 4px; font-size: 20px; font-weight: 700;">Ses Ayarları</h2>
-                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;">Ses giriş ve çıkış
+                    <h2 style="margin-bottom: 4px; font-size: 20px; font-weight: 700;" data-lang-key="audio_settings">Ses Ayarları</h2>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;" data-lang-key="audio_settings_desc">Ses giriş ve çıkış
                         cihazlarınızı seçin ve test edin.</p>
 
                     <div class="form-group" style="margin-bottom: 12px;">
@@ -239,16 +240,16 @@
                                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                                 <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
                             </svg>
-                            Giriş Aygıtı (Mikrofon)
+                            <span data-lang-key="mic_label">Giriş Aygıtı (Mikrofon)</span>
                         </label>
                         <select id="login-mic-select" class="form-input"
                             style="appearance: auto; cursor: pointer; padding: 10px 14px; height: 44px; min-height: unset; font-size: 14px; background-color: rgba(255,255,255,0.03); color: var(--text-primary); margin-bottom: 10px;">
-                            <option value="">Yükleniyor...</option>
+                            <option value="" data-lang-key="select_loading">Yükleniyor...</option>
                         </select>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <button type="button" id="login-btn-test-mic"
                                 style="padding: 8px 16px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-medium); border-radius: 6px; color: var(--text-primary); cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.15s; display: flex; align-items: center; gap: 6px;">
-                                🎙️ Mikrofonu Test Et
+                                <span data-lang-key="btn_test_mic">🎙️ Mikrofonu Test Et</span>
                             </button>
                             <div id="login-mic-level-container"
                                 style="flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; display: none;">
@@ -267,15 +268,15 @@
                                 <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
                                 <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                             </svg>
-                            Çıkış Aygıtı (Hoparlör)
+                            <span data-lang-key="speaker_label">Çıkış Aygıtı (Hoparlör)</span>
                         </label>
                         <select id="login-speaker-select" class="form-input"
                             style="appearance: auto; cursor: pointer; padding: 10px 14px; height: 44px; min-height: unset; font-size: 14px; background-color: rgba(255,255,255,0.03); color: var(--text-primary); margin-bottom: 10px;">
-                            <option value="">Yükleniyor...</option>
+                            <option value="" data-lang-key="select_loading">Yükleniyor...</option>
                         </select>
                         <button type="button" id="login-btn-test-speaker"
                             style="padding: 8px 16px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-medium); border-radius: 6px; color: var(--text-primary); cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.15s; display: flex; align-items: center; gap: 6px;">
-                            🔊 Hoparlörü Test Et
+                            <span data-lang-key="btn_test_speaker">🔊 Hoparlörü Test Et</span>
                         </button>
                     </div>
 
@@ -284,8 +285,8 @@
 
                 <!-- ===== GÖRÜNÜM SEKMESİ ===== -->
                 <div class="login-settings-panel" id="login-panel-gorunum" style="display: none;">
-                    <h2 style="margin-bottom: 4px; font-size: 20px; font-weight: 700;">Görünüm Ayarları</h2>
-                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;">Uygulamanın görsel
+                    <h2 style="margin-bottom: 4px; font-size: 20px; font-weight: 700;" data-lang-key="appearance_settings">Görünüm Ayarları</h2>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;" data-lang-key="appearance_settings_desc">Uygulamanın görsel
                         temasını buradan değiştirebilirsiniz.</p>
 
                     <div class="form-group" style="margin-bottom: 12px;">
@@ -295,21 +296,32 @@
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <path d="M12 2v20"></path>
                             </svg>
-                            Giriş Ekranı Teması
+                            <span data-lang-key="theme_label">Giriş Ekranı Teması</span>
                         </label>
                         <select id="login-theme-select" class="form-input"
                             style="appearance: auto; cursor: pointer; padding: 10px 14px; height: 44px; min-height: unset; font-size: 14px; background-color: rgba(255,255,255,0.03); color: var(--text-primary); margin-bottom: 10px;">
-                            <option value="space">Klasik</option>
-                            <option value="hacker">Hacker</option>
-                            <option value="antigravity">Beyaz</option>
+                            <option value="space" data-lang-key="theme_classic">Klasik</option>
+                            <option value="hacker" data-lang-key="theme_hacker">Hacker</option>
+                            <option value="antigravity" data-lang-key="theme_white">Beyaz</option>
                         </select>
                     </div>
 
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px;">
+                            <span data-lang-key="lang_label">Uygulama Dili</span>
+                        </label>
+                        <select id="login-lang-select" class="form-input"
+                            style="appearance: auto; cursor: pointer; padding: 10px 14px; height: 44px; min-height: unset; font-size: 14px; background-color: rgba(255,255,255,0.03); color: var(--text-primary); margin-bottom: 10px;">
+                            <option value="tr">Türkçe</option>
+                            <option value="en">English</option>
+                            <option value="ku">Kurdî</option>
+                        </select>
+                    </div>
 
                 </div>
 
                 <!-- Kaydet Butonu -->
-                <button type="button" id="btn-save-settings" class="form-submit"
+                <button type="button" id="btn-save-settings" class="form-submit" data-lang-key="save_and_close"
                     style="margin-top: 16px; padding: 12px; margin-bottom: 0px; width: 100%;">Kaydet ve Kapat</button>
             </div>
         </div>
@@ -321,47 +333,47 @@
         <div
             style="background: var(--bg-dark); padding: 32px; border-radius: var(--radius-lg); width: 450px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border-light); position: relative; box-shadow: var(--shadow-lg);">
 
-            <h2
+            <h2 data-lang-key="invite_title"
                 style="margin-bottom: 24px; font-size: 20px; font-weight: 700; text-align: center; color: var(--text-primary);">
                 Odanız Kuruldu!</h2>
-            <p style="text-align: center; color: var(--text-muted); margin-bottom: 24px; font-size: 14px;">Aşağıdaki
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 24px; font-size: 14px;" data-lang-key="invite_desc">Aşağıdaki
                 bilgileri arkadaşınıza göndererek odaya katılmasını sağlayabilirsiniz.</p>
 
             <div class="form-group">
-                <label class="form-label" style="color: var(--text-primary);">Sunucu Davet Linki</label>
+                <label class="form-label" style="color: var(--text-primary);" data-lang-key="invite_server_label">Sunucu Davet Linki</label>
                 <div style="display: flex; gap: 8px;">
                     <input class="form-input" type="text" id="invite-server" readonly
                         style="background: rgba(0,0,0,0.2); color: var(--text-primary);">
                     <button type="button" class="form-submit" id="btn-copy-server"
-                        style="width: auto; padding: 0 20px; margin-top: 0; flex-shrink: 0;">Kopyala</button>
+                        style="width: auto; padding: 0 20px; margin-top: 0; flex-shrink: 0;" data-lang-key="btn_copy">Kopyala</button>
                 </div>
             </div>
 
             <div class="form-group">
-                <label class="form-label" style="color: var(--text-primary);">Oda Anahtarı</label>
+                <label class="form-label" style="color: var(--text-primary);" data-lang-key="invite_room_label">Oda Anahtarı</label>
                 <div style="display: flex; gap: 8px;">
                     <input class="form-input" type="text" id="invite-room" readonly
                         style="background: rgba(0,0,0,0.2); color: var(--text-primary);">
                     <button type="button" class="form-submit" id="btn-copy-room"
-                        style="width: auto; padding: 0 20px; margin-top: 0; flex-shrink: 0;">Kopyala</button>
+                        style="width: auto; padding: 0 20px; margin-top: 0; flex-shrink: 0;" data-lang-key="btn_copy">Kopyala</button>
                 </div>
             </div>
 
             <div class="form-group">
-                <label class="form-label" style="color: var(--text-primary);">Oda Şifresi</label>
+                <label class="form-label" style="color: var(--text-primary);" data-lang-key="invite_password_label">Oda Şifresi</label>
                 <div style="display: flex; gap: 8px;">
                     <input class="form-input" type="text" id="invite-password" readonly
                         style="background: rgba(0,0,0,0.2); color: var(--text-primary);">
                     <button type="button" class="form-submit" id="btn-copy-password"
-                        style="width: auto; padding: 0 20px; margin-top: 0; flex-shrink: 0;">Kopyala</button>
+                        style="width: auto; padding: 0 20px; margin-top: 0; flex-shrink: 0;" data-lang-key="btn_copy">Kopyala</button>
                 </div>
             </div>
 
-            <button type="button" id="btn-copy-all" class="form-submit"
+            <button type="button" id="btn-copy-all" class="form-submit" data-lang-key="btn_copy_all"
                 style="margin-top: 16px; background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid var(--border-light);">Tümünü
                 Kopyala</button>
 
-            <button type="button" id="btn-start-chat" class="form-submit" style="margin-top: 16px;">Sohbete Geç</button>
+            <button type="button" id="btn-start-chat" class="form-submit" style="margin-top: 16px;" data-lang-key="btn_start_chat">Sohbete Geç</button>
         </div>
     </div>
 
@@ -374,9 +386,9 @@
                 style="width:48px; height:48px; border-radius:50%; background-color:rgba(239, 68, 68, 0.1); color:var(--accent-danger); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; margin:0 auto 16px;">
                 !
             </div>
-            <h3 id="custom-alert-title" style="margin-bottom:8px; color:var(--text-primary); font-size:18px;">Uyarı</h3>
+            <h3 id="custom-alert-title" style="margin-bottom:8px; color:var(--text-primary); font-size:18px;" data-lang-key="warning">Uyarı</h3>
             <p id="custom-alert-message" style="color:var(--text-muted); font-size:14px; margin-bottom:24px;"></p>
-            <button id="btn-custom-alert-ok"
+            <button id="btn-custom-alert-ok" data-lang-key="ok"
                 style="width:100%; padding:10px; background:var(--accent-primary); border:none; border-radius:8px; color:var(--text-on-accent, #000); cursor:pointer; font-weight:600; transition:0.2s;">Tamam</button>
         </div>
     </div>

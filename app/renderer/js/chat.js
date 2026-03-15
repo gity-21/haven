@@ -98,6 +98,7 @@ const el = {
     chatColorPreviewText: document.getElementById('chat-color-preview-text'),
     chatColorPickerContainer: document.getElementById('chat-color-picker'),
     chatThemeSelector: document.getElementById('chat-theme-selector'),
+    chatLangSelect: document.getElementById('chat-lang-select'),
     chatAvatarUpload: document.getElementById('chat-avatar-upload'),
     chatAvatarPreviewImg: document.getElementById('chat-avatar-preview-img'),
     chatAvatarUploadIcon: document.getElementById('chat-avatar-upload-icon'),
@@ -211,7 +212,7 @@ async function initialize() {
         e2eeKey = await deriveE2EEKey(state.roomPassword);
     } catch (err) {
         console.error("E2EE Başlatılamadı:", err);
-        showToast("Güvenlik sistemi başlatılamadı!", "error");
+        showToast(window.i18n ? window.i18n.t('security_fail') : "Güvenlik sistemi başlatılamadı!", "error");
     }
 
     // UI'da Odayı yaz
@@ -229,13 +230,13 @@ async function initialize() {
 function connectSocket() {
     if (state.socket) state.socket.disconnect();
 
-    updateStatus('Bağlanıyor...', 'connecting');
+    updateStatus(window.i18n ? window.i18n.t('connecting') : 'Bağlanıyor...', 'connecting');
 
     // Socket.IO kütüphanesi yüklenmiş mi kontrol et
     if (typeof io === 'undefined') {
-        updateStatus('Socket.IO kütüphanesi yüklenemedi!', 'reconnecting');
+        updateStatus(window.i18n ? window.i18n.t('socketio_fail') : 'Socket.IO kütüphanesi yüklenemedi!', 'reconnecting');
         console.error('[HATA] Socket.IO kütüphanesi bulunamadı. io tanımsız.');
-        showToast('Socket.IO yüklenemedi. Sayfa yenileniyor...', 'error');
+        showToast(window.i18n ? window.i18n.t('socketio_fail') : 'Socket.IO yüklenemedi.', 'error');
         return;
     }
 
@@ -285,13 +286,13 @@ function connectSocket() {
     // Bağlantı hatası
     state.socket.on('connect_error', (err) => {
         console.error('[HATA] Sunucuya bağlanılamadı:', err.message);
-        updateStatus('Sunucuya bağlanılamıyor: ' + err.message, 'reconnecting');
-        showToast('Bağlantı Hatası: ' + err.message, 'error');
+        updateStatus((window.i18n ? window.i18n.t('conn_failed') : 'Bağlantı hatası!') + ' ' + err.message, 'reconnecting');
+        showToast((window.i18n ? window.i18n.t('conn_failed') : 'Bağlantı Hatası') + ': ' + err.message, 'error');
     });
 
 
     state.socket.on('disconnect', () => {
-        updateStatus('Bağlantı koptu. Yeniden deneniyor...', 'reconnecting');
+        updateStatus(window.i18n ? window.i18n.t('conn_lost') : 'Bağlantı koptu. Yeniden deneniyor...', 'reconnecting');
     });
 
     // Odaya birisi girdiğinde (notification)
@@ -307,7 +308,7 @@ function connectSocket() {
     // Odadakilerin listesi güncellendiğinde
     state.socket.on('online-users', (users) => {
         state.users = users;
-        el.headerOnlineText.textContent = `${users.length} Çevrimiçi`;
+        el.headerOnlineText.textContent = `${users.length} ${window.i18n ? window.i18n.t('online_count') : 'Çevrimiçi'}`;
         renderUsersModal();
     });
 
@@ -393,11 +394,11 @@ function connectSocket() {
             if (typingIndicator) typingIndicator.style.display = 'flex';
             if (typingText) {
                 if (names.length === 1) {
-                    typingText.textContent = `${names[0]} yazıyor...`;
+                    typingText.textContent = `${names[0]} ${window.i18n ? window.i18n.t('typing_one') : 'yazıyor...'}`;
                 } else if (names.length === 2) {
-                    typingText.textContent = `${names[0]} ve ${names[1]} yazıyor...`;
+                    typingText.textContent = `${names[0]} & ${names[1]} ${window.i18n ? window.i18n.t('typing_two') : 'yazıyor...'}`;
                 } else {
-                    typingText.textContent = `${names.length} kişi yazıyor...`;
+                    typingText.textContent = `${names.length} ${window.i18n ? window.i18n.t('typing_many') : 'kişi yazıyor...'}`;
                 }
             }
         }
@@ -562,7 +563,7 @@ function connectSocket() {
         const initial = data.callerName[0].toUpperCase();
         el.incomingAvatar.textContent = initial;
         el.incomingAvatar.style.backgroundColor = data.avatarColor || '#6366f1';
-        el.incomingName.textContent = `${data.callerName} Arıyor...`;
+        el.incomingName.textContent = `${data.callerName} ${window.i18n ? window.i18n.t('calling') : 'Arıyor...'}`;
 
         el.modalIncomingCall.classList.add('visible');
         playRingtone();
@@ -570,7 +571,7 @@ function connectSocket() {
 
     state.socket.on('voice-call-declined', (data) => {
         if (data && data.username) {
-            showToast(`${data.username} aramayı reddetti!`, 'error');
+            showToast(`${data.username} ${window.i18n ? window.i18n.t('call_rejected') : 'aramayı reddetti!'}`, 'error');
             stopRingtone();
         }
     });
@@ -585,7 +586,7 @@ function connectSocket() {
     state.socket.on('call-cancelled', () => {
         stopRingtone();
         el.modalIncomingCall.classList.remove('visible');
-        showToast('Arama iptal edildi.', 'info');
+        showToast(window.i18n ? window.i18n.t('call_cancelled') : 'Arama iptal edildi.', 'info');
     });
 
     // Aktif sesli kanal kullanıcı listesi güncellendiğinde
@@ -726,7 +727,7 @@ function connectSocket() {
 
                 if (dc.readyState === 'open') {
                     dc.send(JSON.stringify({ type: 'EOF' }));
-                    if (txt) txt.textContent = 'Gönderim Tamamlandı';
+                    if (txt) txt.textContent = window.i18n ? window.i18n.t('send_complete') : 'Gönderim Tamamlandı';
                     const loadingBox = document.getElementById(`p2p-loading-box-${fileMeta.fileId}`);
                     if (loadingBox) {
                         loadingBox.innerHTML = '<span style="color:var(--accent-success);font-weight:bold;">✓</span><span style="color:var(--accent-success);">Gönderim Tamamlandı</span>';
@@ -828,7 +829,7 @@ window.startP2PDownload = async (fileId, targetId, filename, size, isAuto = fals
     if (pauseBtn) {
         pauseBtn.onclick = () => {
             isPaused = !isPaused;
-            pauseBtn.textContent = isPaused ? '▶ Devam' : '⏸ Duraklat';
+            pauseBtn.textContent = isPaused ? (window.i18n ? window.i18n.t('resume') : '▶ Devam') : (window.i18n ? window.i18n.t('pause') : '⏸ Duraklat');
             pauseBtn.style.borderColor = isPaused ? 'var(--accent-success)' : 'var(--accent-info)';
             pauseBtn.style.color = isPaused ? 'var(--accent-success)' : 'var(--accent-info)';
         };
@@ -867,7 +868,7 @@ window.startP2PDownload = async (fileId, targetId, filename, size, isAuto = fals
                         }
                     } else {
                         const textEl = document.getElementById(`p2p-text-receiver-${fileId}`);
-                        if (textEl) textEl.textContent = '✅ Tamamlandı!';
+                        if (textEl) textEl.textContent = window.i18n ? window.i18n.t('download_complete') : '✅ Tamamlandı!';
                         if (pauseBtn) { pauseBtn.style.display = 'none'; }
                         if (cancelBtn) { cancelBtn.style.display = 'none'; }
                         const a = document.createElement('a');
@@ -889,7 +890,7 @@ window.startP2PDownload = async (fileId, targetId, filename, size, isAuto = fals
                 if (textEl) textEl.textContent = percent + '%  (' + (receivedSize / 1024 / 1024).toFixed(1) + ' MB / ' + (size / 1024 / 1024).toFixed(1) + ' MB)';
             } else {
                 const autoText = document.getElementById(`p2p-auto-text-${fileId}`);
-                if (autoText) autoText.textContent = `%${percent} Görsel Yükleniyor...`;
+                if (autoText) autoText.textContent = `%${percent} ${window.i18n ? window.i18n.t('loading_image') : 'Görsel Yükleniyor...'}`;
             }
         }
     };
@@ -912,8 +913,9 @@ function formatDiscordDate(dateParam) {
     const d = new Date(dateParam);
     const now = new Date();
 
-    // Yalnızca saat ve dakika (16:46)
-    const timeStr = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    const lang = (window.i18n && window.i18n.currentLang) ? window.i18n.currentLang : 'tr';
+    const locale = (lang === 'en') ? 'en-US' : 'tr-TR';
+    const timeStr = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterday = new Date(today);
@@ -921,12 +923,12 @@ function formatDiscordDate(dateParam) {
     const targetDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
     if (targetDate.getTime() === today.getTime()) {
-        return `bugün ${timeStr}`;
+        return `${window.i18n ? window.i18n.t('date_today') : 'bugün'} ${timeStr}`;
     } else if (targetDate.getTime() === yesterday.getTime()) {
-        return `dün ${timeStr}`;
+        return `${window.i18n ? window.i18n.t('date_yesterday') : 'dün'} ${timeStr}`;
     } else {
-        const dateStr = d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        return `${dateStr} ${timeStr}`; // 25.02.2026 11:35 formatı
+        const dateStr = d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return `${dateStr} ${timeStr}`;
     }
 }
 
@@ -936,15 +938,21 @@ function formatDateSeparator(dateParam) {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const targetDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
+    const lang = (window.i18n && window.i18n.currentLang) ? window.i18n.currentLang : 'tr';
+    const locale = (lang === 'en') ? 'en-US' : 'tr-TR';
+
     if (targetDate.getTime() === today.getTime()) {
-        return `Bugün`;
+        const text = window.i18n ? window.i18n.t('date_today') : 'Bugün';
+        return `<span data-lang-key="date_today">${text}</span>`;
     }
-    return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+    return d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function appendMessage(msg) {
     const msgDate = new Date(msg.created_at || new Date());
-    const msgDateString = msgDate.toLocaleDateString('tr-TR');
+    
+    // Separatör karşılaştırması için locale'den bağımsız olarak string yapalım veya hep aynı locale kullanalım (ör: en-CA yyyy-mm-dd)
+    const msgDateString = msgDate.getFullYear() + "-" + msgDate.getMonth() + "-" + msgDate.getDate();
 
     // Tarih Separatör Kontrolü
     if (state.lastMessageDateString !== msgDateString) {
@@ -1194,7 +1202,7 @@ function appendMessage(msg) {
             menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;z-index:9999;background:var(--bg-medium);border:1px solid var(--border-medium);border-radius:8px;padding:4px 0;box-shadow:0 8px 24px rgba(0,0,0,0.4);min-width:160px;`;
 
             const btnCopy = document.createElement('button');
-            btnCopy.textContent = '📋 Resmi Kopyala';
+            btnCopy.textContent = window.i18n ? window.i18n.t('copy_image') : '📋 Resmi Kopyala';
             btnCopy.style.cssText = 'display:block; width:100%; text-align:left; padding:8px 14px; background:none; border:none; color:var(--text-primary); cursor:pointer; font-size:13px;';
             btnCopy.onmouseenter = () => btnCopy.style.background = 'rgba(255,255,255,0.06)';
             btnCopy.onmouseleave = () => btnCopy.style.background = 'none';
@@ -1204,14 +1212,14 @@ function appendMessage(msg) {
                     const response = await fetch(img.src);
                     const blob = await response.blob();
                     await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-                    showToast('Resim panoya kopyalandı!', 'success');
+                    showToast(window.i18n ? window.i18n.t('image_copied') : 'Resim panoya kopyalandı!', 'success');
                 } catch (err) {
-                    showToast('Resim kopyalanamadı!', 'error');
+                    showToast(window.i18n ? window.i18n.t('image_copy_fail') : 'Resim kopyalanamadı!', 'error');
                 }
             };
 
             const btnSave = document.createElement('button');
-            btnSave.textContent = '💾 Resmi Kaydet';
+            btnSave.textContent = window.i18n ? window.i18n.t('save_image') : '💾 Resmi Kaydet';
             btnSave.style.cssText = 'display:block; width:100%; text-align:left; padding:8px 14px; background:none; border:none; color:var(--text-primary); cursor:pointer; font-size:13px;';
             btnSave.onmouseenter = () => btnSave.style.background = 'rgba(255,255,255,0.06)';
             btnSave.onmouseleave = () => btnSave.style.background = 'none';
@@ -1478,7 +1486,7 @@ function setupEventListeners() {
                     await window.uploadFileToChat(file);
                 } catch (err) {
                     console.error("Görsel yükleme hatası:", err);
-                    showToast("Görsel gönderilemedi!", "error");
+                    showToast(window.i18n ? window.i18n.t('image_send_fail') : "Görsel gönderilemedi!", "error");
                 }
             }
         }
@@ -1552,18 +1560,18 @@ function setupEventListeners() {
                         });
                         resolve(res);
                     } else {
-                        showToast(res.message || 'Yükleme başarısız!', 'error');
+                        showToast(res.message || (window.i18n ? window.i18n.t('upload_fail') : 'Yükleme başarısız!'), 'error');
                         reject(new Error(res.message));
                     }
                 } else {
-                    showToast('Sunucu hatası!', 'error');
+                    showToast(window.i18n ? window.i18n.t('server_error') : 'Sunucu hatası!', 'error');
                     reject(new Error('Server error'));
                 }
             };
 
             xhr.onerror = () => {
                 if (progressContainer) progressContainer.style.display = 'none';
-                showToast('Bağlantı hatası!', 'error');
+                showToast(window.i18n ? window.i18n.t('conn_failed') : 'Bağlantı hatası!', 'error');
                 reject(new Error('Network error'));
             };
 
@@ -1778,7 +1786,7 @@ function setupEventListeners() {
             if (bar) bar.style.width = '0%';
 
             const btn = document.getElementById('btn-test-mic');
-            if (btn) btn.textContent = '🎙️ Mikrofonu Test Et';
+            if (btn) btn.textContent = window.i18n ? window.i18n.t('btn_test_mic') : '🎙️ Mikrofonu Test Et';
         }
 
         const btnTestMic = document.getElementById('btn-test-mic');
@@ -1797,7 +1805,7 @@ function setupEventListeners() {
                     const constraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
                     micTestStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-                    btnTestMic.textContent = '⏹️ Testi Durdur';
+                    btnTestMic.textContent = window.i18n ? window.i18n.t('btn_stop_test') : '⏹️ Testi Durdur';
                     const container = document.getElementById('mic-level-container');
                     const bar = document.getElementById('mic-level-bar');
                     if (container) container.style.display = 'block';
@@ -1821,7 +1829,7 @@ function setupEventListeners() {
                     }
                     updateBar();
                 } catch (err) {
-                    showToast('Mikrofon erişilemedi: ' + err.message, 'error');
+                    showToast((window.i18n ? window.i18n.t('mic_access_fail') : 'Mikrofon erişilemedi') + ': ' + err.message, 'error');
                 }
             });
         }
@@ -1843,7 +1851,7 @@ function setupEventListeners() {
                 } else {
                     testAudio.play();
                 }
-                showToast('Test sesi çalınıyor...', 'info');
+                showToast(window.i18n ? window.i18n.t('test_sound') : 'Test sesi çalınıyor...', 'info');
             });
         }
 
@@ -1852,11 +1860,15 @@ function setupEventListeners() {
             // Mevcut ayarları forma doldur
             el.chatUsernameInput.value = state.nickname || '';
             el.chatAvatarColorInput.value = state.avatarColor || '#6366f1';
-            el.chatColorPreviewText.textContent = state.nickname || 'Örnek Kullanıcı';
+            el.chatColorPreviewText.textContent = state.nickname || (window.i18n ? window.i18n.t('sample_user') : 'Örnek Kullanıcı');
             el.chatColorPreviewText.style.color = state.avatarColor || '#6366f1';
 
             if (el.chatThemeSelector) {
                 el.chatThemeSelector.value = localStorage.getItem('dc_login_theme') || 'space';
+            }
+
+            if (el.chatLangSelect) {
+                el.chatLangSelect.value = localStorage.getItem('dc_app_lang') || 'tr';
             }
 
             if (state.profilePic) {
@@ -1886,7 +1898,7 @@ function setupEventListeners() {
 
         // Takma ad değiştiğinde preview yazısını güncelle
         el.chatUsernameInput.addEventListener('input', (e) => {
-            el.chatColorPreviewText.textContent = e.target.value.trim() || 'Örnek Kullanıcı';
+            el.chatColorPreviewText.textContent = e.target.value.trim() || (window.i18n ? window.i18n.t('sample_user') : 'Örnek Kullanıcı');
         });
 
         el.chatAvatarUpload.addEventListener('change', (e) => {
@@ -1931,12 +1943,23 @@ function setupEventListeners() {
             });
         }
 
+        if (el.chatLangSelect && window.i18n) {
+            el.chatLangSelect.addEventListener('change', (e) => {
+                window.i18n.setLanguage(e.target.value);
+            });
+        }
+
         const closeChatSettings = () => {
             stopMicTest();
             // Eğer iptal edildiyse veya kapatılırsa, temayı eski haline (kayıtlı olana) döndür
             const savedTheme = localStorage.getItem('dc_login_theme') || 'space';
             document.documentElement.setAttribute('data-theme', savedTheme);
             if (el.chatThemeSelector) el.chatThemeSelector.value = savedTheme;
+
+            // Dili de kayitli olandan dondur eger iptal edildiyse
+            const savedLang = localStorage.getItem('dc_app_lang') || 'tr';
+            if (window.i18n) window.i18n.setLanguage(savedLang);
+            if (el.chatLangSelect) el.chatLangSelect.value = savedLang;
 
             el.chatSettingsModal.style.opacity = '0';
             setTimeout(() => el.chatSettingsModal.style.display = 'none', 300);
@@ -1964,6 +1987,10 @@ function setupEventListeners() {
                 localStorage.setItem('dc_login_theme', selectedTheme);
             }
 
+            if (el.chatLangSelect && window.i18n) {
+                window.i18n.setLanguage(el.chatLangSelect.value);
+            }
+
             // Ses cihaz tercihlerini kaydet
             const micSelect = document.getElementById('settings-mic-select');
             const speakerSelect = document.getElementById('settings-speaker-select');
@@ -1989,7 +2016,7 @@ function setupEventListeners() {
             }
 
             closeChatSettings();
-            showToast('Ayarları kaydettiniz!', 'success');
+            showToast(window.i18n ? window.i18n.t('settings_saved') : 'Ayarları kaydettiniz!', 'success');
         });
 
         el.chatSettingsModal.addEventListener('click', (e) => {
@@ -2337,7 +2364,7 @@ async function initiateVoiceCall(withVideo = false) {
     try {
         await joinVoiceRoom(withVideo); // Biz sese giriyoruz
         state.socket.emit('voice-call-room'); // Herkesin telefonunu çaldır
-        showToast('Odadakiler aranıyor...', 'success');
+        showToast(window.i18n ? window.i18n.t('searching_users') : 'Odadakiler aranıyor...', 'success');
     } catch (e) {
         // joinVoiceRoom hata attıysa zaten toast gösterdi, sadece log yeterli
         console.error('[Ses] Arama başlatılamadı:', e);
@@ -2354,11 +2381,11 @@ async function joinVoiceRoom(withVideo = false) {
         console.error("getUserMedia hatası:", err);
 
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-            showToast('Mikrofon/Kamera izni reddedildi. Lütfen adres çubuğundaki kilit (🔒) simgesine tıklayıp izinleri açın ve sayfayı yenileyin.', 'error');
+            showToast(window.i18n ? window.i18n.t('mic_denied') : 'Mikrofon/Kamera izni reddedildi.', 'error');
         } else if (err.name === 'NotFoundError') {
-            showToast('Mikrofon veya kamera cihazı bulunamadı. Lütfen cihazlarınızı kontrol edin.', 'error');
+            showToast(window.i18n ? window.i18n.t('no_device') : 'Mikrofon veya kamera cihazı bulunamadı.', 'error');
         } else {
-            showToast(`Erişim sağlanamadı: ${err.message}`, 'error');
+            showToast(`${window.i18n ? window.i18n.t('access_error') : 'Erişim sağlanamadı'}: ${err.message}`, 'error');
         }
 
         throw err;
@@ -2373,7 +2400,7 @@ async function joinVoiceRoom(withVideo = false) {
     if (el.activeCallBanner) el.activeCallBanner.style.display = 'none';
     el.btnJoinVoice.style.display = 'none';
     if (el.btnJoinVideo) el.btnJoinVideo.style.display = 'none';
-    if (el.callStatusText) el.callStatusText.textContent = withVideo ? 'Görüntülü Görüşme Bağlı' : 'Sesli Görüşme Bağlı';
+    if (el.callStatusText) el.callStatusText.textContent = withVideo ? (window.i18n ? window.i18n.t('video_call_connected') : 'Görüntülü Görüşme Bağlı') : (window.i18n ? window.i18n.t('voice_call_connected') : 'Sesli Görüşme Bağlı');
 
     updateToggleButtonsUI();
 
@@ -2384,24 +2411,24 @@ async function joinVoiceRoom(withVideo = false) {
     setupVolumeMeter(stream, 'local');
 
     state.socket.emit('voice-join');
-    showToast(withVideo ? 'Görüntülü sohbete katıldınız!' : 'Sesli sohbete katıldınız!', 'success');
+    showToast(withVideo ? (window.i18n ? window.i18n.t('joined_video') : 'Görüntülü sohbete katıldınız!') : (window.i18n ? window.i18n.t('joined_voice') : 'Sesli sohbete katıldınız!'), 'success');
 }
 
 function updateToggleButtonsUI() {
     if (el.btnToggleMic) {
         el.btnToggleMic.innerHTML = voiceState.isMicOn
-            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg> Mikrofon'
-            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent-danger);"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12H3a9 9 0 0 0 8.46 8.94V23h1v-2.06A8.96 8.96 0 0 0 19 16.95"></path></svg> <span style="color:var(--accent-danger);">Susturuldu</span>';
+            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg> ' + (window.i18n ? window.i18n.t('audio_mic') : 'Mikrofon')
+            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent-danger);"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12H3a9 9 0 0 0 8.46 8.94V23h1v-2.06A8.96 8.96 0 0 0 19 16.95"></path></svg> <span style="color:var(--accent-danger);">' + (window.i18n ? window.i18n.t('mute') : 'Susturuldu') + '</span>';
     }
     if (el.btnToggleVideo) {
         el.btnToggleVideo.innerHTML = voiceState.isVideoOn
-            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M21 17.16V5a2 2 0 0 0-2-2H7.95"></path><path d="M3.27 3.27A2 2 0 0 0 1 5v14a2 2 0 0 0 2 2h14c.55 0 1.05-.22 1.41-.59"></path><polygon points="23 7 16 12 23 17 23 7"></polygon></svg> Kamera Kapat'
-            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg> Kamera Aç';
+            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M21 17.16V5a2 2 0 0 0-2-2H7.95"></path><path d="M3.27 3.27A2 2 0 0 0 1 5v14a2 2 0 0 0 2 2h14c.55 0 1.05-.22 1.41-.59"></path><polygon points="23 7 16 12 23 17 23 7"></polygon></svg> ' + (window.i18n ? window.i18n.t('chat_cam_on') : 'Kamera Kapat')
+            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg> ' + (window.i18n ? window.i18n.t('chat_cam_off') : 'Kamera Aç');
     }
     if (el.btnToggleScreen) {
         el.btnToggleScreen.innerHTML = voiceState.isScreenOn
-            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line><line x1="1" y1="1" x2="23" y2="23"></line></svg> Paylaşımı Durdur'
-            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> Ekran Paylaş';
+            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line><line x1="1" y1="1" x2="23" y2="23"></line></svg> ' + (window.i18n ? window.i18n.t('chat_stop_screen') : 'Paylaşımı Durdur')
+            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> ' + (window.i18n ? window.i18n.t('chat_screen_share') : 'Ekran Paylaş');
     }
 }
 
@@ -2456,7 +2483,7 @@ async function toggleVideo() {
             });
         } catch (err) {
             console.error(err);
-            showToast('Kamera açılamadı!', 'error');
+            showToast(window.i18n ? window.i18n.t('cam_failed') : 'Kamera açılamadı!', 'error');
             return;
         }
     }
@@ -2501,7 +2528,7 @@ async function toggleScreen() {
             videoEl.style.display = 'none';
         }
 
-        showToast('Ekran paylaşımı durduruldu.', 'info');
+        showToast(window.i18n ? window.i18n.t('toast_screen_share_stopped') : 'Ekran paylaşımı durduruldu.', 'info');
 
     } else {
         try {
@@ -2522,7 +2549,7 @@ async function toggleScreen() {
             }
         } catch (err) {
             console.error(err);
-            showToast('Ekran paylaşılamadı!', 'error');
+            showToast(window.i18n ? window.i18n.t('screen_share_failed') : 'Ekran paylaşılamadı!', 'error');
             return;
         }
     }
@@ -2568,7 +2595,7 @@ async function openScreenShareModal() {
                             updateToggleButtonsUI();
                         } catch (fallbackErr) {
                             console.error('Fallback ekran paylaşımı hatası:', fallbackErr);
-                            showToast('Ekran paylaşılamadı!', 'error');
+                            showToast(window.i18n ? window.i18n.t('screen_share_failed') : 'Ekran paylaşılamadı!', 'error');
                         }
                     };
                 }
@@ -2620,7 +2647,7 @@ async function openScreenShareModal() {
                             startScreenShareWithStream(streamWithoutAudio);
                         } catch (e2) {
                             console.error("Stream alma hatası:", e2);
-                            showToast('Bu kaynak paylaşılamadı.', 'error');
+                            showToast(window.i18n ? window.i18n.t('source_share_failed') : 'Bu kaynak paylaşılamadı.', 'error');
                         }
                     }
                 };
@@ -2716,7 +2743,7 @@ function startScreenShareWithStream(screenStream) {
     });
 
     updateToggleButtonsUI();
-    showToast('Ekran paylaşımı başlatıldı!', 'success');
+    showToast(window.i18n ? window.i18n.t('toast_screen_share_started') : 'Ekran paylaşımı başlatıldı!', 'success');
 }
 
 // Ekran paylaşımı badge'ini göster/gizle
@@ -2781,7 +2808,7 @@ function leaveVoiceRoom() {
 
     state.socket.emit('voice-leave');
     state.socket.emit('call-ended'); // Ringing durumunu temizle
-    showToast('Görüşmeden ayrıldınız.', 'info');
+    showToast(window.i18n ? window.i18n.t('left_call') : 'Görüşmeden ayrıldınız.', 'info');
 }
 
 // ============================================
@@ -3065,7 +3092,7 @@ window.openUserMenu = function (e, userId) {
 
     // Değerleri oku
     slider.value = audioEl.volume;
-    muteBtn.textContent = audioEl.muted ? 'Sesi Aç' : 'Sustur';
+    muteBtn.textContent = audioEl.muted ? (window.i18n ? window.i18n.t('unmute') : 'Sesi Aç') : (window.i18n ? window.i18n.t('mute') : 'Sustur');
     muteBtn.style.color = audioEl.muted ? 'var(--accent-danger)' : 'white';
     muteBtn.style.background = audioEl.muted ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.05)';
 
@@ -3073,7 +3100,7 @@ window.openUserMenu = function (e, userId) {
     slider.oninput = (ev) => {
         window.changeUserVolume(userId, ev.target.value);
         if (parseFloat(ev.target.value) > 0) {
-            muteBtn.textContent = 'Sustur';
+            muteBtn.textContent = window.i18n ? window.i18n.t('mute') : 'Sustur';
             muteBtn.style.color = 'white';
             muteBtn.style.background = 'rgba(255,255,255,0.05)';
         }
@@ -3081,7 +3108,7 @@ window.openUserMenu = function (e, userId) {
 
     muteBtn.onclick = () => {
         window.toggleUserMute(userId);
-        muteBtn.textContent = audioEl.muted ? 'Sesi Aç' : 'Sustur';
+        muteBtn.textContent = audioEl.muted ? (window.i18n ? window.i18n.t('unmute') : 'Sesi Aç') : (window.i18n ? window.i18n.t('mute') : 'Sustur');
         muteBtn.style.color = audioEl.muted ? 'var(--accent-danger)' : 'white';
         muteBtn.style.background = audioEl.muted ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.05)';
     };
@@ -3271,7 +3298,7 @@ window.openUserMenu = function (e, userId) {
 
         } catch (err) {
             console.error('Mikrofon erişim hatası:', err);
-            showToast('Mikrofon erişimi reddedildi!', 'error');
+            showToast(window.i18n ? window.i18n.t('mic_denied_short') : 'Mikrofon erişimi reddedildi!', 'error');
         }
     }
 
@@ -3333,10 +3360,10 @@ window.openUserMenu = function (e, userId) {
                     });
                     window.cancelReply();
                 } else {
-                    showToast('Ses kaydı yüklenemedi: ' + data.message, 'error');
+                    showToast((window.i18n ? window.i18n.t('voice_upload_fail') : 'Ses kaydı yüklenemedi') + ': ' + data.message, 'error');
                 }
             } catch (err) {
-                showToast('Ses kaydı gönderilemedi!', 'error');
+                showToast(window.i18n ? window.i18n.t('voice_record_fail') : 'Ses kaydı gönderilemedi!', 'error');
             }
         };
 
@@ -3557,7 +3584,7 @@ window.previewMedia = function (url, type) {
     // Zoom talimatı (Sadece görsel için)
     if (type === 'image') {
         const helpText = document.createElement('div');
-        helpText.textContent = 'Büyütmek için fare tekerleğini kullanın • Sürükleyerek gezinin • Kapatmak için tıklayın';
+        helpText.textContent = window.i18n ? window.i18n.t('zoom_help') : 'Büyütmek için fare tekerleğini kullanın • Sürükleyerek gezinin • Kapatmak için tıklayın';
         helpText.className = 'media-preview-help';
         overlay.appendChild(helpText);
     }

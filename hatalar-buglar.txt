@@ -1,0 +1,3 @@
+bildirim kısmında hala dc private yazıyor.
+Çoklu mesaj silme özelliği.
+Mesaj düzenlem özelliği, düzenlenen mesaj diğer kişilerde de düzenlenmiş olacak.
