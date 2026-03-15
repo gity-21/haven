@@ -1,6 +1,16 @@
 # Haven: Private P2P Voice & Text Chat
 
 Haven, Electron.js tabanlı, tamamen oda anahtarı ve uçtan uca şifreleme mantığıyla çalışan, Discord benzeri ama üyelik gerektirmeyen özel bir sohbet uygulamasıdır. Her oda izole bir evrendir; kullanıcı verisi veya mesajlar merkezi bir hesapta toplanmaz.
+---
+
+## 👥 Team
+
+| GitHub | Role |
+|--------|------|
+| [@mehmetsolves](https://github.com/mehmetsolves) | Developer |
+| [@Taruk21](https://github.com/Taruk21) | Developer |
+
+---
 
 ## 🚀 Öne Çıkan Özellikler
 
