@@ -47,6 +47,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Harici bağlantıları varsayılan tarayıcıda aç
     openExternal: (url) => ipcRenderer.invoke('open-external-url', url),
 
+    // Clipboard (Pano)
+    writeToClipboard: (text) => ipcRenderer.invoke('clipboard:write', text),
+
     // Ekran Paylaşımı (Ekran/Pencere Listesi Alma)
     getDesktopSources: (opts) => ipcRenderer.invoke('desktop-capturer-get-sources', opts)
 });

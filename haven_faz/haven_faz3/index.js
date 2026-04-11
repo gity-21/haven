@@ -39,17 +39,14 @@ const server = http.createServer(app);
 // Kendi sabit tünel domaininiz varsa TUNNEL_ORIGIN env'e ekleyin.
 const CORS_WHITELIST = new Set([
     'http://localhost:3847',
-    'http://127.0.0.1:3847',        
+    'http://127.0.0.1:3847',
     process.env.TUNNEL_ORIGIN, // Opsiyonel: sabit Cloudflare tünel domain'i
 ].filter(Boolean));
 
 const corsOptions = {
     origin: function (origin, callback) {
         // Electron file:// ve Node.js iç isteklerinde origin null gelir → izin ver
-        // Electron'da origin null VEYA 'file://' olarak gelebilir — her ikisine izin ver
-        if (!origin || origin === 'file://' || origin.startsWith('file://')) {
-            return callback(null, true);
-        }
+        if (!origin) return callback(null, true);
         // Whitelist kontrolü
         if (CORS_WHITELIST.has(origin)) return callback(null, true);
         // Cloudflare ücretsiz tünel subdomain'leri dinamik; pattern ile izin ver

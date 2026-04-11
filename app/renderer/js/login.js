@@ -9,7 +9,8 @@
  * - Oda şifreisni SHA-256 ile hash'leyerek sunucuya girebilmek için doğrulama anahtarı (authKey) oluşturur.
  * 
  * Ayarlar / Depolanan Veriler:
- * - dc_profile_pic, dc_server_url, dc_nickname, dc_room, dc_avatar, dc_login_theme, dc_room_password
+ * - dc_profile_pic, dc_server_url, dc_nickname, dc_room, dc_avatar, dc_login_theme
+ * - (dc_room_password KALDIRILDI — FIX #4: artık sessionStorage kullanılıyor)
  */
 
 window.showAlertModal = function (message, title = 'Uyarı') {
@@ -73,7 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     let invitePass = '';
     if (urlParams.has('room')) savedRoom = urlParams.get('room');
-    if (urlParams.has('pass')) invitePass = urlParams.get('pass');
+    // FIX #5: ?pass= URL parametresi kaldırıldı. Şifre URL'de iletilmemeli;
+    // Cloudflare loglarına, tarayıcı geçmişine ve ekran görüntülerine düşüyordu.
+    // if (urlParams.has('pass')) invitePass = urlParams.get('pass');
     if (urlParams.has('name')) savedUsername = urlParams.get('name');
 
     // Tema verisini yükle
@@ -542,7 +545,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('dc_nickname', nickname);
                     localStorage.setItem('dc_room', room);
                     localStorage.setItem('dc_avatar', inputColor.value);
-                    localStorage.setItem('dc_room_password', passwordMatch); // E2EE için bellek
+                    // FIX #4: dc_room_password localStorage'dan kaldırıldı (düz metin şifre güvensizdi).
+                    // Şifre yalnızca E2EE anahtarı türetilene kadar sessionStorage'da tutulur;
+                    // sekme kapanınca otomatik silinir, diğer sekmelere paylaşılmaz.
+                    sessionStorage.setItem('dc_session_password', passwordMatch);
                     localStorage.setItem('dc_auth_key', authKey); // Sunucuya girebilmek için
                     localStorage.setItem('dc_join_mode', 'create'); // Oda oluşturma modu
 
@@ -597,7 +603,8 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('dc_nickname', nickname);
         localStorage.setItem('dc_room', room);
         localStorage.setItem('dc_avatar', inputColor.value);
-        localStorage.setItem('dc_room_password', passwordMatch); // E2EE için bellek
+        // FIX #4: dc_room_password localStorage'dan kaldırıldı (düz metin şifre güvensizdi).
+        sessionStorage.setItem('dc_session_password', passwordMatch);
         localStorage.setItem('dc_auth_key', authKey); // Sunucuya girebilmek için
         localStorage.setItem('dc_join_mode', 'join'); // Mevcut odaya katılma modu
 
@@ -621,12 +628,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    const copyToClipboard = (text, btn) => {
-        navigator.clipboard.writeText(text).then(() => {
+    const copyToClipboard = async (text, btn) => {
+        try {
+            if (window.electronAPI && window.electronAPI.writeToClipboard) {
+                await window.electronAPI.writeToClipboard(text);
+            } else {
+                await navigator.clipboard.writeText(text);
+            }
+
+            const hasLangKey = btn.hasAttribute('data-lang-key');
+            const originalLangKey = btn.getAttribute('data-lang-key');
+            if (hasLangKey) {
+                btn.removeAttribute('data-lang-key');
+            }
+
             const originalText = btn.textContent;
-            btn.textContent = window.i18n ? window.i18n.t('btn_copied') : 'Kopyalandı!';
-            setTimeout(() => btn.textContent = originalText, 2000);
-        });
+            btn.textContent = window.i18n ? window.i18n.t('toast_copied') || window.i18n.t('btn_copied') || 'Kopyalandı!' : 'Kopyalandı!';
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                if (hasLangKey) {
+                    btn.setAttribute('data-lang-key', originalLangKey);
+                }
+            }, 2000);
+        } catch (err) {
+            console.error('Panoya kopyalanamadı:', err);
+        }
     };
 
     const btnCopyServer = document.getElementById('btn-copy-server');
@@ -642,9 +669,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const passVal = document.getElementById('invite-password').value;
 
             const cleanUrl = serverVal.endsWith('/') ? serverVal.slice(0, -1) : serverVal;
-            const inviteLink = `${cleanUrl}/?room=${encodeURIComponent(roomVal)}&pass=${encodeURIComponent(passVal)}`;
+            // FIX #5: Şifre URL'den kaldırıldı. Link sadece oda anahtarını içeriyor.
+            // Şifreyi davet ettiğiniz kişiyle AYRI bir kanaldan (SMS, şifreli mesaj) paylaşın.
+            const inviteLink = `${cleanUrl}/?room=${encodeURIComponent(roomVal)}`;
 
-            const inviteText = `Haven Gizli Oda Daveti!\n\n🚀 Tek tıkla katılmak için linke tıkla:\n${inviteLink}\n\nManuel Katılım:\nOda Anahtarı: ${roomVal}\nŞifre: ${passVal}`;
+            const inviteText = `Haven Gizli Oda Daveti!\n\n🚀 Oda bağlantısı:\n${inviteLink}\n\nOda Anahtarı: ${roomVal}\n\n⚠️ Şifreyi bu mesajla birlikte göndermeyin.\nŞifreyi ayrı bir kanaldan (SMS vb.) paylaşın.`;
             copyToClipboard(inviteText, btnCopyAll);
         });
     }

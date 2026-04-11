@@ -10,7 +10,7 @@
  * - Ekran ve kamera/ses izinlerine otomatik onay veren güvenlik ayarları.
  */
 
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, clipboard } = require('electron');
 const path = require('path');
 
 // Uygulama adını ve ID'sini ayarla (Bildirimlerde 'Haven' görünmesi için)
@@ -68,10 +68,10 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
             nodeIntegration: false,
-            webSecurity: false,
-            allowRunningInsecureContent: true,
+            // FIX #2: webSecurity:false ve allowRunningInsecureContent kaldırıldı.
+            // Bu iki ayar SOP/CSP korumalarını devre dışı bırakıyordu.
+            // Medya izinleri setPermissionRequestHandler ile yönetildiğinden burada gerekmez.
             webviewTag: true, // YouTube <webview> embed için
-            // yüksek izolasyonlu mikrofon/kamera erişimi için
             experimentalFeatures: true
         }
     });
@@ -163,6 +163,14 @@ let serverInstance = null;
 
 ipcMain.handle('start-host', async () => {
     try {
+        // Sunucuyu her zaman Electron içinden başlat (Node.js versiyon uyumu için)
+        // start.sh'den bağımsız olarak sunucu Electron'un kendi Node.js'i ile çalışmalı
+        // çünkü better-sqlite3 native modülü Electron'un Node versiyonuna göre derlenir.
+        if (!serverInstance) {
+            const { startServer } = require('../server/index.js');
+            serverInstance = await startServer(3847); // Sabit port: start.sh tüneli de 3847'ye yönlendirir
+        }
+
         // 1) Eğer dc / start.sh üzerinden dışarıdan bir tünel açılmışsa DİREKT olarak onu kullan.
         // Cloudflare ücretsiz tünel limitine takılmamak ve çakışmayı (xhr poll error) önlemek için en güvenlisi bu.
         try {
@@ -176,11 +184,6 @@ ipcMain.handle('start-host', async () => {
             }
         } catch (e) {
             console.error("Harici tünel kontrolünde hata:", e);
-        }
-
-        if (!serverInstance) {
-            const { startServer } = require('../server/index.js');
-            serverInstance = await startServer(0); // 0 = Let OS assign random available port
         }
 
         // Eğer zaten açık bir tünelimiz ve bağımız varsa, hiç kapatmadan aynı linki ve tüneli geri ver!
@@ -273,6 +276,16 @@ ipcMain.handle('open-external-url', (event, url) => {
     }
 });
 
+// Pano yazma — file:// bağlamında navigator.clipboard çalışmadığı için
+// Electron native clipboard modülü kullanılıyor
+ipcMain.handle('clipboard:write', (event, text) => {
+    if (text && typeof text === 'string') {
+        clipboard.writeText(text);
+        return true;
+    }
+    return false;
+});
+
 // ============================================
 // Uygulama Yaşam Döngüsü
 // ============================================
@@ -296,23 +309,48 @@ ipcMain.handle('desktop-capturer-get-sources', async (event, opts) => {
     }
 });
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
     const { session } = require('electron');
 
-    // Medya donanımlarına erişim iznini otomatik olarak onayla
-    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-        if (permission === 'media' || permission === 'camera' || permission === 'microphone') {
-            callback(true);
-        } else {
-            callback(true); // Diğer izinlere de izin ver (örneğin bildirimler için)
+    // Sunucuyu Electron açılır açılmaz başlat (Node.js versiyon uyumu için)
+    // better-sqlite3 native modülü Electron'un Node versiyonuna göre derlendiğinden
+    // sunucu her zaman Electron process'i içinden çalışmalı.
+    if (!serverInstance) {
+        try {
+            const { startServer } = require('../server/index.js');
+            serverInstance = await startServer(3847);
+            console.log('[Electron] Sunucu başarıyla başlatıldı, port: 3847');
+        } catch (err) {
+            console.error('[Electron] Sunucu başlatılamadı:', err.message);
+            // Port meşgulse rastgele port dene
+            if (err.code === 'EADDRINUSE') {
+                try {
+                    const { startServer } = require('../server/index.js');
+                    serverInstance = await startServer(0);
+                    console.log('[Electron] Sunucu rastgele portta başlatıldı:', serverInstance.server.address().port);
+                } catch (err2) {
+                    console.error('[Electron] Sunucu hiçbir portta başlatılamadı:', err2.message);
+                }
+            }
         }
+    }
+
+    // FIX #3: Sadece gerekli izinler onaylanıyor.
+    // Eski kod tüm izinleri (konum, USB, Bluetooth dahil) kayıtsız şartsız onaylıyordu.
+    const ALLOWED_PERMISSIONS = new Set([
+        'media',           // Mikrofon + kamera (WebRTC)
+        'camera',          // Kamera erişimi
+        'microphone',      // Mikrofon erişimi
+        'notifications',   // Masaüstü bildirimleri
+        'display-capture', // Ekran paylaşımı
+    ]);
+
+    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+        callback(ALLOWED_PERMISSIONS.has(permission));
     });
 
     session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
-        if (permission === 'media' || permission === 'camera' || permission === 'microphone') {
-            return true;
-        }
-        return true;
+        return ALLOWED_PERMISSIONS.has(permission);
     });
 
     createWindow();

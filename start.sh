@@ -11,15 +11,11 @@ echo -e "${BLUE}🚀 DC Private Chat Başlatılıyor...${NC}"
 
 echo -e "${YELLOW}🧹 Eski işlemler temizleniyor...${NC}"
 killall -9 cloudflared 2>/dev/null
-pkill -f "node server/index.js" 2>/dev/null
+# Not: Sunucu artık Electron tarafından başlatılıyor (Node.js versiyon uyumu için)
 sleep 1
 
 # Önceki kayıt dosyalarını temizle
 rm -f server.log tunnel.log
-
-echo -e "${YELLOW}📦 Sunucu arka planda başlatılıyor...${NC}"
-npm run server > server.log 2>&1 &
-SERVER_PID=$!
 
 echo -e "${YELLOW}🌐 Cloudflare Tunnel arka planda başlatılıyor...${NC}"
 cloudflared tunnel --edge-ip-version 4 --region us --url http://localhost:3847 > tunnel.log 2>&1 &
@@ -59,9 +55,8 @@ echo -e "${BLUE}💻 Masaüstü (Electron) uygulaması açılıyor...${NC}"
 # Masaüstü uygulamasını başlat ve uygulamanın kapanmasını bekle
 npm start
 
-# Electron kapandığında arka plandaki node ve cloudflared'i kapat
+# Electron kapandığında arka plandaki cloudflared'i kapat
 echo -e "${YELLOW}🛑 Uygulama kapatıldı. Arka plan servisleri durduruluyor...${NC}"
-kill $SERVER_PID 2>/dev/null
 kill $TUNNEL_PID 2>/dev/null
 
 echo -e "${GREEN}👋 Görüşmek üzere! Tüm işlemler temizlendi.${NC}"
