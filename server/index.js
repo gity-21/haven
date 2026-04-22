@@ -427,7 +427,11 @@ async function startServer(portArg = null) {
                 roomId: socket.roomKey,
                 username: socket.nickname,
                 avatarColor: socket.avatarColor,
-                profile_pic: socket.profilePic,
+                // FIX #16: profile_pic artık gerçek zamanlı mesajlarda gönderilmiyor.
+                // Base64 profil resmi (~50-100KB) her mesajda tüm istemcilere yayınlanıyordu.
+                // İstemci profil resmini online-users listesinden alır.
+                // DB'de saklanmaya devam eder (mesaj geçmişi yüklenirken gönderilir).
+                profile_pic: null,
                 user_id: socket.userId || null,
                 content: safeContent,
                 type: msgType,

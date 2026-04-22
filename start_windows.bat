@@ -1,8 +1,9 @@
 @echo off
+chcp 65001 >nul
 title Haven Private Chat - Windows Starter
 echo.
-echo      /$$   /$$                                     
-echo     ^| $$  ^| $$                                     
+echo      /$$   /$$
+echo     ^| $$  ^| $$
 echo     ^| $$  ^| $$  /$$$$$$  /$$    /$$ /$$$$$$  /$$$$$$$
 echo     ^| $$$$$$$$ ^|____  $$^|  $$  /$$//$$__  $$^| $$__  $$
 echo     ^| $$__  $$  /$$$$$$$ \  $$/$$/^| $$$$$$$$^| $$  \ $$
@@ -16,19 +17,14 @@ echo.
 :: Temizlik
 echo [WAIT] Eski islemler temizleniyor...
 taskkill /F /IM cloudflared.exe /T >nul 2>&1
-taskkill /F /IM node.exe /FI "WINDOWTITLE eq HavenServer" >nul 2>&1
 timeout /t 2 /nobreak >nul
 
 :: Veri klasoru kontrolu
 if not exist data mkdir data
 
-:: Sunucuyu baslat
-echo [SERVER] Sunucu arka planda baslatiliyor...
-start "HavenServer" /B npm run server
-
-:: Cloudflare Tünelini baslat
+:: Cloudflare Tunelini baslat
 echo [TUNNEL] Cloudflare Tunnel baslatiliyor...
-:: npx cloudflared kullanıyoruz çünkü node_modules içinde hazır
+:: npx cloudflared kullaniyoruz cunku node_modules icinde hazir
 start "HavenTunnel" /B cmd /c npx cloudflared tunnel --edge-ip-version 4 --region us --url http://127.0.0.1:3847 > data\tunnel.log 2>&1
 
 echo [WAIT] Cloudflare tunel adresi bekleniyor...
@@ -56,13 +52,16 @@ echo [OK] Login ekraninda otomatik doldurulacak.
 :open_app
 echo.
 echo [APP] Haven Masaustu uygulamasi aciliyor...
+echo [INFO] NOT: Sunucu Electron uygulamasi icinden otomatik baslatilir.
+echo.
+
+:: Electron uygulamasini baslat
+:: Sunucu main.js icinden baslatiliyor, ayrica baslatmaya GEREK YOK!
 npm start
 
-:: Kapanıs
+:: Kapanis
 echo.
 echo [EXIT] Uygulama kapatildi. Servisler durduruluyor...
 taskkill /F /IM cloudflared.exe /T >nul 2>&1
-:: Node sunucusunu isminden bulup kapatıyoruz
-taskkill /F /FI "WINDOWTITLE eq HavenServer" >nul 2>&1
 echo [INFO] Gorusmek uzere!
 pause

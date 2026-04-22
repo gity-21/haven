@@ -276,10 +276,14 @@ function connectSocket() {
     const isLocalhostHost = state.serverUrl.includes('localhost') || state.serverUrl.includes('127.0.0.1');
 
     // Socket Ayarları
+    // FIX: Cloudflare Tunnel üzerinden WebSocket upgrade hatasını önlemek için
+    // polling önce, sonra websocket'e yükseltme (sunucu ayarıyla aynı sıra).
     state.socket = io(cleanUrl, {
         reconnectionDelayMax: 5000,
-        transports: ['websocket', 'polling'], // Prefer websocket for better tunnel performance
+        reconnectionAttempts: 50,
+        transports: ['polling', 'websocket'], // Polling first — Cloudflare Tunnel uyumlu
         upgrade: true,
+        withCredentials: false, // Cloudflare CORS uyumluluğu
         extraHeaders: {
             "Bypass-Tunnel-Reminder": "true"
         }
@@ -394,6 +398,15 @@ function connectSocket() {
     // Yeni mesaj geldiğinde
     state.socket.on('new-message', async (msg) => {
         if (el.emptyState) el.emptyState.style.display = 'none';
+
+        // Gerçek zamanlı mesajlarda profile_pic artık gönderilmiyor (bant genişliği).
+        // Online kullanıcı listesinden profil resmini çekiyoruz.
+        if (!msg.profile_pic && state.users) {
+            const sender = state.users.find(u => u.username === msg.username);
+            if (sender && sender.profilePic) {
+                msg.profile_pic = sender.profilePic;
+            }
+        }
 
         // Gelen mesajı şifresini çöz
         msg.content = await decryptMessage(msg.content);
@@ -2459,13 +2472,39 @@ function linkify(text) {
 // WEBRTC P2P SES SİSTEMİ MANTIĞI
 // ============================================
 
+// FIX #18: TURN sunucuları eklendi — NAT arkasındaki kullanıcılar artık P2P bağlantı kurabilir.
+// Yalnızca STUN kullanıldığında, simetrik NAT arkasındaki iki kullanıcı bağlanamıyordu.
+// TURN sunucusu medya trafiğini relay ederek bu sorunu çözer.
 const rtcConfig = {
     iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
-        // TODO (Güvenlik): Google STUN yerine aşağıdaki gibi bir TURN sunucusu eklenmesi IP sızıntılarını tamamen durdurur:
-        // { urls: 'turn:ornek-turn.com:3478', username: 'kullanici', credential: 'sifre' }
-    ]
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
+        // Ücretsiz TURN sunucuları (metered.ca ücretsiz katmanı)
+        {
+            urls: 'turn:a.relay.metered.ca:80',
+            username: 'e8dd65e92f3c1bc1b4fc4d82',
+            credential: 'uWdWNmkhvyqTEwkR'
+        },
+        {
+            urls: 'turn:a.relay.metered.ca:80?transport=tcp',
+            username: 'e8dd65e92f3c1bc1b4fc4d82',
+            credential: 'uWdWNmkhvyqTEwkR'
+        },
+        {
+            urls: 'turn:a.relay.metered.ca:443',
+            username: 'e8dd65e92f3c1bc1b4fc4d82',
+            credential: 'uWdWNmkhvyqTEwkR'
+        },
+        {
+            urls: 'turns:a.relay.metered.ca:443',
+            username: 'e8dd65e92f3c1bc1b4fc4d82',
+            credential: 'uWdWNmkhvyqTEwkR'
+        }
+    ],
+    iceTransportPolicy: 'all' // STUN mümkünse kullan, değilse TURN'e düş
 };
 
 async function initiateVoiceCall(withVideo = false) {
@@ -2896,7 +2935,7 @@ function leaveVoiceRoom() {
     // AudioContext nesnesinin kendisi serbest bırakılmıyordu (bellek sızıntısı).
     Object.keys(volumeMeters).forEach(id => {
         cancelAnimationFrame(volumeMeters[id].animationFrame);
-        try { volumeMeters[id].source.disconnect(); } catch (_) {}
+        try { volumeMeters[id].source.disconnect(); } catch (_) { }
         delete volumeMeters[id];
     });
     if (audioContext) {
@@ -2947,7 +2986,7 @@ function setupVolumeMeter(stream, targetId) {
     // FIX #13: Eski meter varsa source'u da disconnect et
     if (volumeMeters[targetId]) {
         cancelAnimationFrame(volumeMeters[targetId].animationFrame);
-        try { volumeMeters[targetId].source.disconnect(); } catch (_) {}
+        try { volumeMeters[targetId].source.disconnect(); } catch (_) { }
         delete volumeMeters[targetId];
     }
 
@@ -3115,7 +3154,7 @@ function removePeerConnection(targetId) {
 
     if (volumeMeters[targetId]) {
         cancelAnimationFrame(volumeMeters[targetId].animationFrame);
-        try { volumeMeters[targetId].source.disconnect(); } catch (_) {} // FIX #13
+        try { volumeMeters[targetId].source.disconnect(); } catch (_) { } // FIX #13
         delete volumeMeters[targetId];
     }
 

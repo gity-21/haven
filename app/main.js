@@ -71,8 +71,9 @@ function createWindow() {
             // FIX #2: webSecurity:false ve allowRunningInsecureContent kaldırıldı.
             // Bu iki ayar SOP/CSP korumalarını devre dışı bırakıyordu.
             // Medya izinleri setPermissionRequestHandler ile yönetildiğinden burada gerekmez.
-            webviewTag: true, // YouTube <webview> embed için
-            experimentalFeatures: true
+            // GÜVENLİK: webviewTag kapalı — <webview> enjeksiyon riski önlendi.
+            // YouTube embed'ler <iframe> sandbox ile gösterilmeye devam ediyor.
+            webviewTag: false
         }
     });
 
