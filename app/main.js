@@ -110,9 +110,9 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, 'renderer', 'login.html'));
 
     // BROWSER KONSOLUNU DOSYAYA YAZ (Hata Ayıklama İçin)
-    mainWindow.webContents.on('console-message', (event, messageDetails) => {
+    mainWindow.webContents.on('console-message', (event) => {
         const fs = require('fs');
-        fs.appendFileSync('browser-debug.log', `[BROWSER CONSOLE] [${messageDetails.level}] ${messageDetails.message}\n`);
+        fs.appendFileSync('browser-debug.log', `[BROWSER CONSOLE] [${event.level}] ${event.message}\n`);
     });
 
     // Zoom seviyesini kilitle (Zoom bug'ını önler - cascade/tekrarlama hatası)
