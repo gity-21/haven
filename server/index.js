@@ -55,6 +55,12 @@ const corsOptions = {
         }
         // Whitelist kontrolü
         if (CORS_WHITELIST.has(origin)) return callback(null, true);
+        // Cloudflare ücretsiz tünel subdomain'leri dinamik. Origin'in host header ile uyuşmasını gerektir.
+        // Bunu middleware seviyesinde reddedeceğiz, bu yüzden corsOptions'ta buraya izin vermiyoruz!
+        // Eğer buradan geçerse, middleware reddetse bile bir şekilde headerlar çakışabilir.
+        // Ya da en iyisi, corsOptions'a trycloudflare için HİÇBİR ZAMAN izin vermeyelim.
+        // Sadece kendi origin'ini kontrol eden request tabanlı bir cors middleware yazalım.
+
         // Diğer tüm origin'ler reddedilir
         console.warn(`[CORS] Reddedilen origin: ${origin}`);
         callback(new Error(`CORS: İzin verilmeyen origin → ${origin}`));
@@ -66,22 +72,38 @@ const corsOptions = {
 // CORS middleware that dynamically checks Host for trycloudflare domains
 const customCorsMiddleware = (req, res, next) => {
     const origin = req.headers.origin;
+    
     if (origin && origin.endsWith('.trycloudflare.com')) {
         const host = req.headers.host;
+        // Host header'ı origin ile eşleşmeli. (örn: origin https://xyz.trycloudflare.com ise host xyz.trycloudflare.com olmalı)
         if (host && origin.includes(host)) {
             res.header('Access-Control-Allow-Origin', origin);
             res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
             res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-upload-token');
             if (req.method === 'OPTIONS') return res.sendStatus(200);
             return next();
+        } else {
+            console.warn(`[CORS] Host mismatch for trycloudflare. Origin: ${origin}, Host: ${host}`);
+            return res.status(403).json({ error: 'CORS: Origin/Host mismatch for Cloudflare tunnel.' });
         }
     }
+    
     // Fall back to standard CORS
     cors(corsOptions)(req, res, next);
 };
 
 const io = new Server(server, {
-    cors: corsOptions,
+    cors: {
+        origin: (origin, callback) => {
+            // Socket.IO request aware değildir, ama upgrade request'i yaparken zaten Origin header'ı kontrol ediliyor.
+            // Socket.IO tarafı için manuel bir origin check:
+            if (!origin || origin === 'file://' || origin.startsWith('file://')) return callback(null, true);
+            if (CORS_WHITELIST.has(origin)) return callback(null, true);
+            if (origin.endsWith('.trycloudflare.com')) return callback(null, true); // Socket.io engine.io handshake'inde Host header'ına erişmek zor, trycloudflare'e izin veriyoruz
+            callback(new Error(`CORS: İzin verilmeyen origin → ${origin}`), false);
+        },
+        methods: ['GET', 'POST']
+    },
     transports: ['polling', 'websocket'], // polling önce, sonra websocket'e upgrade (Cloudflare uyumlu)
     allowUpgrades: true,
     upgradeTimeout: 10000,
