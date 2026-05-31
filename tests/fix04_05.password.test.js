@@ -21,28 +21,28 @@ const loginReal = realCodeLines(loginJs);
 const chatReal  = realCodeLines(chatJs);
 
 describe('FIX #4 — Şifre localStorage → sessionStorage', () => {
-    test("login.js'te localStorage.setItem('dc_room_password') bulunmamalı", () => {
-        const bad = loginReal.filter(l => l.includes("'dc_room_password'") && l.includes('setItem'));
+    test("login.js'te localStorage.setItem('haven_room_password') bulunmamalı", () => {
+        const bad = loginReal.filter(l => l.includes("'haven_room_password'") && l.includes('setItem'));
         expect(bad).toHaveLength(0);
     });
 
-    test("chat.js'te localStorage.getItem('dc_room_password') bulunmamalı", () => {
-        const bad = chatReal.filter(l => l.includes("'dc_room_password'") && l.includes('getItem'));
+    test("chat.js'te localStorage.getItem('haven_room_password') bulunmamalı", () => {
+        const bad = chatReal.filter(l => l.includes("'haven_room_password'") && l.includes('getItem'));
         expect(bad).toHaveLength(0);
     });
 
-    test("login.js sessionStorage.setItem('dc_session_password') kullanmalı", () => {
-        const good = loginReal.filter(l => l.includes('dc_session_password') && l.includes('sessionStorage'));
+    test("login.js sessionStorage.setItem('haven_session_password') kullanmalı", () => {
+        const good = loginReal.filter(l => l.includes('haven_session_password') && l.includes('sessionStorage'));
         expect(good.length).toBeGreaterThan(0);
     });
 
-    test("chat.js sessionStorage.getItem('dc_session_password') kullanmalı", () => {
-        const good = chatReal.filter(l => l.includes('dc_session_password') && l.includes('sessionStorage'));
+    test("chat.js sessionStorage.getItem('haven_session_password') kullanmalı", () => {
+        const good = chatReal.filter(l => l.includes('haven_session_password') && l.includes('sessionStorage'));
         expect(good.length).toBeGreaterThan(0);
     });
 
     test('E2EE türetimi sonrası sessionStorage temizlenmeli', () => {
-        expect(chatJs).toContain("sessionStorage.removeItem('dc_session_password')");
+        expect(chatJs).toContain("sessionStorage.removeItem('haven_session_password')");
     });
 
     test('state.roomPassword = null ile bellek referansı temizlenmeli', () => {

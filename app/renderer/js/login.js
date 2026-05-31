@@ -9,8 +9,8 @@
  * - Oda şifreisni SHA-256 ile hash'leyerek sunucuya girebilmek için doğrulama anahtarı (authKey) oluşturur.
  * 
  * Ayarlar / Depolanan Veriler:
- * - dc_profile_pic, dc_server_url, dc_nickname, dc_room, dc_avatar, dc_login_theme
- * - (dc_room_password KALDIRILDI — FIX #4: artık sessionStorage kullanılıyor)
+ * - haven_profile_pic, haven_server_url, haven_nickname, haven_room, haven_avatar, haven_login_theme
+ * - (haven_room_password KALDIRILDI — FIX #4: artık sessionStorage kullanılıyor)
  */
 
 window.showAlertModal = function (message, title = 'Uyarı') {
@@ -64,11 +64,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabJoin = document.getElementById('tab-join');
 
     // Kayıtlı verileri yükle
-    let savedProfilePic = localStorage.getItem('dc_profile_pic') || null;
-    let savedServer = localStorage.getItem('dc_server_url') || 'http://localhost:3847';
-    let savedUsername = localStorage.getItem('dc_nickname') || '';
-    let savedRoom = localStorage.getItem('dc_room') || '';
-    let savedColor = localStorage.getItem('dc_avatar') || '#6366f1';
+    let savedProfilePic = localStorage.getItem('haven_profile_pic') || null;
+    let savedServer = localStorage.getItem('haven_server_url') || 'http://localhost:3847';
+    let savedUsername = localStorage.getItem('haven_nickname') || '';
+    let savedRoom = localStorage.getItem('haven_room') || '';
+    let savedColor = localStorage.getItem('haven_avatar') || '#6366f1';
 
     // Tek tıkla davet linkinden parametreleri al (Sihirli Link özelliği)
     const urlParams = new URLSearchParams(window.location.search);
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (urlParams.has('name')) savedUsername = urlParams.get('name');
 
     // Tema verisini yükle
-    const savedTheme = localStorage.getItem('dc_login_theme') || 'space';
+    const savedTheme = localStorage.getItem('haven_login_theme') || 'space';
     const loginThemeSelect = document.getElementById('login-theme-select');
     if (loginThemeSelect) {
         loginThemeSelect.value = savedTheme;
@@ -88,28 +88,35 @@ document.addEventListener('DOMContentLoaded', () => {
     document.documentElement.setAttribute('data-theme', savedTheme);
 
     // Dil verisini yükle
-    const savedLang = localStorage.getItem('dc_app_lang') || 'tr';
+    const savedLang = localStorage.getItem('haven_app_lang') || 'tr';
     const loginLangSelect = document.getElementById('login-lang-select');
     if (loginLangSelect) {
         loginLangSelect.value = savedLang;
     }
 
+    // Gürültü Engelleme verisini yükle
+    const savedNoiseSetting = localStorage.getItem('haven_noise_suppression');
+    const noiseCheckbox = document.getElementById('login-noise-suppression');
+    if (noiseCheckbox && savedNoiseSetting === 'false') {
+        noiseCheckbox.checked = false;
+    }
+
     // Eski Cloudflare tünel URL'si temizle (artık geçersizdir, her oturumda değişir)
     if (savedServer.includes('trycloudflare.com') || savedServer.includes('ngrok') || savedServer.includes('loca.lt')) {
         savedServer = 'http://localhost:3847';
-        localStorage.setItem('dc_server_url', savedServer);
+        localStorage.setItem('haven_server_url', savedServer);
     }
 
     // Nickname kalıcı olsun: ilk açılışta bir kez random üret ve sakla
-    let defaultName = localStorage.getItem('dc_nickname');
+    let defaultName = localStorage.getItem('haven_nickname');
     if (!defaultName) {
         defaultName = `Kullanıcı_${Math.floor(1000 + Math.random() * 9000)}`;
-        localStorage.setItem('dc_nickname', defaultName);
+        localStorage.setItem('haven_nickname', defaultName);
     }
 
-    const loginError = localStorage.getItem('dc_login_error');
+    const loginError = localStorage.getItem('haven_login_error');
     if (loginError) {
-        localStorage.removeItem('dc_login_error');
+        localStorage.removeItem('haven_login_error');
         setTimeout(() => {
             window.showAlertModal(loginError, 'Bölgeye Erişim Reddedildi');
         }, 150);
@@ -224,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (localUrl) {
                 inputServer.value = localUrl;
                 // localStorage'ı da güncelle
-                localStorage.setItem('dc_server_url', localUrl);
+                localStorage.setItem('haven_server_url', localUrl);
                 console.log('[Login] Lokal sunucu URL güncellendi:', localUrl);
             }
         }).catch(err => console.error('Lokal sunucu URL alınamadı:', err));
@@ -316,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             micSelect.appendChild(opt);
                         });
                     }
-                    const savedMic = localStorage.getItem('dc_mic_device');
+                    const savedMic = localStorage.getItem('haven_mic_device');
                     if (savedMic) micSelect.value = savedMic;
                 }
 
@@ -333,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             speakerSelect.appendChild(opt);
                         });
                     }
-                    const savedSpeaker = localStorage.getItem('dc_speaker_device');
+                    const savedSpeaker = localStorage.getItem('haven_speaker_device');
                     if (savedSpeaker) speakerSelect.value = savedSpeaker;
                 }
             } catch (err) {
@@ -452,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (loginThemeSelect) {
                 const selectedTheme = loginThemeSelect.value;
                 document.documentElement.setAttribute('data-theme', selectedTheme);
-                localStorage.setItem('dc_login_theme', selectedTheme);
+                localStorage.setItem('haven_login_theme', selectedTheme);
             }
 
             // Dil
@@ -465,8 +472,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Ses cihaz tercihlerini kaydet
             const micSelect = document.getElementById('login-mic-select');
             const speakerSelect = document.getElementById('login-speaker-select');
-            if (micSelect?.value) localStorage.setItem('dc_mic_device', micSelect.value);
-            if (speakerSelect?.value) localStorage.setItem('dc_speaker_device', speakerSelect.value);
+            if (micSelect?.value) localStorage.setItem('haven_mic_device', micSelect.value);
+            if (speakerSelect?.value) localStorage.setItem('haven_speaker_device', speakerSelect.value);
+
+            // Gürültü Engelleme kaydet
+            const noiseCheckbox = document.getElementById('login-noise-suppression');
+            if (noiseCheckbox) {
+                localStorage.setItem('haven_noise_suppression', noiseCheckbox.checked);
+            }
 
             closeSettings();
         });
@@ -498,15 +511,35 @@ document.addEventListener('DOMContentLoaded', () => {
         tabCreate.addEventListener('click', () => {
             tabCreate.classList.add('active');
             tabJoin.classList.remove('active');
-            document.getElementById('login-submit').textContent = 'Ağ Kur';
-            inputRoom.placeholder = 'Yeni uçtan uca şifreli ağ bağlamı oluşturun';
+            
+            const submitBtn = document.getElementById('login-submit');
+            if (submitBtn) {
+                submitBtn.setAttribute('data-lang-key', 'btn_create');
+                submitBtn.textContent = window.i18n ? window.i18n.t('btn_create') : 'Ağ Kur';
+            }
+            
+            if (inputRoom) {
+                inputRoom.setAttribute('data-lang-key', 'room_placeholder_create');
+                inputRoom.placeholder = window.i18n ? window.i18n.t('room_placeholder_create') : 'Yeni uçtan uca şifreli ağ bağlamı oluşturun';
+            }
+            
             if (serverGroup) serverGroup.style.display = 'none';
         });
         tabJoin.addEventListener('click', () => {
             tabJoin.classList.add('active');
             tabCreate.classList.remove('active');
-            document.getElementById('login-submit').textContent = 'Bağlan';
-            inputRoom.placeholder = 'Kriptografik erişim odası anahtarı';
+            
+            const submitBtn = document.getElementById('login-submit');
+            if (submitBtn) {
+                submitBtn.setAttribute('data-lang-key', 'btn_connect');
+                submitBtn.textContent = window.i18n ? window.i18n.t('btn_connect') : 'Bağlan';
+            }
+            
+            if (inputRoom) {
+                inputRoom.setAttribute('data-lang-key', 'room_placeholder_join');
+                inputRoom.placeholder = window.i18n ? window.i18n.t('room_placeholder_join') : 'Kriptografik erişim odası anahtarı';
+            }
+            
             if (serverGroup) serverGroup.style.display = 'block';
         });
     }
@@ -541,21 +574,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     serverUrl = await window.electronAPI.getLocalServerUrl(); // Host, kendi sunucusuna localhost üzerinden bağlanır
 
                     // Bilgileri sakla
-                    localStorage.setItem('dc_server_url', serverUrl);
-                    localStorage.setItem('dc_nickname', nickname);
-                    localStorage.setItem('dc_room', room);
-                    localStorage.setItem('dc_avatar', inputColor.value);
-                    // FIX #4: dc_room_password localStorage'dan kaldırıldı (düz metin şifre güvensizdi).
+                    localStorage.setItem('haven_server_url', serverUrl);
+                    localStorage.setItem('haven_nickname', nickname);
+                    localStorage.setItem('haven_room', room);
+                    localStorage.setItem('haven_avatar', inputColor.value);
+                    // FIX #4: haven_room_password localStorage'dan kaldırıldı (düz metin şifre güvensizdi).
                     // Şifre yalnızca E2EE anahtarı türetilene kadar sessionStorage'da tutulur;
                     // sekme kapanınca otomatik silinir, diğer sekmelere paylaşılmaz.
-                    sessionStorage.setItem('dc_session_password', passwordMatch);
-                    localStorage.setItem('dc_auth_key', authKey); // Sunucuya girebilmek için
-                    localStorage.setItem('dc_join_mode', 'create'); // Oda oluşturma modu
+                    sessionStorage.setItem('haven_session_password', passwordMatch);
+                    localStorage.setItem('haven_auth_key', authKey); // Sunucuya girebilmek için
+                    localStorage.setItem('haven_join_mode', 'create'); // Oda oluşturma modu
 
                     if (savedProfilePic) {
-                        localStorage.setItem('dc_profile_pic', savedProfilePic);
+                        localStorage.setItem('haven_profile_pic', savedProfilePic);
                     } else {
-                        localStorage.removeItem('dc_profile_pic');
+                        localStorage.removeItem('haven_profile_pic');
                     }
 
                     // Modal üzerinden bilgileri göster
@@ -599,19 +632,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Bilgileri sakla
-        localStorage.setItem('dc_server_url', serverUrl);
-        localStorage.setItem('dc_nickname', nickname);
-        localStorage.setItem('dc_room', room);
-        localStorage.setItem('dc_avatar', inputColor.value);
-        // FIX #4: dc_room_password localStorage'dan kaldırıldı (düz metin şifre güvensizdi).
-        sessionStorage.setItem('dc_session_password', passwordMatch);
-        localStorage.setItem('dc_auth_key', authKey); // Sunucuya girebilmek için
-        localStorage.setItem('dc_join_mode', 'join'); // Mevcut odaya katılma modu
+        localStorage.setItem('haven_server_url', serverUrl);
+        localStorage.setItem('haven_nickname', nickname);
+        localStorage.setItem('haven_room', room);
+        localStorage.setItem('haven_avatar', inputColor.value);
+        // FIX #4: haven_room_password localStorage'dan kaldırıldı (düz metin şifre güvensizdi).
+        sessionStorage.setItem('haven_session_password', passwordMatch);
+        localStorage.setItem('haven_auth_key', authKey); // Sunucuya girebilmek için
+        localStorage.setItem('haven_join_mode', 'join'); // Mevcut odaya katılma modu
 
         if (savedProfilePic) {
-            localStorage.setItem('dc_profile_pic', savedProfilePic);
+            localStorage.setItem('haven_profile_pic', savedProfilePic);
         } else {
-            localStorage.removeItem('dc_profile_pic');
+            localStorage.removeItem('haven_profile_pic');
         }
 
         const submitBtn = document.getElementById('login-submit');

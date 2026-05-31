@@ -1,25 +1,20 @@
 /**
  * database.js - Veritabanı Yönetimi
  *
- * FIX #9: sql.js (in-memory WASM) → better-sqlite3 (dosya tabanlı, senkron)
+ * sql.js (WASM tabanlı SQLite) kullanılıyor.
+ * Native derleme (C++ / Visual Studio Build Tools) gerektirmez.
  *
- * Neden değiştirildi:
- * - sql.js her mesajda tüm DB'yi RAM'den diske export ediyordu (I/O bottleneck)
- * - DB büyüdükçe RAM kullanımı artıyordu (memory leak benzeri davranış)
- * - Sunucu çökünce son export anından bu yana mesajlar kaybolabiliyordu
+ * better-sqlite3 uyumlu senkron API wrapper:
+ *   db.prepare(sql).get(params)   → tek satır döner
+ *   db.prepare(sql).all(params)   → tüm satırları döner
+ *   db.prepare(sql).run(params)   → { changes, lastInsertRowid } döner
+ *   db.exec(sql)                  → toplu SQL çalıştırır
+ *   db.pragma(str)                → sql.js'de PRAGMA komutu çalıştırır
  *
- * better-sqlite3 avantajları:
- * - Dosya tabanlı: her işlem doğrudan diske yazılır
- * - WAL modu: eş zamanlı okuma/yazma + çökme güvenliği
- * - Senkron API: aynı .prepare().get/all/run() kullanımı, wrapper gereksiz
- * - WASM yok: başlangıç süresi çok daha kısa
- *
- * Kurulum (proje dizininde çalıştır):
- *   npm uninstall sql.js
- *   npm install better-sqlite3
+ * Veriler data/haven.db dosyasına periyodik ve değişiklik sonrası kaydedilir.
  */
 
-const Database = require('better-sqlite3');
+const initSqlJs = require('sql.js');
 const path = require('path');
 const fs = require('fs');
 
@@ -28,28 +23,143 @@ if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// Yeni DB dosyası — eski dc_chat_v2.db ile çakışmıyor
 const dbPath = path.join(dataDir, 'haven.db');
 
-let db = null;
+let sqliteDb = null;   // sql.js Database nesnesi
+let isDirty = false;   // Diske yazma gerekiyor mu?
+
+// ---- Diske kaydetme mantığı ----
+function saveToDisk() {
+    if (!sqliteDb || !isDirty) return;
+    try {
+        const data = sqliteDb.export();
+        const buffer = Buffer.from(data);
+        fs.writeFileSync(dbPath, buffer);
+        isDirty = false;
+    } catch (e) {
+        console.error('DB diske kaydedilemedi:', e);
+    }
+}
+
+// Her 30 saniyede bir otomatik kaydet
+let saveInterval = null;
+
+// ---- better-sqlite3 uyumlu wrapper ----
+function createBetterSqlite3Wrapper(db) {
+    const wrapper = {
+        prepare(sql) {
+            return {
+                get(...params) {
+                    const flatParams = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+                    try {
+                        const stmt = db.prepare(sql);
+                        stmt.bind(flatParams.length > 0 ? flatParams : undefined);
+                        if (stmt.step()) {
+                            const row = stmt.getAsObject();
+                            stmt.free();
+                            return row;
+                        }
+                        stmt.free();
+                        return undefined;
+                    } catch (e) {
+                        throw e;
+                    }
+                },
+                all(...params) {
+                    const flatParams = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+                    try {
+                        const results = [];
+                        const stmt = db.prepare(sql);
+                        stmt.bind(flatParams.length > 0 ? flatParams : undefined);
+                        while (stmt.step()) {
+                            results.push(stmt.getAsObject());
+                        }
+                        stmt.free();
+                        return results;
+                    } catch (e) {
+                        throw e;
+                    }
+                },
+                run(...params) {
+                    const flatParams = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+                    try {
+                        db.run(sql, flatParams.length > 0 ? flatParams : undefined);
+                        isDirty = true;
+                        // Hemen kaydet (veri kaybını önlemek için)
+                        saveToDisk();
+                        return {
+                            changes: db.getRowsModified(),
+                            lastInsertRowid: getLastInsertRowId(db)
+                        };
+                    } catch (e) {
+                        throw e;
+                    }
+                }
+            };
+        },
+        exec(sql) {
+            db.run(sql);
+            isDirty = true;
+            saveToDisk();
+        },
+        pragma(pragmaStr) {
+            // sql.js'de PRAGMA ifadelerini doğrudan çalıştır
+            try {
+                db.run(`PRAGMA ${pragmaStr}`);
+            } catch (e) {
+                // Bazı PRAGMA'lar sql.js'de desteklenmeyebilir (WAL modu gibi)
+                console.warn(`[DB] PRAGMA ${pragmaStr} uygulanamadı (sql.js sınırlaması):`, e.message);
+            }
+        }
+    };
+    return wrapper;
+}
+
+function getLastInsertRowId(db) {
+    try {
+        const stmt = db.prepare('SELECT last_insert_rowid() as id');
+        if (stmt.step()) {
+            const row = stmt.getAsObject();
+            stmt.free();
+            return row.id;
+        }
+        stmt.free();
+    } catch (e) {
+        console.error('last_insert_rowid hatası:', e);
+    }
+    return 0;
+}
+
+let db = null; // wrapper referansı (index.js'deki db değişkeni ile uyumlu)
 
 async function initializeDatabase() {
-    db = new Database(dbPath);
+    const SQL = await initSqlJs();
 
-    // WAL modu: okuma/yazma eş zamanlı çalışır, çökme durumunda veri güvenli kalır
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-    db.pragma('synchronous = NORMAL'); // WAL ile güvenli, FULL'dan hızlı
+    // Mevcut DB dosyasını yükle veya yeni oluştur
+    if (fs.existsSync(dbPath)) {
+        const fileBuffer = fs.readFileSync(dbPath);
+        sqliteDb = new SQL.Database(fileBuffer);
+        console.log('📂 Mevcut veritabanı yüklendi:', dbPath);
+    } else {
+        sqliteDb = new SQL.Database();
+        console.log('🆕 Yeni veritabanı oluşturuldu:', dbPath);
+    }
+
+    // PRAGMA ayarları
+    try { sqliteDb.run('PRAGMA foreign_keys = ON'); } catch (e) { /* ignore */ }
+    try { sqliteDb.run('PRAGMA synchronous = NORMAL'); } catch (e) { /* ignore */ }
 
     // Tablolar
-    db.exec(`
+    sqliteDb.run(`
         CREATE TABLE IF NOT EXISTS rooms (
             room_key      TEXT PRIMARY KEY,
             password_hash TEXT NOT NULL,
-            e2ee_salt     TEXT,         -- FIX #1: per-room rastgele PBKDF2 salt
+            e2ee_salt     TEXT,
             created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
+        )
+    `);
 
+    sqliteDb.run(`
         CREATE TABLE IF NOT EXISTS messages (
             id           INTEGER PRIMARY KEY AUTOINCREMENT,
             room_key     TEXT NOT NULL,
@@ -63,25 +173,37 @@ async function initializeDatabase() {
             reactions    TEXT DEFAULT '{}',
             user_id      TEXT,
             created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_messages_room
-            ON messages(room_key, created_at DESC);
+        )
     `);
 
-    console.log('✅ better-sqlite3 veritabanı hazır (WAL modu):', dbPath);
+    sqliteDb.run(`
+        CREATE INDEX IF NOT EXISTS idx_messages_room
+            ON messages(room_key, created_at DESC)
+    `);
 
-    // better-sqlite3 API'si senkron ve doğrudan — dbWrapper'a gerek yok
-    // index.js'deki tüm db.prepare().get/all/run() çağrıları olduğu gibi çalışır
+    isDirty = true;
+    saveToDisk();
+
+    // Periyodik kaydetme (30 saniyede bir)
+    saveInterval = setInterval(saveToDisk, 30000);
+
+    // Kapanışta kaydet
+    process.on('exit', saveToDisk);
+    process.on('SIGINT', () => { saveToDisk(); process.exit(0); });
+    process.on('SIGTERM', () => { saveToDisk(); process.exit(0); });
+
+    db = createBetterSqlite3Wrapper(sqliteDb);
+
+    console.log('✅ sql.js veritabanı hazır:', dbPath);
+
+    // better-sqlite3 API uyumlu wrapper döndür
     return db;
 }
 
-// Eski sql.js dbWrapper uyumluluğu için — index.js import'u değişmez
-// { initializeDatabase, dbWrapper } destructuring'i bozmamak adına dbWrapper da export edilir.
-// Ancak better-sqlite3'te dbWrapper = db'nin kendisi (aynı API).
-// index.js'de dbWrapper kullanan admin endpoint'leri artık db'yi direkt kullanacak.
+// Eski import uyumluluğu: { initializeDatabase, dbWrapper }
 const dbWrapper = {
     prepare(sql) {
+        if (!db) throw new Error('Veritabanı henüz başlatılmadı');
         return db.prepare(sql);
     }
 };

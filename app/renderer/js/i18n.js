@@ -25,6 +25,8 @@ const translations = {
         "server_placeholder": "Uzak sunucu adresi (localhost/davet)",
         "room_label": "Ağ Anahtarı",
         "room_placeholder": "Doğrulanmış ağ kimliği",
+        "room_placeholder_create": "Yeni uçtan uca şifreli ağ bağlamı oluşturun",
+        "room_placeholder_join": "Kriptografik erişim odası anahtarı",
         "password_label": "Erişim Şifresi (E2EE)",
         "password_placeholder": "Şifrenizi güvenle girin",
         "btn_connect": "Bağlan",
@@ -42,6 +44,7 @@ const translations = {
         "audio_settings_desc": "Ses giriş ve çıkış cihazlarınızı seçin ve test edin.",
         "mic_label": "Giriş Aygıtı (Mikrofon)",
         "speaker_label": "Çıkış Aygıtı (Hoparlör)",
+        "noise_suppression_label": "Gürültü Engelleme (Yapay Zeka)",
         "btn_test_mic": "🎙️ Mikrofonu Test Et",
         "btn_test_speaker": "🔊 Hoparlörü Test Et",
         "btn_stop_test": "⏹️ Testi Durdur",
@@ -205,6 +208,8 @@ const translations = {
         "server_placeholder": "Remote server address (localhost/invite)",
         "room_label": "Network Key",
         "room_placeholder": "Verified network ID",
+        "room_placeholder_create": "Create a new end-to-end encrypted network context",
+        "room_placeholder_join": "Cryptographic access room key",
         "password_label": "Access Password (E2EE)",
         "password_placeholder": "Enter your password securely",
         "btn_connect": "Connect",
@@ -219,9 +224,10 @@ const translations = {
         "sample_user": "Sample User",
         
         "audio_settings": "Audio Settings",
-        "audio_settings_desc": "Select and test your audio inputs and outputs.",
+        "audio_settings_desc": "Select and test your audio input and output devices.",
         "mic_label": "Input Device (Microphone)",
         "speaker_label": "Output Device (Speaker)",
+        "noise_suppression_label": "Noise Suppression (AI)",
         "btn_test_mic": "🎙️ Test Microphone",
         "btn_test_speaker": "🔊 Test Speaker",
         "btn_stop_test": "⏹️ Stop Test",
@@ -383,6 +389,8 @@ const translations = {
         "server_placeholder": "Navnîşana serverê (localhost/vexwendin)",
         "room_label": "Bişkojka Torê",
         "room_placeholder": "Nasnameya torê ya pejirandî",
+        "room_placeholder_create": "Têkiliyek nû ya tora şîfrekirî ji serî heta dawiyê biafirînin",
+        "room_placeholder_join": "Mifteya odeya gihîştina krîptografîk",
         "password_label": "Şîfreya Gihîştinê",
         "password_placeholder": "Şîfreya xwe bi ewlehî binivîse",
         "btn_connect": "Têkeve",
@@ -396,11 +404,12 @@ const translations = {
         "color_preview_text": "Pêşdîtin:",
         "sample_user": "Bikarhênerê Mînak",
         
-        "audio_settings": "Mîhengên Deng",
-        "audio_settings_desc": "Cîhazên dengê xwe hilbijêrin û biceribînin.",
-        "mic_label": "Amûra Têketinê (Mîkrofon)",
+        "audio_settings": "Mîhengên Dengê",
+        "audio_settings_desc": "Amûrên deng ên ketin û derketinê hilbijêrin û biceribînin.",
+        "mic_label": "Amûra Ketinê (Mîkrofon)",
         "speaker_label": "Amûra Derketinê (Axaftvan)",
-        "btn_test_mic": "🎙️ Mîkrofon Biceribîne",
+        "noise_suppression_label": "Kêmkirina Dengê Zêde (AI)",
+        "btn_test_mic": "🎙️ Mîkrofonê Biceribîne",
         "btn_test_speaker": "🔊 Axaftvan Biceribîne",
         "btn_stop_test": "⏹️ Testê Rawestîne",
         "select_loading": "Tê barkirin...",
@@ -539,7 +548,7 @@ const translations = {
     }
 };
 
-let currentLang = localStorage.getItem('dc_app_lang') || 'tr';
+let currentLang = localStorage.getItem('haven_app_lang') || 'tr';
 
 function translatePage() {
     document.querySelectorAll('[data-lang-key]').forEach(el => {
@@ -571,7 +580,7 @@ function t(key) {
 function setLanguage(lang) {
     if (!translations[lang]) return;
     currentLang = lang;
-    localStorage.setItem('dc_app_lang', lang);
+    localStorage.setItem('haven_app_lang', lang);
     translatePage();
 }
 

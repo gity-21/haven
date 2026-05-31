@@ -51,7 +51,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     writeToClipboard: (text) => ipcRenderer.invoke('clipboard:write', text),
 
     // Ekran Paylaşımı (Ekran/Pencere Listesi Alma)
-    getDesktopSources: (opts) => ipcRenderer.invoke('desktop-capturer-get-sources', opts)
+    getDesktopSources: (opts) => ipcRenderer.invoke('desktop-capturer-get-sources', opts),
+
+    // Admin token'ını al (sunucu sahibi için otomatik yetkilendirme)
+    getAdminToken: () => ipcRenderer.invoke('get-admin-token')
 });
 
 // DOM yüklendiğinde Ctrl+Scroll ve Ctrl+Plus/Minus zoom'u engelle

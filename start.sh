@@ -7,7 +7,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo -e "${BLUE}🚀 DC Private Chat Başlatılıyor...${NC}"
+echo -e "${BLUE}🚀 Haven Başlatılıyor...${NC}"
 
 echo -e "${YELLOW}🧹 Eski işlemler temizleniyor...${NC}"
 killall -9 cloudflared 2>/dev/null

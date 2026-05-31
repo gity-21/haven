@@ -109,9 +109,27 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 // ============================================
 // FIX #8: IP kontrolü kaldırıldı. trust proxy açıkken X-Forwarded-For
 // başlığını sahteleyerek admin erişimi bypass edilebiliyordu.
-// Şimdi Bearer token zorunlu. Token .env dosyasında ADMIN_TOKEN olarak
-// tutulur. Üretmek için: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || null;
+// Şimdi Bearer token zorunlu.
+
+// ADMIN_TOKEN yoksa otomatik üret ve dosyaya yaz (Electron host modu için)
+const crypto = require('crypto');
+const adminTokenFile = process.env.DATA_DIR
+    ? path.join(process.env.DATA_DIR, 'admin-token.txt')
+    : path.join(__dirname, '..', 'data', 'admin-token.txt');
+
+let ADMIN_TOKEN = process.env.ADMIN_TOKEN || null;
+if (!ADMIN_TOKEN) {
+    // Otomatik token üret
+    ADMIN_TOKEN = crypto.randomBytes(32).toString('hex');
+    try {
+        const tokenDir = path.dirname(adminTokenFile);
+        if (!fs.existsSync(tokenDir)) fs.mkdirSync(tokenDir, { recursive: true });
+        fs.writeFileSync(adminTokenFile, ADMIN_TOKEN, 'utf-8');
+        console.log('[ADMIN] Otomatik admin token üretildi ve kaydedildi.');
+    } catch (e) {
+        console.error('[ADMIN] Token dosyası yazılamadı:', e.message);
+    }
+}
 
 function adminOnly(req, res, next) {
     // ADMIN_TOKEN tanımlı değilse admin panel devre dışı
@@ -376,8 +394,23 @@ async function startServer(portArg = null) {
                     socket.to(socket.roomKey).emit('username-changed', {
                         oldUsername: prevNickname,
                         newUsername: socket.nickname,
-                        avatarColor: socket.avatarColor
+                        avatarColor: socket.avatarColor,
+                        profilePic: socket.profilePic,
+                        userId: socket.userId || socket.id
                     });
+                }
+
+                // Eğer sesli aramadaysa, activeVoiceUsers listesinde de adını güncelle ve odadakilere yeni listeyi yolla
+                if (activeVoiceUsers.has(socket.roomKey)) {
+                    const voiceRoom = activeVoiceUsers.get(socket.roomKey);
+                    if (voiceRoom.has(socket.id)) {
+                        const voiceUser = voiceRoom.get(socket.id);
+                        voiceUser.username = socket.nickname;
+                        voiceUser.avatarColor = socket.avatarColor;
+                        voiceUser.profilePic = socket.profilePic;
+                        
+                        io.to(socket.roomKey).emit('active-voice-users', Array.from(voiceRoom.values()));
+                    }
                 }
             } catch (e) {
                 console.error('İsim güncelleme hatası:', e);

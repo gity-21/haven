@@ -1,5 +1,5 @@
 @echo off
-title Haven Private Chat - Windows Starter
+title Haven - Windows Starter
 echo.
 echo      /$$   /$$                                     
 echo     ^| $$  ^| $$                                     
@@ -10,26 +10,32 @@ echo     ^| $$  ^| $$ /$$__  $$  \  $$$/ ^| $$_____/^| $$  ^| $$
 echo     ^| $$  ^| $$^|  $$$$$$$   \  $/  ^|  $$$$$$$^| $$  ^| $$
 echo     ^|__/  ^|__/ \_______/    \_/    \_______/^|__/  ^|__/
 echo.
-echo [INFO] Haven Private Chat Baslatiliyor...
+echo [INFO] Haven Baslatiliyor...
 echo.
 
 :: Temizlik
 echo [WAIT] Eski islemler temizleniyor...
 taskkill /F /IM cloudflared.exe /T >nul 2>&1
-taskkill /F /IM node.exe /FI "WINDOWTITLE eq HavenServer" >nul 2>&1
+taskkill /F /IM electron.exe /T >nul 2>&1
 timeout /t 2 /nobreak >nul
 
 :: Veri klasoru kontrolu
 if not exist data mkdir data
 
-:: Sunucuyu baslat
-echo [SERVER] Sunucu arka planda baslatiliyor...
-start "HavenServer" /B npm run server
+:: Cloudflare binary kontrolu ve indirme
+set "CF_BIN=node_modules\cloudflared\bin\cloudflared.exe"
+if not exist "%CF_BIN%" (
+    echo [DOWNLOAD] cloudflared.exe indiriliyor...
+    node -e "const cf = require('cloudflared'); cf.install(cf.DEFAULT_CLOUDFLARED_BIN).then(() => console.log('[OK] cloudflared indirildi')).catch(e => { console.error('[ERROR] cloudflared indirilemedi:', e.message); process.exit(1); })"
+    if errorlevel 1 (
+        echo [ERROR] cloudflared indirilemedi! Tunnel olmadan devam ediliyor...
+        goto open_app
+    )
+)
 
-:: Cloudflare Tünelini baslat
+:: Cloudflare Tunelini baslat (Sunucu Electron tarafindan baslatilacak, tunel 3847'ye yonlendirir)
 echo [TUNNEL] Cloudflare Tunnel baslatiliyor...
-:: npx cloudflared kullanıyoruz çünkü node_modules içinde hazır
-start "HavenTunnel" /B cmd /c npx cloudflared tunnel --edge-ip-version 4 --region us --url http://127.0.0.1:3847 > data\tunnel.log 2>&1
+start "HavenTunnel" /B cmd /c "%CF_BIN%" tunnel --edge-ip-version 4 --region us --url http://127.0.0.1:3847 > data\tunnel.log 2>&1
 
 echo [WAIT] Cloudflare tunel adresi bekleniyor...
 echo.
@@ -56,13 +62,12 @@ echo [OK] Login ekraninda otomatik doldurulacak.
 :open_app
 echo.
 echo [APP] Haven Masaustu uygulamasi aciliyor...
+echo [INFO] Sunucu Electron tarafindan otomatik baslatilacak.
 npm start
 
 :: Kapanıs
 echo.
 echo [EXIT] Uygulama kapatildi. Servisler durduruluyor...
 taskkill /F /IM cloudflared.exe /T >nul 2>&1
-:: Node sunucusunu isminden bulup kapatıyoruz
-taskkill /F /FI "WINDOWTITLE eq HavenServer" >nul 2>&1
 echo [INFO] Gorusmek uzere!
 pause

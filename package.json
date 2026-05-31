@@ -1,5 +1,5 @@
 {
-    "name": "dc-private-chat",
+    "name": "haven",
     "version": "1.0.0",
     "description": "Private desktop chat application - Premium Discord-like invite-only rooms",
     "homepage": "https://github.com/haven-chat/haven",
@@ -9,6 +9,7 @@
         "server": "node server/index.js",
         "dev": "electron . --dev",
         "build:win": "electron-builder --win",
+        "build:setup": "electron-builder --win nsis",
         "build:linux": "electron-builder --linux",
         "test": "jest",
         "test:watch": "jest --watch",
@@ -16,7 +17,7 @@
         "test:verbose": "jest --verbose"
     },
     "build": {
-        "appId": "com.dc.private-chat",
+        "appId": "com.haven.app",
         "productName": "Haven",
         "asar": true,
         "directories": {
@@ -29,14 +30,29 @@
             "node_modules/**/*",
             "package.json"
         ],
+        "extraResources": [
+            {
+                "from": "node_modules/cloudflared/bin/",
+                "to": "cloudflared",
+                "filter": ["**/*"]
+            }
+        ],
         "win": {
             "target": [
-                "zip"
+                "nsis"
             ],
-            "icon": "assets/icon.png",
-            "signtoolOptions": {
-                "publisherName": "DC Team"
-            }
+            "icon": "assets/icon.png"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true,
+            "shortcutName": "Haven",
+            "installerIcon": "assets/icon.ico",
+            "uninstallerIcon": "assets/icon.ico",
+            "installerHeaderIcon": "assets/icon.ico",
+            "deleteAppDataOnUninstall": false
         },
         "linux": {
             "target": [
@@ -45,10 +61,6 @@
             ],
             "icon": "assets/icon.png",
             "category": "Network"
-        },
-        "nsis": {
-            "oneClick": false,
-            "allowToChangeInstallationDirectory": true
         }
     },
     "dependencies": {
@@ -68,13 +80,13 @@
     },
     "devDependencies": {
         "concurrently": "^9.1.2",
-        "electron": "^34.2.0",
+        "electron": "^34.5.8",
         "electron-builder": "^25.1.8",
         "jest": "^30.3.0",
         "supertest": "^7.2.2"
     },
     "author": {
-        "name": "DC Team",
+        "name": "Haven Team",
         "email": "haven@dcteam.dev"
     },
     "license": "MIT",

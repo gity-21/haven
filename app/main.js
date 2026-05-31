@@ -10,18 +10,28 @@
  * - Ekran ve kamera/ses izinlerine otomatik onay veren güvenlik ayarları.
  */
 
-const { app, BrowserWindow, ipcMain, shell, clipboard } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, clipboard, Tray, Menu } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const { spawn } = require('child_process');
+const net = require('net');
+
+const checkPort = (port) => new Promise((resolve) => {
+    const tester = net.createServer()
+        .once('error', err => resolve(err.code === 'EADDRINUSE'))
+        .once('listening', () => tester.once('close', () => resolve(false)).close())
+        .listen(port);
+});
 
 // Uygulama adını ve ID'sini ayarla (Bildirimlerde 'Haven' görünmesi için)
 app.name = 'Haven';
 if (process.platform === 'win32') {
-    app.setAppUserModelId('com.dc.private-chat');
+    app.setAppUserModelId('com.haven.app');
 }
 
-const fs = require('fs');
 
-// Veri depolama konumu (App Data altındaki DC-Chat-Data klasörü)
+
+// Veri depolama konumu (App Data altındaki Haven klasörü)
 const appDataPath = app.isPackaged
     ? path.join(app.getPath('userData'), 'data')
     : path.resolve(__dirname, '..', 'data');
@@ -37,6 +47,12 @@ process.env.DATA_DIR = appDataPath;
 app.commandLine.appendSwitch('enable-speech-dispatcher');
 app.commandLine.appendSwitch('enable-usermedia-screen-capturing');
 app.commandLine.appendSwitch('allow-http-screen-capture');
+
+// FIX: Electron DNS çözümleme sorunu — STUN sunucuları çözülemeyebilir.
+// Chromium'un async DNS çözücüsünü etkinleştir (sistem DNS'ini daha güvenilir kullanır)
+app.commandLine.appendSwitch('enable-features', 'AsyncDns');
+// WebRTC'nin mDNS ICE adaylarını kullanmasına izin ver (yerel ağ keşfi için)
+app.commandLine.appendSwitch('enable-webrtc-hide-local-ips-with-mdns', 'disabled');
 // Disable hardware acceleration ONLY if there are specific known issues with transparent windows
 // But generally, turning this off causes massive lag, especially on Linux (Wayland/X11).
 // app.disableHardwareAcceleration();
@@ -45,12 +61,14 @@ app.commandLine.appendSwitch('allow-http-screen-capture');
 
 // Linux'ta Wayland ve genel GPU performansı için ek optimizasyon (Opsiyonel ama faydalıdır)
 if (process.platform === 'linux') {
-    app.commandLine.appendSwitch('enable-features', 'WaylandWindowDecorations');
+    app.commandLine.appendSwitch('enable-features', 'WaylandWindowDecorations,AsyncDns');
     app.commandLine.appendSwitch('enable-gpu-rasterization');
     app.commandLine.appendSwitch('ignore-gpu-blocklist'); // Genelde Arch'da kapalı kalan GPU'yu zorlar
 }
 
 let mainWindow;
+let tray = null;
+let isQuiting = false;
 
 /**
  * Ana pencereyi oluştur
@@ -72,7 +90,10 @@ function createWindow() {
             // Bu iki ayar SOP/CSP korumalarını devre dışı bırakıyordu.
             // Medya izinleri setPermissionRequestHandler ile yönetildiğinden burada gerekmez.
             webviewTag: true, // YouTube <webview> embed için
-            experimentalFeatures: true
+            experimentalFeatures: true,
+            // FIX: WebRTC audio elementlerinin kullanıcı etkileşimi olmadan oynatılmasını sağla.
+            // Bu olmadan Electron, uzak katılımcıların sesini autoplay ile oynatamıyor.
+            autoplayPolicy: 'no-user-gesture-required'
         }
     });
 
@@ -101,6 +122,15 @@ function createWindow() {
         if (input.control && (input.key === '+' || input.key === '-' || input.key === '=' || input.key === '0')) {
             event.preventDefault();
         }
+    });
+
+    // Kapatma düğmesine basıldığında arka plana (Tray) küçült
+    mainWindow.on('close', function (event) {
+        if (!isQuiting) {
+            event.preventDefault();
+            mainWindow.hide();
+        }
+        return false;
     });
 }
 
@@ -150,6 +180,19 @@ ipcMain.handle('get-tunnel-url', () => {
     return null;
 });
 
+// Admin token'ını oku (sunucu otomatik üretip dosyaya yazmıştır)
+ipcMain.handle('get-admin-token', () => {
+    try {
+        const tokenFile = path.join(appDataPath, 'admin-token.txt');
+        if (fs.existsSync(tokenFile)) {
+            return fs.readFileSync(tokenFile, 'utf-8').trim();
+        }
+    } catch (e) {
+        console.error('Admin token okunamadı:', e.message);
+    }
+    return null;
+});
+
 ipcMain.handle('get-local-server-url', () => {
     if (serverInstance && serverInstance.server) {
         return `http://127.0.0.1:${serverInstance.server.address().port}`;
@@ -161,17 +204,66 @@ let activeTunnel = null;
 let activeTunnelUrl = null;
 let serverInstance = null;
 
+// Cloudflared tünel sürecini başlatan yardımcı fonksiyon
+function spawnTunnel(cloudflaredBin, port, resolve, reject) {
+    const { spawn } = require('child_process');
+
+    activeTunnel = spawn(cloudflaredBin, [
+        'tunnel',
+        '--edge-ip-version', '4',
+        '--url', `http://127.0.0.1:${port}`
+    ], {
+        windowsHide: true
+    });
+
+    let resolved = false;
+
+    const handleOutput = (data) => {
+        const output = data.toString();
+        const match = output.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
+        if (match && !resolved) {
+            resolved = true;
+            activeTunnelUrl = match[0];
+            resolve(activeTunnelUrl);
+        }
+    };
+
+    activeTunnel.stdout.on('data', handleOutput);
+    activeTunnel.stderr.on('data', handleOutput);
+
+    activeTunnel.on('close', (code) => {
+        console.log(`Cloudflare process kapandı. Code: ${code}`);
+        activeTunnel = null;
+        activeTunnelUrl = null;
+        if (!resolved) {
+            reject(new Error("Cloudflare tunnel başlatılamadı veya çok erken kapandı."));
+        }
+    });
+
+    activeTunnel.on('error', (err) => {
+        activeTunnel = null;
+        activeTunnelUrl = null;
+        if (!resolved) {
+            reject(err);
+        }
+    });
+}
+
 ipcMain.handle('start-host', async () => {
     try {
-        // Sunucuyu her zaman Electron içinden başlat (Node.js versiyon uyumu için)
-        // start.sh'den bağımsız olarak sunucu Electron'un kendi Node.js'i ile çalışmalı
-        // çünkü better-sqlite3 native modülü Electron'un Node versiyonuna göre derlenir.
+        // Sunucuyu başlatmadan önce portun kullanımda olup olmadığını kontrol et
         if (!serverInstance) {
-            const { startServer } = require('../server/index.js');
-            serverInstance = await startServer(3847); // Sabit port: start.sh tüneli de 3847'ye yönlendirir
+            const inUse = await checkPort(3847);
+            if (inUse) {
+                console.log('[Electron-IPC] Port 3847 zaten kullanımda, arka plan sunucusu çalışıyor kabul ediliyor.');
+            } else {
+                const { startServer } = require('../server/index.js');
+                serverInstance = await startServer(3847);
+                console.log(`[Electron-IPC] Sunucu başarıyla başlatıldı, port: ${serverInstance.server.address().port}`);
+            }
         }
 
-        // 1) Eğer dc / start.sh üzerinden dışarıdan bir tünel açılmışsa DİREKT olarak onu kullan.
+        // 1) Eğer komut satırı / start.sh üzerinden dışarıdan bir tünel açılmışsa DİREKT olarak onu kullan.
         // Cloudflare ücretsiz tünel limitine takılmamak ve çakışmayı (xhr poll error) önlemek için en güvenlisi bu.
         try {
             const tunnelFile = path.join(appDataPath, 'tunnel-url.txt');
@@ -192,58 +284,40 @@ ipcMain.handle('start-host', async () => {
             return activeTunnelUrl;
         }
 
-        const address = serverInstance.server.address();
-        const activePort = address.port;
+        const activePort = serverInstance ? serverInstance.server.address().port : 3847;
 
         return new Promise((resolve, reject) => {
             const { spawn } = require('child_process');
 
-            // Windows'ta npx -> npx.cmd olmalı ve shell: true gerekiyor
-            const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-            activeTunnel = spawn(npxCmd, [
-                'cloudflared',
-                'tunnel',
-                '--edge-ip-version', '4',
-                '--url', `http://127.0.0.1:${activePort}`
-            ], {
-                shell: true,
-                windowsHide: true
-            });
+            // Paketlenmiş modda: extraResources/cloudflared/cloudflared.exe
+            // Geliştirme modunda: node_modules/cloudflared/bin/cloudflared.exe
+            let cloudflaredBin;
+            if (app.isPackaged) {
+                cloudflaredBin = path.join(process.resourcesPath, 'cloudflared', 'cloudflared.exe');
+            } else {
+                cloudflaredBin = path.join(__dirname, '..', 'node_modules', 'cloudflared', 'bin', 'cloudflared.exe');
+            }
 
-            let resolved = false;
-
-            const handleOutput = (data) => {
-                const output = data.toString();
-                // Cloudflared çıktı formatı: |  https://lindsay-wage-degree.trycloudflare.com  |
-                const match = output.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
-
-                if (match && !resolved) {
-                    resolved = true;
-                    activeTunnelUrl = match[0];
-                    resolve(activeTunnelUrl);
+            // Binary yoksa indirmeyi dene
+            if (!fs.existsSync(cloudflaredBin)) {
+                console.log('[Tunnel] cloudflared binary bulunamadı, indiriliyor...');
+                try {
+                    const cf = require('cloudflared');
+                    // Senkron indirme bekleyemeyiz, async çöz
+                    cf.install(cloudflaredBin).then(() => {
+                        console.log('[Tunnel] cloudflared indirildi:', cloudflaredBin);
+                        spawnTunnel(cloudflaredBin, activePort, resolve, reject);
+                    }).catch(dlErr => {
+                        reject(new Error('cloudflared indirilemedi: ' + dlErr.message));
+                    });
+                    return;
+                } catch (e) {
+                    reject(new Error('cloudflared binary bulunamadı ve indirilemedi: ' + e.message));
+                    return;
                 }
-            };
+            }
 
-            // cloudflared çıktıları konsol yapılandırmasına göre stdout veya stderr'de çıkabilir
-            activeTunnel.stdout.on('data', handleOutput);
-            activeTunnel.stderr.on('data', handleOutput);
-
-            activeTunnel.on('close', (code) => {
-                console.log(`Cloudflare process kapandı. Code: ${code}`);
-                activeTunnel = null;
-                activeTunnelUrl = null;
-                if (!resolved) {
-                    reject(new Error("Cloudflare tunnel başlatılamadı veya çok erken kapandı."));
-                }
-            });
-
-            activeTunnel.on('error', (err) => {
-                activeTunnel = null;
-                activeTunnelUrl = null;
-                if (!resolved) {
-                    reject(err);
-                }
-            });
+            spawnTunnel(cloudflaredBin, activePort, resolve, reject);
         });
     } catch (err) {
         console.error("Host başlatılamadı:", err);
@@ -312,22 +386,19 @@ ipcMain.handle('desktop-capturer-get-sources', async (event, opts) => {
 app.whenReady().then(async () => {
     const { session } = require('electron');
 
-    // Sunucuyu Electron açılır açılmaz başlat (Node.js versiyon uyumu için)
-    // better-sqlite3 native modülü Electron'un Node versiyonuna göre derlendiğinden
-    // sunucu her zaman Electron process'i içinden çalışmalı.
     if (!serverInstance) {
         try {
             const { startServer } = require('../server/index.js');
             serverInstance = await startServer(3847);
-            console.log('[Electron] Sunucu başarıyla başlatıldı, port: 3847');
+            console.log(`[Electron] Sunucu başarıyla başlatıldı, port: ${serverInstance.server.address().port}`);
         } catch (err) {
             console.error('[Electron] Sunucu başlatılamadı:', err.message);
-            // Port meşgulse rastgele port dene
             if (err.code === 'EADDRINUSE') {
+                console.log('[Electron] Port 3847 meşgul, rastgele port deneniyor...');
                 try {
                     const { startServer } = require('../server/index.js');
                     serverInstance = await startServer(0);
-                    console.log('[Electron] Sunucu rastgele portta başlatıldı:', serverInstance.server.address().port);
+                    console.log(`[Electron] Sunucu rastgele portta başlatıldı: ${serverInstance.server.address().port}`);
                 } catch (err2) {
                     console.error('[Electron] Sunucu hiçbir portta başlatılamadı:', err2.message);
                 }
@@ -354,6 +425,37 @@ app.whenReady().then(async () => {
     });
 
     createWindow();
+
+    // Sistem Tepsisi (Tray) İkonu ve Menüsü
+    let iconPath;
+    if (process.platform === 'win32') {
+        iconPath = path.join(__dirname, '..', 'assets', 'icon.ico');
+    } else {
+        iconPath = path.join(__dirname, '..', 'assets', 'icon.png');
+    }
+    
+    // Fallback if ico doesn't exist
+    if (!fs.existsSync(iconPath)) {
+        iconPath = path.join(__dirname, '..', 'assets', 'icon.png');
+    }
+
+    tray = new Tray(iconPath);
+    tray.setToolTip('Haven');
+    
+    const contextMenu = Menu.buildFromTemplate([
+        { label: 'Haven', enabled: false },
+        { type: 'separator' },
+        { label: 'Göster', click: () => { mainWindow.show(); } },
+        { label: 'Çıkış', click: () => { 
+            isQuiting = true; 
+            app.quit(); 
+        } }
+    ]);
+    tray.setContextMenu(contextMenu);
+    
+    tray.on('click', () => {
+        mainWindow.show();
+    });
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {

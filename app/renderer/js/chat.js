@@ -8,37 +8,37 @@
  * - Bildirimleri, mesaj geçmişini ve kullanıcı arayüzü güncellemelerini idare eder.
  *
  * Ayarlar / Depolanan Veriler:
- * - dc_profile_pic, dc_server_url, dc_nickname, dc_room, dc_avatar, dc_login_theme
- * - (dc_room_password KALDIRILDI — FIX #4: artık sessionStorage kullanılıyor)
+ * - haven_profile_pic, haven_server_url, haven_nickname, haven_room, haven_avatar, haven_login_theme
+ * - (haven_room_password KALDIRILDI — FIX #4: artık sessionStorage kullanılıyor)
  */
 
 const isWeb = window.location.protocol === 'http:' || window.location.protocol === 'https:';
 const defaultServer = isWeb ? window.location.origin : 'http://localhost:3847';
 
 // Kalıcı kullanıcı kimliği oluştur (bir kez üretilir, hep aynı kalır)
-if (!localStorage.getItem('dc_user_id')) {
-    localStorage.setItem('dc_user_id', 'user_' + Date.now() + '_' + Math.floor(Math.random() * 100000));
+if (!localStorage.getItem('haven_user_id')) {
+    localStorage.setItem('haven_user_id', 'user_' + Date.now() + '_' + Math.floor(Math.random() * 100000));
 }
 
 const state = {
     socket: null,
-    userId: localStorage.getItem('dc_user_id'),
-    nickname: localStorage.getItem('dc_nickname'),
-    roomKey: localStorage.getItem('dc_room'),
-    avatarColor: localStorage.getItem('dc_avatar') || '#6366f1',
-    profilePic: localStorage.getItem('dc_profile_pic') || null,
-    authKey: localStorage.getItem('dc_auth_key') || null,
+    userId: localStorage.getItem('haven_user_id'),
+    nickname: localStorage.getItem('haven_nickname'),
+    roomKey: localStorage.getItem('haven_room'),
+    avatarColor: localStorage.getItem('haven_avatar') || '#6366f1',
+    profilePic: localStorage.getItem('haven_profile_pic') || null,
+    authKey: localStorage.getItem('haven_auth_key') || null,
     // FIX #4: Şifre artık localStorage'dan değil sessionStorage'dan okunuyor.
     // sessionStorage sekme kapanınca silinir; diğer sekmelere ve eklentilere paylaşılmaz.
-    roomPassword: sessionStorage.getItem('dc_session_password') || null,
-    joinMode: localStorage.getItem('dc_join_mode') || 'join',
-    serverUrl: isWeb ? window.location.origin : (localStorage.getItem('dc_server_url') || defaultServer),
+    roomPassword: sessionStorage.getItem('haven_session_password') || null,
+    joinMode: localStorage.getItem('haven_join_mode') || 'join',
+    serverUrl: isWeb ? window.location.origin : (localStorage.getItem('haven_server_url') || defaultServer),
     users: [], // Bu odadaki online kişiler
     lastMessageUserId: null, // Grouping için aslında username kullanılacak
     lastMessageTime: null,   // Son mesajın zamanı (5 dk gruplama için)
     lastMessageDateString: null, // Tarih ayırıcı için
     replyingTo: null, // Yanıtlanan mesaj ({id, username, content})
-    adminToken: localStorage.getItem('dc_admin_token') || null, // FIX #8: Admin token (opsiyonel)
+    adminToken: localStorage.getItem('haven_admin_token') || null, // FIX #8: Admin token (opsiyonel)
     pendingImages: [], // Gönderilmeyi bekleyen görseller (Blob objeleri)
     currentPreviewIndex: 0,
     viewOnceEnabled: false
@@ -151,6 +151,10 @@ const LEGACY_SALT = 'HavenSecureSalt2026'; // Yalnızca salt'sız eski odalar i�
 let e2eeKey = null;
 let pendingE2EEInit = false; // Salt bekleniyor mu?
 
+// FIX: E2EE anahtar türetme süresi boyunca room-history'nin beklemesi için Promise mekanizması
+let e2eeReadyResolve = null;
+let e2eeReadyPromise = null;
+
 // ============================================
 // FIX #6: İSTEMCİ TARAFI XSS KORUMASI
 // ============================================
@@ -224,8 +228,15 @@ async function decryptMessage(base64text) {
 
 async function initialize() {
     // Temayı Yükle
-    const savedTheme = localStorage.getItem('dc_login_theme') || 'space';
+    const savedTheme = localStorage.getItem('haven_login_theme') || 'space';
     document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // Gürültü Engelleme Yükle
+    const savedNoiseSetting = localStorage.getItem('haven_noise_suppression');
+    const chatNoiseCheckbox = document.getElementById('settings-noise-suppression');
+    if (chatNoiseCheckbox && savedNoiseSetting === 'false') {
+        chatNoiseCheckbox.checked = false;
+    }
 
     // Güvenlik Check — FIX #4: roomPassword sessionStorage'dan okunuyor
     // state.roomPassword bu noktada henüz set edilmiş durumda (satır 30)
@@ -242,6 +253,11 @@ async function initialize() {
     // Salt, join-room eventi başarılı olduktan sonra room-e2ee-salt olarak geliyor.
     // pendingE2EEInit = true olarak işaretlenir; salt gelince initE2EEWithSalt() çağrılır.
     pendingE2EEInit = true; // salt gelince türetme başlatılacak
+
+    // FIX: room-history'nin E2EE anahtarını bekleyebilmesi için Promise oluştur
+    e2eeReadyPromise = new Promise(resolve => {
+        e2eeReadyResolve = resolve;
+    });
 
     // UI'da Odayı yaz
     el.roomNameDisplay.textContent = state.roomKey;
@@ -292,17 +308,23 @@ function connectSocket() {
         const pw = state.roomPassword; // sessionStorage'dan okunmuştu
         if (!pw) {
             console.error('[E2EE] Şifre bulunamadı, anahtar türetilemiyor.');
+            if (e2eeReadyResolve) e2eeReadyResolve(); // Bekleyenleri serbest bırak
             return;
         }
         try {
             // salt null ise eski oda — legacy salt ile geriye uyumlu çalış
             e2eeKey = await deriveE2EEKey(pw, salt || null);
-            sessionStorage.removeItem('dc_session_password');
+            sessionStorage.removeItem('haven_session_password');
             state.roomPassword = null;
             console.log('[E2EE] Anahtar türetildi.', salt ? '(per-room salt)' : '(legacy salt)');
         } catch (err) {
             console.error('[E2EE] Anahtar türetme hatası:', err);
             showToast(window.i18n ? window.i18n.t('security_fail') : 'Güvenlik sistemi başlatılamadı!', 'error');
+        }
+        // FIX: E2EE anahtarı hazır — room-history bekleyenlerini serbest bırak
+        if (e2eeReadyResolve) {
+            e2eeReadyResolve();
+            e2eeReadyResolve = null;
         }
     });
 
@@ -324,7 +346,7 @@ function connectSocket() {
 
     // Odaya Giriş Hatası
     state.socket.on('join-error', (errMsg) => {
-        localStorage.setItem('dc_login_error', "Odaya Bağlanılamadı: " + errMsg);
+        localStorage.setItem('haven_login_error', "Odaya Bağlanılamadı: " + errMsg);
         if (window.electronAPI && window.electronAPI.navigateToLogin) {
             window.electronAPI.navigateToLogin();
         } else {
@@ -362,12 +384,36 @@ function connectSocket() {
     });
 
     // Başka bir kullanıcı ismini değiştirdiğinde ekrandaki mesajları güncelle
-    state.socket.on('username-changed', ({ oldUsername, newUsername }) => {
+    state.socket.on('username-changed', ({ oldUsername, newUsername, avatarColor, profilePic, userId }) => {
         document.querySelectorAll('.message-username').forEach(usernameEl => {
             if (usernameEl.textContent === oldUsername) {
                 usernameEl.textContent = newUsername;
             }
         });
+
+        // Sesli sohbetteyse katılımcı kartını güncelle
+        if (userId) {
+            const card = document.getElementById(`voice-card-${userId}`);
+            if (card) {
+                const nameSpan = card.querySelector('span');
+                if (nameSpan) nameSpan.textContent = newUsername;
+                
+                const avatarDiv = document.getElementById(`avatar-${userId}`);
+                if (avatarDiv) {
+                    if (profilePic) {
+                        avatarDiv.style.backgroundImage = `url('${profilePic}')`;
+                        avatarDiv.style.backgroundColor = 'transparent';
+                        avatarDiv.style.color = 'transparent';
+                        avatarDiv.textContent = '';
+                    } else {
+                        avatarDiv.style.backgroundImage = 'none';
+                        avatarDiv.style.backgroundColor = avatarColor || '#6366f1';
+                        avatarDiv.style.color = 'white';
+                        avatarDiv.textContent = newUsername.charAt(0).toUpperCase();
+                    }
+                }
+            }
+        }
     });
 
     // Sunucu yöneticisi mevcut odayı silerse
@@ -394,6 +440,11 @@ function connectSocket() {
     // Yeni mesaj geldiğinde
     state.socket.on('new-message', async (msg) => {
         if (el.emptyState) el.emptyState.style.display = 'none';
+
+        // FIX: E2EE anahtarı henüz hazır olmayabilir (PBKDF2 türetme sürüyor olabilir)
+        if (e2eeReadyPromise) {
+            await e2eeReadyPromise;
+        }
 
         // Gelen mesajı şifresini çöz
         msg.content = await decryptMessage(msg.content);
@@ -583,6 +634,12 @@ function connectSocket() {
 
     // Mesaj geçmişi
     state.socket.on('room-history', async (messages) => {
+        // FIX: E2EE anahtarının hazır olmasını bekle (PBKDF2 türetmesi ~100-500ms sürer)
+        // Salt eventi daha önce gelse bile deriveE2EEKey async, bu yüzden anahtar henüz hazır olmayabilir.
+        if (e2eeReadyPromise) {
+            await e2eeReadyPromise;
+        }
+
         el.chatMessages.innerHTML = '';
         state.lastMessageUserId = null;
         state.lastMessageTime = null;
@@ -1553,8 +1610,15 @@ function setupEventListeners() {
             // Görselleri artık P2P yerine SUNUCUYA yüklüyoruz (Sayfa yenileyince kaybolmaması için)
             for (const blob of state.pendingImages) {
                 try {
-                    // Dosya adı yoksa oluştur
-                    const filename = (blob.name && blob.name !== 'image.png') ? blob.name : `image_${Date.now()}.jpg`;
+                    // Dosya adı yoksa blob türüne göre oluştur (FIX: PNG blob'u .jpg uzantısıyla gönderilmemeli)
+                    let filename;
+                    if (blob.name && blob.name !== 'image.png') {
+                        filename = blob.name;
+                    } else {
+                        const extMap = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp' };
+                        const ext = extMap[blob.type] || 'png';
+                        filename = `image_${Date.now()}.${ext}`;
+                    }
                     const file = new File([blob], filename, { type: blob.type });
 
                     await window.uploadFileToChat(file);
@@ -1638,8 +1702,14 @@ function setupEventListeners() {
                         reject(new Error(res.message));
                     }
                 } else {
-                    showToast(window.i18n ? window.i18n.t('server_error') : 'Sunucu hatası!', 'error');
-                    reject(new Error('Server error'));
+                    // Sunucu hata mesajını göstermeye çalış
+                    let errMsg = window.i18n ? window.i18n.t('server_error') : 'Sunucu hatası!';
+                    try {
+                        const errRes = JSON.parse(xhr.responseText);
+                        if (errRes.message) errMsg = errRes.message;
+                    } catch (_) {}
+                    showToast(errMsg, 'error');
+                    reject(new Error(errMsg));
                 }
             };
 
@@ -1688,11 +1758,11 @@ function setupEventListeners() {
     // Oturum Kapatma (Login ekranına dön)
     el.btnLogout.addEventListener('click', () => {
         window.showConfirmModal(window.i18n ? window.i18n.t('msg_leave_room') : 'Gizli odadan çıkmak istediğinize emin misiniz?', () => {
-            localStorage.removeItem('dc_nickname');
-            localStorage.removeItem('dc_room');
-            localStorage.removeItem('dc_auth_key');
-            // FIX #4: dc_room_password artık localStorage'da yok; sessionStorage da temizleniyor.
-            sessionStorage.removeItem('dc_session_password');
+            localStorage.removeItem('haven_nickname');
+            localStorage.removeItem('haven_room');
+            localStorage.removeItem('haven_auth_key');
+            // FIX #4: haven_room_password artık localStorage'da yok; sessionStorage da temizleniyor.
+            sessionStorage.removeItem('haven_session_password');
             if (window.electronAPI && window.electronAPI.navigateToLogin) {
                 window.electronAPI.navigateToLogin();
             } else {
@@ -1819,7 +1889,7 @@ function setupEventListeners() {
                         });
                     }
                     // Kayıtlı cihazı seç
-                    const savedMic = localStorage.getItem('dc_mic_device');
+                    const savedMic = localStorage.getItem('haven_mic_device');
                     if (savedMic) micSelect.value = savedMic;
                 }
 
@@ -1836,7 +1906,7 @@ function setupEventListeners() {
                             speakerSelect.appendChild(opt);
                         });
                     }
-                    const savedSpeaker = localStorage.getItem('dc_speaker_device');
+                    const savedSpeaker = localStorage.getItem('haven_speaker_device');
                     if (savedSpeaker) speakerSelect.value = savedSpeaker;
                 }
             } catch (err) {
@@ -1953,11 +2023,11 @@ function setupEventListeners() {
             }
 
             if (el.chatThemeSelector) {
-                el.chatThemeSelector.value = localStorage.getItem('dc_login_theme') || 'space';
+                el.chatThemeSelector.value = localStorage.getItem('haven_login_theme') || 'space';
             }
 
             if (el.chatLangSelect) {
-                el.chatLangSelect.value = localStorage.getItem('dc_app_lang') || 'tr';
+                el.chatLangSelect.value = localStorage.getItem('haven_app_lang') || 'tr';
             }
 
             if (state.profilePic) {
@@ -2041,12 +2111,12 @@ function setupEventListeners() {
         const closeChatSettings = () => {
             stopMicTest();
             // Eğer iptal edildiyse veya kapatılırsa, temayı eski haline (kayıtlı olana) döndür
-            const savedTheme = localStorage.getItem('dc_login_theme') || 'space';
+            const savedTheme = localStorage.getItem('haven_login_theme') || 'space';
             document.documentElement.setAttribute('data-theme', savedTheme);
             if (el.chatThemeSelector) el.chatThemeSelector.value = savedTheme;
 
             // Dili de kayitli olandan dondur eger iptal edildiyse
-            const savedLang = localStorage.getItem('dc_app_lang') || 'tr';
+            const savedLang = localStorage.getItem('haven_app_lang') || 'tr';
             if (window.i18n) window.i18n.setLanguage(savedLang);
             if (el.chatLangSelect) el.chatLangSelect.value = savedLang;
 
@@ -2061,19 +2131,19 @@ function setupEventListeners() {
             state.nickname = el.chatUsernameInput.value.trim() || 'Kullanıcı';
             state.avatarColor = el.chatAvatarColorInput.value;
 
-            localStorage.setItem('dc_nickname', state.nickname);
-            localStorage.setItem('dc_avatar', state.avatarColor);
+            localStorage.setItem('haven_nickname', state.nickname);
+            localStorage.setItem('haven_avatar', state.avatarColor);
 
             if (state.profilePic) {
-                localStorage.setItem('dc_profile_pic', state.profilePic);
+                localStorage.setItem('haven_profile_pic', state.profilePic);
             } else {
-                localStorage.removeItem('dc_profile_pic');
+                localStorage.removeItem('haven_profile_pic');
             }
 
             if (el.chatThemeSelector) {
                 const selectedTheme = el.chatThemeSelector.value;
                 document.documentElement.setAttribute('data-theme', selectedTheme);
-                localStorage.setItem('dc_login_theme', selectedTheme);
+                localStorage.setItem('haven_login_theme', selectedTheme);
             }
 
             if (el.chatLangSelect && window.i18n) {
@@ -2083,8 +2153,14 @@ function setupEventListeners() {
             // Ses cihaz tercihlerini kaydet
             const micSelect = document.getElementById('settings-mic-select');
             const speakerSelect = document.getElementById('settings-speaker-select');
-            if (micSelect?.value) localStorage.setItem('dc_mic_device', micSelect.value);
-            if (speakerSelect?.value) localStorage.setItem('dc_speaker_device', speakerSelect.value);
+            if (micSelect?.value) localStorage.setItem('haven_mic_device', micSelect.value);
+            if (speakerSelect?.value) localStorage.setItem('haven_speaker_device', speakerSelect.value);
+
+            // Gürültü Engelleme tercihini kaydet
+            const noiseCheckbox = document.getElementById('settings-noise-suppression');
+            if (noiseCheckbox) {
+                localStorage.setItem('haven_noise_suppression', noiseCheckbox.checked);
+            }
 
             // Ekrandaki eski mesajlardaki kullanıcı adlarını ve renklerini anında güncelle
             const nicknameToCheck = oldNickname || state.nickname;
@@ -2110,6 +2186,28 @@ function setupEventListeners() {
                     }
                 }
             });
+
+            // Sesli sohbetteysek kendi kartımızı güncelle
+            const myCard = document.getElementById(`voice-card-${state.userId}`);
+            if (myCard) {
+                const nameSpan = myCard.querySelector('span');
+                if (nameSpan) nameSpan.textContent = state.nickname + (window.i18n ? ` (${window.i18n.t('you')})` : ' (Sen)');
+                
+                const avatarDiv = document.getElementById(`avatar-${state.userId}`);
+                if (avatarDiv) {
+                    if (state.profilePic) {
+                        avatarDiv.style.backgroundImage = `url('${state.profilePic}')`;
+                        avatarDiv.style.backgroundColor = 'transparent';
+                        avatarDiv.style.color = 'transparent';
+                        avatarDiv.textContent = '';
+                    } else {
+                        avatarDiv.style.backgroundImage = 'none';
+                        avatarDiv.style.backgroundColor = state.avatarColor || '#6366f1';
+                        avatarDiv.style.color = 'white';
+                        avatarDiv.textContent = state.nickname.charAt(0).toUpperCase();
+                    }
+                }
+            }
 
             if (state.socket) {
                 state.socket.emit('update-profile', {
@@ -2192,8 +2290,15 @@ async function sendMessage() {
         // Önce görselleri gönder
         if (hasImages) {
             for (const blob of state.pendingImages) {
-                // Burada da sunucuya yükle kullanıyoruz (Sayfa yenileme fix)
-                const filename = (blob.name && blob.name !== 'image.png') ? blob.name : `image_${Date.now()}.jpg`;
+                // FIX: Blob türüne göre doğru uzantı seç (PNG blob'u .jpg olarak gönderilmemeli)
+                let filename;
+                if (blob.name && blob.name !== 'image.png') {
+                    filename = blob.name;
+                } else {
+                    const extMap = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp' };
+                    const ext = extMap[blob.type] || 'png';
+                    filename = `image_${Date.now()}.${ext}`;
+                }
                 const file = new File([blob], filename, { type: blob.type });
                 await window.uploadFileToChat(file);
             }
@@ -2461,8 +2566,13 @@ function linkify(text) {
 
 const rtcConfig = {
     iceServers: [
+        // Google STUN — domain + IP fallback (Electron DNS çözümleyemeyebilir)
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
+        // Alternatif STUN sunucuları (Google DNS çözülemediğinde yedek)
+        { urls: 'stun:stun.cloudflare.com:3478' },
+        { urls: 'stun:stun.nextcloud.com:443' },
+        { urls: 'stun:stun.relay.metered.ca:80' },
         // TODO (Güvenlik): Google STUN yerine aşağıdaki gibi bir TURN sunucusu eklenmesi IP sızıntılarını tamamen durdurur:
         // { urls: 'turn:ornek-turn.com:3478', username: 'kullanici', credential: 'sifre' }
     ]
@@ -2484,7 +2594,31 @@ async function joinVoiceRoom(withVideo = false) {
 
     let stream;
     try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: withVideo });
+        const savedMic = localStorage.getItem('haven_mic_device');
+        const useNoiseSuppression = localStorage.getItem('haven_noise_suppression') !== 'false';
+        
+        const advancedAudioConfig = {
+            echoCancellation: true,
+            noiseSuppression: useNoiseSuppression,
+            autoGainControl: true,
+            googEchoCancellation: true,
+            googExperimentalEchoCancellation: true,
+            googNoiseSuppression: useNoiseSuppression,
+            googExperimentalNoiseSuppression: useNoiseSuppression,
+            googHighpassFilter: useNoiseSuppression,
+            googTypingNoiseDetection: useNoiseSuppression,
+            googAudioMirroring: false
+        };
+
+        const audioConstraint = savedMic ? { 
+            deviceId: { exact: savedMic },
+            ...advancedAudioConfig
+        } : advancedAudioConfig;
+
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: audioConstraint, 
+            video: withVideo 
+        });
     } catch (err) {
         console.error("getUserMedia hatası:", err);
 
@@ -2525,18 +2659,18 @@ async function joinVoiceRoom(withVideo = false) {
 function updateToggleButtonsUI() {
     if (el.btnToggleMic) {
         el.btnToggleMic.innerHTML = voiceState.isMicOn
-            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg> ' + (window.i18n ? window.i18n.t('audio_mic') : 'Mikrofon')
-            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent-danger);"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12H3a9 9 0 0 0 8.46 8.94V23h1v-2.06A8.96 8.96 0 0 0 19 16.95"></path></svg> <span style="color:var(--accent-danger);">' + (window.i18n ? window.i18n.t('mute') : 'Susturuldu') + '</span>';
+            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg> <span data-lang-key="audio_mic">' + (window.i18n ? window.i18n.t('audio_mic') : 'Mikrofon') + '</span>'
+            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent-danger);"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12H3a9 9 0 0 0 8.46 8.94V23h1v-2.06A8.96 8.96 0 0 0 19 16.95"></path></svg> <span style="color:var(--accent-danger);" data-lang-key="mute">' + (window.i18n ? window.i18n.t('mute') : 'Susturuldu') + '</span>';
     }
     if (el.btnToggleVideo) {
         el.btnToggleVideo.innerHTML = voiceState.isVideoOn
-            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M21 17.16V5a2 2 0 0 0-2-2H7.95"></path><path d="M3.27 3.27A2 2 0 0 0 1 5v14a2 2 0 0 0 2 2h14c.55 0 1.05-.22 1.41-.59"></path><polygon points="23 7 16 12 23 17 23 7"></polygon></svg> ' + (window.i18n ? window.i18n.t('chat_cam_on') : 'Kamera Kapat')
-            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg> ' + (window.i18n ? window.i18n.t('chat_cam_off') : 'Kamera Aç');
+            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M21 17.16V5a2 2 0 0 0-2-2H7.95"></path><path d="M3.27 3.27A2 2 0 0 0 1 5v14a2 2 0 0 0 2 2h14c.55 0 1.05-.22 1.41-.59"></path><polygon points="23 7 16 12 23 17 23 7"></polygon></svg> <span data-lang-key="chat_cam_on">' + (window.i18n ? window.i18n.t('chat_cam_on') : 'Kamera Kapat') + '</span>'
+            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg> <span data-lang-key="chat_cam_off">' + (window.i18n ? window.i18n.t('chat_cam_off') : 'Kamera Aç') + '</span>';
     }
     if (el.btnToggleScreen) {
         el.btnToggleScreen.innerHTML = voiceState.isScreenOn
-            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line><line x1="1" y1="1" x2="23" y2="23"></line></svg> ' + (window.i18n ? window.i18n.t('chat_stop_screen') : 'Paylaşımı Durdur')
-            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> ' + (window.i18n ? window.i18n.t('chat_screen_share') : 'Ekran Paylaş');
+            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line><line x1="1" y1="1" x2="23" y2="23"></line></svg> <span data-lang-key="chat_stop_screen">' + (window.i18n ? window.i18n.t('chat_stop_screen') : 'Paylaşımı Durdur') + '</span>'
+            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> <span data-lang-key="chat_screen_share">' + (window.i18n ? window.i18n.t('chat_screen_share') : 'Ekran Paylaş') + '</span>';
     }
 }
 
@@ -3057,6 +3191,15 @@ async function createPeerConnection(targetId, isInitiator) {
                 } else {
                     audioEl.srcObject.addTrack(event.track);
                     setupVolumeMeter(audioEl.srcObject, targetId);
+                }
+
+                // FIX: Electron'da autoplay engellenebilir, açıkça play() çağır
+                audioEl.play().catch(e => console.warn('[Ses] Audio play hatası (autoplay engeli?):', e));
+
+                // Kullanıcının seçtiği hoparlörü uygula
+                const savedSpeaker = localStorage.getItem('haven_speaker_device');
+                if (savedSpeaker && typeof audioEl.setSinkId === 'function') {
+                    audioEl.setSinkId(savedSpeaker).catch(e => console.warn('Hoparlör değiştirilemedi:', e));
                 }
             }
         }
@@ -3717,7 +3860,7 @@ window.previewMedia = function (url, type) {
 // ADMIN PANEL MANTIĞI
 // ============================================
 
-function checkAdminStatus() {
+async function checkAdminStatus() {
     const adminTabBtn = document.getElementById('admin-tab-btn');
     const adminTabSep = document.getElementById('admin-tab-separator');
     const adminTabLbl = document.getElementById('admin-tab-label');
@@ -3725,6 +3868,20 @@ function checkAdminStatus() {
     const isLocalhostHost = state.serverUrl.includes('localhost') || state.serverUrl.includes('127.0.0.1');
 
     if (isLocalhostHost) {
+        // Electron'daysa admin token'ı otomatik al (sunucu başlarken üretip dosyaya yazmıştır)
+        if (window.electronAPI && window.electronAPI.getAdminToken && !state.adminToken) {
+            try {
+                const token = await window.electronAPI.getAdminToken();
+                if (token) {
+                    state.adminToken = token;
+                    localStorage.setItem('haven_admin_token', token);
+                    console.log('[ADMIN] Admin token otomatik olarak alındı.');
+                }
+            } catch (e) {
+                console.warn('[ADMIN] Admin token alınamadı:', e);
+            }
+        }
+
         if (adminTabBtn) adminTabBtn.style.display = 'flex';
         if (adminTabSep) adminTabSep.style.display = 'block';
         if (adminTabLbl) adminTabLbl.style.display = 'block';
