@@ -2586,8 +2586,6 @@ const rtcConfig = {
         { urls: 'stun:stun1.l.google.com:19302' },
         // Alternatif STUN sunucuları (Google DNS çözülemediğinde yedek)
         { urls: 'stun:stun.cloudflare.com:3478' },
-        { urls: 'stun:stun.nextcloud.com:443' },
-        { urls: 'stun:stun.relay.metered.ca:80' },
         // TODO (Güvenlik): Google STUN yerine aşağıdaki gibi bir TURN sunucusu eklenmesi IP sızıntılarını tamamen durdurur:
         // { urls: 'turn:ornek-turn.com:3478', username: 'kullanici', credential: 'sifre' }
     ]
