@@ -94,6 +94,11 @@ const upload = multer({
 });
 
 router.post('/', (req, res) => {
+    const token = req.headers['x-upload-token'];
+    if (!token || !global.validUploadTokens || !global.validUploadTokens.has(token)) {
+        return res.status(403).json({ success: false, message: 'Yetkisiz dosya yükleme girişimi. Lütfen odaya tekrar bağlanın.' });
+    }
+
     upload.single('file')(req, res, (err) => {
         if (err) {
             return res.status(400).json({ success: false, message: err.message || 'Dosya yüklenemedi' });

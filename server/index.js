@@ -25,6 +25,9 @@ const { rateLimit } = require('express-rate-limit');
 // sanitize-html kaldırıldı (FIX #6) — XSS koruması artık istemci tarafında
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
+
+global.validUploadTokens = new Set();
 
 const PORT = process.env.PORT || 3847;
 const HOST = process.env.HOST || '0.0.0.0'; // 0.0.0.0 allows tunnel to connect via any interface
@@ -52,14 +55,29 @@ const corsOptions = {
         }
         // Whitelist kontrolü
         if (CORS_WHITELIST.has(origin)) return callback(null, true);
-        // Cloudflare ücretsiz tünel subdomain'leri dinamik; pattern ile izin ver
-        if (origin.endsWith('.trycloudflare.com')) return callback(null, true);
         // Diğer tüm origin'ler reddedilir
         console.warn(`[CORS] Reddedilen origin: ${origin}`);
         callback(new Error(`CORS: İzin verilmeyen origin → ${origin}`));
     },
     methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
     credentials: false
+};
+
+// CORS middleware that dynamically checks Host for trycloudflare domains
+const customCorsMiddleware = (req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && origin.endsWith('.trycloudflare.com')) {
+        const host = req.headers.host;
+        if (host && origin.includes(host)) {
+            res.header('Access-Control-Allow-Origin', origin);
+            res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+            res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-upload-token');
+            if (req.method === 'OPTIONS') return res.sendStatus(200);
+            return next();
+        }
+    }
+    // Fall back to standard CORS
+    cors(corsOptions)(req, res, next);
 };
 
 const io = new Server(server, {
@@ -73,8 +91,8 @@ const io = new Server(server, {
     maxHttpBufferSize: 10e6 // 10 MB (dosya transferi için)
 });
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Preflight isteklerini karşıla
+app.use(customCorsMiddleware);
+app.options('*', customCorsMiddleware); // Preflight isteklerini karşıla
 app.use(express.json());
 
 // DDoS / Brute-Force koruması (Rate Limiting)
@@ -112,7 +130,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 // Şimdi Bearer token zorunlu.
 
 // ADMIN_TOKEN yoksa otomatik üret ve dosyaya yaz (Electron host modu için)
-const crypto = require('crypto');
+// const crypto = require('crypto');
 const adminTokenFile = process.env.DATA_DIR
     ? path.join(process.env.DATA_DIR, 'admin-token.txt')
     : path.join(__dirname, '..', 'data', 'admin-token.txt');
@@ -254,7 +272,7 @@ async function startServer(portArg = null) {
         }
 
         // Kullanıcı giriş yaptığında (Bir Odaya katıldığında)
-        socket.on('join-room', ({ userId, nickname, roomKey, avatarColor, profilePic, authKey, mode }) => {
+        socket.on('join-room', ({ userId, userToken, nickname, roomKey, avatarColor, profilePic, authKey, mode }) => {
             if (!_rateCheck('join-room')) return;
             if (!nickname || !roomKey || !authKey) {
                 socket.emit('join-error', 'Takma ad, oda anahtarı ve şifre gereklidir.');
@@ -291,12 +309,24 @@ async function startServer(portArg = null) {
                 }
             }
 
-            socket.userId = userId || null;
+            if (userToken) {
+                // FIX IDOR: Derive userId securely from secret userToken
+                socket.userId = crypto.createHash('sha256').update(userToken).digest('hex').substring(0, 16);
+            } else {
+                socket.userId = userId || null;
+            }
             socket.nickname = nickname;
             socket.roomKey = roomKey;
             socket.avatarColor = avatarColor || '#6366f1';
             socket.profilePic = profilePic || null;
             socket.sessionId = uuidv4(); // Mesaj silme güvenliği için benzersiz oturum ID
+
+            // Generate and emit uploadToken for this session
+            const uploadToken = crypto.randomBytes(16).toString('hex');
+            socket.uploadToken = uploadToken;
+            global.validUploadTokens.add(uploadToken);
+            setTimeout(() => global.validUploadTokens.delete(uploadToken), 12 * 60 * 60 * 1000); // 12 hours max
+            socket.emit('upload-token', uploadToken);
 
             // Eski mesajları sahiplenme ve güncelleme
             if (socket.userId) {
@@ -576,6 +606,10 @@ async function startServer(portArg = null) {
                 }
 
                 updateOnlineUsers(socket.roomKey);
+            }
+
+            if (socket.uploadToken) {
+                global.validUploadTokens.delete(socket.uploadToken);
             }
         });
 
