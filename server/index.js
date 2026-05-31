@@ -291,6 +291,14 @@ async function startServer(portArg = null) {
                     console.warn(`[RATE] ${socket.nickname || socket.id} → '${eventName}' limit aşıldı!`);
                     c.warned = true;
                 }
+                
+                // Çok agresif saldırı durumunda (limitin çok üstüne çıkılırsa) bağlantıyı tamamen kes!
+                if (c.count > limit.max + 50) {
+                    console.error(`[DDOS] ${socket.nickname || socket.id} aşırı istek gönderdiği için bağlantısı koparıldı!`);
+                    socket.disconnect(true);
+                }
+                
+                c.count++;
                 return false;
             }
             c.count++;
