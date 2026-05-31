@@ -17,10 +17,11 @@ Haven, tam gizlilik odaklı, sıfır kayıt mantığıyla çalışan premium bir
 ## 🚀 Öne Çıkan Özellikler
 
 - **🔐 Oda Tabanlı Anonimlik & Uçtan Uca Şifreleme (E2EE)**: Hesap açma yoktur. Kullanıcıların mesajları, görselleri ve P2P transfer anonsları AES-GCM ile odanın şifresi kullanılarak cihazda (istemcide) şifrelenir. Sunucu hiçbir zaman mesajların açık halini göremez veya okuyamaz.
-- **🎙️ P2P Sesli ve Görüntülü İletişim**: WebRTC protokolü ile sunucuyu yormayan, gecikmesiz ve yüksek kaliteli P2P sesli ve görüntülü görüşmeler yapın.
+- **🎙️ P2P Sesli ve Görüntülü İletişim**: WebRTC protokolü ile sunucuyu yormayan, gecikmesiz ve yüksek kaliteli P2P görüşmeler yapın. (Ses kalitesi **384 kbps Stereo** müzik stüdyosu kalitesine çıkartılmış ve agresif **Noise Gate / Gürültü Engelleme** eklenmiştir).
 - **🖥️ P2P Ekran Paylaşımı**: Toplantılarınızı veya kod incelemelerinizi WebRTC tabanlı düşük gecikmeli ekran paylaşımı (pencere veya tüm ekran seçimi) ile gerçekleştirin.
 - **⚡ Şifreli P2P Büyük Dosya Transferi**: Dosyalarınız sunucuya yüklenmeden, doğrudan gönderici ile alıcı arasında (P2P), WebRTC veri kanalları (DataChannels) kullanılarak şifreli ve limitsiz boyutta aktarılır.
 - **🔊 Sesli Mesajlar ve Görseller**: Normal mesajların yanı sıra ses kayıtları, görseller ve diğer dokümanları paylaşabilirsiniz.
+- **🔄 Otomatik Güncelleme (Auto-Updater)**: Uygulama açıldığında arka planda sessizce GitHub Releases üzerinden yeni sürüm kontrolü yapar. Yeni sürüm varsa indirip size onay penceresiyle bildirir.
 - **🌙 Premium & Dinamik Arayüz**: Klasik "Space", yeşil terminal "Hacker" veya modern "Antigravity" (Beyaz) temalarından birini seçebilirsiniz. Gelişmiş CSS ile akıcı animasyonlar barındırır.
 - **🌍 Çoklu Dil Desteği (i18n)**: Türkçe, İngilizce (English) ve Kürtçe (Kurdî) dillerini destekler. Dil anında değiştirilebilir.
 - **🌐 Dahili Cloudflare Tunnel**: Uygulama başlatıldığında `start.sh` veya `start_windows.bat` betikleri otomatik olarak Cloudflare Tunnel açar. Modemden port açmanıza gerek kalmadan uygulamanıza internet üzerinden güvenle erişilebilir.
@@ -79,7 +80,6 @@ npm run build:win
 - **Sürükle & Bırak:** Dosyaları doğrudan sohbet penceresine sürükleyerek P2P transferi başlatma.
 - **Güvenlik Artırımı:** Görüldükten sonra kendini imha eden mesajlar ve MITM saldırılarına karşı anahtar (fingerprint) doğrulama.
 - **Kişiselleştirme:** Arama ekranlarında mikrofon/kamera cihaz seçimi ve arka plan bulanıklaştırma.
-- **DevOps:** Electron otomatik güncelleme (auto-updater) entegrasyonu.
 
 ---
 **GITY Team** tarafından <3 ile geliştirilmiştir.
