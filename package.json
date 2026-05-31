@@ -1,6 +1,6 @@
 {
     "name": "haven",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "description": "Private desktop chat application - Premium Discord-like invite-only rooms",
     "homepage": "https://github.com/haven-chat/haven",
     "main": "app/main.js",
@@ -67,7 +67,6 @@
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",
-        "better-sqlite3": "^12.8.0",
         "cloudflared": "^0.7.1",
         "cors": "^2.8.5",
         "dotenv": "^16.4.7",
