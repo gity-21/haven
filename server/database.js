@@ -85,11 +85,14 @@ function createBetterSqlite3Wrapper(db) {
                     try {
                         db.run(sql, flatParams.length > 0 ? flatParams : undefined);
                         isDirty = true;
+                        // Kaydetmeden ÖNCE ID ve değişiklik sayısını al!
+                        const changes = db.getRowsModified();
+                        const insertId = getLastInsertRowId(db);
                         // Hemen kaydet (veri kaybını önlemek için)
                         saveToDisk();
                         return {
-                            changes: db.getRowsModified(),
-                            lastInsertRowid: getLastInsertRowId(db)
+                            changes: changes,
+                            lastInsertRowid: insertId
                         };
                     } catch (e) {
                         throw e;
@@ -172,9 +175,17 @@ async function initializeDatabase() {
             session_id   TEXT,
             reactions    TEXT DEFAULT '{}',
             user_id      TEXT,
+            user_secret  TEXT,
             created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
+
+    // Migration: Eğer veritabanı eski versiyonsa user_secret kolonunu ekle
+    try {
+        sqliteDb.run("ALTER TABLE messages ADD COLUMN user_secret TEXT");
+    } catch (e) {
+        // Kolon zaten varsa (veya başka bir hata ise) yoksay
+    }
 
     sqliteDb.run(`
         CREATE INDEX IF NOT EXISTS idx_messages_room

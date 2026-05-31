@@ -6,7 +6,7 @@
     "main": "app/main.js",
     "scripts": {
         "start": "electron .",
-        "server": "node server/index.js",
+        "server": "node server/server.js",
         "dev": "electron . --dev",
         "build:win": "electron-builder --win",
         "build:setup": "electron-builder --win nsis",

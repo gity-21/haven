@@ -1887,7 +1887,7 @@ function setupEventListeners() {
             return;
         }
 
-        msgEl.textContent = message;
+        msgEl.innerHTML = message;
         modal.style.display = 'flex';
         setTimeout(() => modal.style.opacity = '1', 10);
 

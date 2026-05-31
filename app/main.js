@@ -109,6 +109,12 @@ function createWindow() {
     // Login sayfasıyla başla
     mainWindow.loadFile(path.join(__dirname, 'renderer', 'login.html'));
 
+    // BROWSER KONSOLUNU DOSYAYA YAZ (Hata Ayıklama İçin)
+    mainWindow.webContents.on('console-message', (event, messageDetails) => {
+        const fs = require('fs');
+        fs.appendFileSync('browser-debug.log', `[BROWSER CONSOLE] [${messageDetails.level}] ${messageDetails.message}\n`);
+    });
+
     // Zoom seviyesini kilitle (Zoom bug'ını önler - cascade/tekrarlama hatası)
     mainWindow.webContents.on('did-finish-load', () => {
         mainWindow.webContents.setZoomFactor(1);
@@ -263,7 +269,7 @@ ipcMain.handle('start-host', async () => {
             if (inUse) {
                 console.log('[Electron-IPC] Port 3847 zaten kullanımda, arka plan sunucusu çalışıyor kabul ediliyor.');
             } else {
-                const { startServer } = require('../server/index.js');
+                const { startServer } = require('../server/server.js');
                 serverInstance = await startServer(3847);
                 console.log(`[Electron-IPC] Sunucu başarıyla başlatıldı, port: ${serverInstance.server.address().port}`);
             }
@@ -454,7 +460,7 @@ app.whenReady().then(async () => {
     if (!serverInstance) {
         (async () => {
             try {
-                const { startServer } = require('../server/index.js');
+                const { startServer } = require('../server/server.js');
                 serverInstance = await startServer(3847);
                 console.log(`[Electron] Sunucu başarıyla başlatıldı, port: ${serverInstance.server.address().port}`);
             } catch (err) {
@@ -462,7 +468,7 @@ app.whenReady().then(async () => {
                 if (err.code === 'EADDRINUSE') {
                     console.log('[Electron] Port 3847 meşgul, rastgele port deneniyor...');
                     try {
-                        const { startServer } = require('../server/index.js');
+                        const { startServer } = require('../server/server.js');
                         serverInstance = await startServer(0);
                         console.log(`[Electron] Sunucu rastgele portta başlatıldı: ${serverInstance.server.address().port}`);
                     } catch (err2) {
