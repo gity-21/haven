@@ -306,7 +306,7 @@ async function startServer(portArg = null) {
         }
 
         // Kullanıcı giriş yaptığında (Bir Odaya katıldığında)
-        socket.on('join-room', ({ userId, userToken, nickname, roomKey, avatarColor, profilePic, authKey, mode }) => {
+        socket.on('join-room', ({ userId, userToken, nickname, roomKey, avatarColor, profilePic, authKey, mode } = {}) => {
             if (!_rateCheck('join-room')) return;
             if (!nickname || !roomKey || !authKey) {
                 socket.emit('join-error', 'Takma ad, oda anahtarı ve şifre gereklidir.');
@@ -433,7 +433,7 @@ async function startServer(portArg = null) {
         });
 
         // Kullanıcı kendi profilini güncellediğinde
-        socket.on('update-profile', ({ oldNickname, nickname, avatarColor, profilePic }) => {
+        socket.on('update-profile', ({ oldNickname, nickname, avatarColor, profilePic } = {}) => {
             if (!socket.roomKey) return;
             const prevNickname = oldNickname || socket.nickname;
             socket.nickname = nickname || socket.nickname;
@@ -485,7 +485,7 @@ async function startServer(portArg = null) {
         });
 
         // Yeni mesaj geldiğinde
-        socket.on('send-message', ({ content, type, replyTo }) => {
+        socket.on('send-message', ({ content, type, replyTo } = {}) => {
             if (!_rateCheck('send-message')) return;
             if (!socket.roomKey || !content) return;
 
@@ -540,7 +540,7 @@ async function startServer(portArg = null) {
         });
 
         // Yazıyor göstergesi
-        socket.on('typing', ({ isTyping }) => {
+        socket.on('typing', ({ isTyping } = {}) => {
             if (!_rateCheck('typing')) return;
             if (!socket.roomKey) return;
             socket.to(socket.roomKey).emit('user-typing', {
@@ -550,7 +550,7 @@ async function startServer(portArg = null) {
         });
 
         // Mesaj silme işlemi
-        socket.on('delete-message', ({ messageId }) => {
+        socket.on('delete-message', ({ messageId } = {}) => {
             if (!socket.roomKey || !messageId) return;
 
             // FIX #10: Sahiplik kontrolü session_id > user_id sırasıyla yapılıyor.
@@ -572,7 +572,7 @@ async function startServer(portArg = null) {
         });
 
         // Mesaj Tepkisi Ekle/Çıkar (Toggle)
-        socket.on('toggle-reaction', ({ messageId, emoji }) => {
+        socket.on('toggle-reaction', ({ messageId, emoji } = {}) => {
             if (!_rateCheck('toggle-reaction')) return;
             if (!socket.roomKey || !messageId || !emoji) return;
 
@@ -750,7 +750,7 @@ async function startServer(portArg = null) {
         });
 
         // WebRTC: İki kişi arasında "Aramayı başlatıyorum" sinyali (SDP Offer)
-        socket.on('webrtc-offer', ({ targetId, offer }) => {
+        socket.on('webrtc-offer', ({ targetId, offer } = {}) => {
             io.to(targetId).emit('webrtc-offer', {
                 senderId: socket.id,
                 senderName: socket.nickname,
@@ -759,7 +759,7 @@ async function startServer(portArg = null) {
         });
 
         // WebRTC: "Aramayı kabul ediyorum" sinyali (SDP Answer)
-        socket.on('webrtc-answer', ({ targetId, answer }) => {
+        socket.on('webrtc-answer', ({ targetId, answer } = {}) => {
             io.to(targetId).emit('webrtc-answer', {
                 senderId: socket.id,
                 answer
@@ -767,7 +767,7 @@ async function startServer(portArg = null) {
         });
 
         // WebRTC: "Kamera/Mikrofon donanım yolları (ICE)" iletişimi
-        socket.on('webrtc-candidate', ({ targetId, candidate }) => {
+        socket.on('webrtc-candidate', ({ targetId, candidate } = {}) => {
             io.to(targetId).emit('webrtc-candidate', {
                 senderId: socket.id,
                 candidate
@@ -775,7 +775,7 @@ async function startServer(portArg = null) {
         });
 
         // Ekran paylaşımı durumunu diğer kullanıcılara ilet
-        socket.on('screen-share-state', ({ isSharing }) => {
+        socket.on('screen-share-state', ({ isSharing } = {}) => {
             if (!socket.roomKey) return;
             socket.to(socket.roomKey).emit('screen-share-state', {
                 userId: socket.id,
@@ -787,7 +787,7 @@ async function startServer(portArg = null) {
         // ============================================
         // WEBRTC P2P DOSYA TRANSFER SİNYALLERİ
         // ============================================
-        socket.on('p2p-file-offer', ({ targetId, offer, fileMeta }) => {
+        socket.on('p2p-file-offer', ({ targetId, offer, fileMeta } = {}) => {
             io.to(targetId).emit('p2p-file-offer', {
                 senderId: socket.id,
                 senderName: socket.nickname,
@@ -796,7 +796,7 @@ async function startServer(portArg = null) {
             });
         });
 
-        socket.on('p2p-file-answer', ({ targetId, answer, fileId }) => {
+        socket.on('p2p-file-answer', ({ targetId, answer, fileId } = {}) => {
             io.to(targetId).emit('p2p-file-answer', {
                 senderId: socket.id,
                 answer,
@@ -804,7 +804,7 @@ async function startServer(portArg = null) {
             });
         });
 
-        socket.on('p2p-file-candidate', ({ targetId, candidate, fileId }) => {
+        socket.on('p2p-file-candidate', ({ targetId, candidate, fileId } = {}) => {
             io.to(targetId).emit('p2p-file-candidate', {
                 senderId: socket.id,
                 candidate,
