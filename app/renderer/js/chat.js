@@ -45,7 +45,8 @@ const state = {
     adminToken: localStorage.getItem('haven_admin_token') || null, // FIX #8: Admin token (opsiyonel)
     pendingImages: [], // Gönderilmeyi bekleyen görseller (Blob objeleri)
     currentPreviewIndex: 0,
-    viewOnceEnabled: false
+    viewOnceEnabled: false,
+    editingMessageId: null // Düzenlenen mesajın ID'si
 };
 
 // Aktif Masaüstü Bildirimleri Takibi
@@ -556,6 +557,52 @@ function connectSocket() {
             typingUsers.delete(username);
         }
         updateTypingDisplay();
+    });
+
+    // Mesaj düzenlendiğinde
+    state.socket.on('message-edited', async ({ messageId, newContent, editHistory, isEdited }) => {
+        try {
+            // Şifreyi çöz
+            const decryptedContent = await decryptMessage(newContent);
+            const safeContent = DOMPurify.sanitize(decryptedContent);
+
+            // Ekranda mesajı bul
+            const textElement = document.querySelector(`.message-text[data-message-id="${messageId}"]`);
+            if (textElement) {
+                textElement.innerHTML = safeContent;
+                
+                // "(düzenlendi)" ibaresi ekle
+                let badge = textElement.parentElement.querySelector('.edit-badge');
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'edit-badge';
+                    badge.style.cssText = 'font-size:10px; color:var(--text-muted); margin-left:6px; cursor:pointer; text-decoration:underline;';
+                    badge.textContent = '(düzenlendi)';
+                    textElement.parentElement.appendChild(badge);
+                }
+
+                // Geçmişi görebilmek için veriyi dataset'e yaz
+                // Gelen editHistory arrayindeki contentler hala şifreli! Tıklanınca çözülecek.
+                badge.dataset.history = JSON.stringify(editHistory);
+                badge.onclick = async () => {
+                    const hArr = JSON.parse(badge.dataset.history);
+                    let historyHtml = '<b>Geçmiş Sürümler:</b><br><br>';
+                    for (let i = 0; i < hArr.length; i++) {
+                        const hItem = hArr[i];
+                        const dateStr = new Date(hItem.edited_at).toLocaleTimeString();
+                        try {
+                            const oldDecrypted = await decryptMessage(hItem.content);
+                            historyHtml += `<i>[${dateStr} öncesi]</i><br>${DOMPurify.sanitize(oldDecrypted)}<br><hr style="border-top:1px solid var(--border-light);margin:4px 0">`;
+                        } catch(e) {
+                            historyHtml += `<i>[${dateStr} öncesi]</i><br>[Şifre çözülemedi]<br><hr>`;
+                        }
+                    }
+                    window.showConfirmModal(historyHtml, () => {});
+                };
+            }
+        } catch (error) {
+            console.error('Düzenlenen mesajın şifresi çözülemedi:', error);
+        }
     });
 
     // Mesaj silindiğinde
@@ -1223,6 +1270,31 @@ function appendMessage(msg) {
                 newTextDiv.innerHTML = safeContent;
                 rowDiv.appendChild(newTextDiv);
 
+                if (msg.is_edited) {
+                    const badge = document.createElement('span');
+                    badge.className = 'edit-badge';
+                    badge.style.cssText = 'font-size:10px; color:var(--text-muted); margin-left:6px; cursor:pointer; text-decoration:underline;';
+                    badge.textContent = '(düzenlendi)';
+                    if (msg.edit_history) badge.dataset.history = msg.edit_history;
+                    badge.onclick = async () => {
+                        if (!badge.dataset.history) return;
+                        const hArr = JSON.parse(badge.dataset.history);
+                        let historyHtml = '<b>Geçmiş Sürümler:</b><br><br>';
+                        for (let i = 0; i < hArr.length; i++) {
+                            const hItem = hArr[i];
+                            const dateStr = new Date(hItem.edited_at).toLocaleTimeString();
+                            try {
+                                const oldDecrypted = await decryptMessage(hItem.content);
+                                historyHtml += `<i>[${dateStr} öncesi]</i><br>${DOMPurify.sanitize(oldDecrypted)}<br><hr style="border-top:1px solid var(--border-light);margin:4px 0">`;
+                            } catch(e) {
+                                historyHtml += `<i>[${dateStr} öncesi]</i><br>[Şifre çözülemedi]<br><hr>`;
+                            }
+                        }
+                        window.showConfirmModal(historyHtml, () => {});
+                    };
+                    rowDiv.appendChild(badge);
+                }
+
                 // Her satıra ait tepki çubuğu
                 const rowReactBar = document.createElement('div');
                 rowReactBar.className = 'reaction-bar';
@@ -1252,6 +1324,20 @@ function appendMessage(msg) {
                     eBtn.onclick = () => window.sendReaction(msg.id, em);
                     hoverToolbar.appendChild(eBtn);
                 });
+
+                // Düzenle butonu (sadece kendi mesajıysa ve 15 dk geçmediyse)
+                const msgTime = new Date(msg.created_at).getTime();
+                const isEditable = isMine && (Date.now() - msgTime <= 15 * 60 * 1000);
+                
+                if (isEditable && msg.type === 'message') {
+                    const editBtn = document.createElement('button');
+                    editBtn.innerHTML = '✏️';
+                    editBtn.title = 'Düzenle';
+                    editBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:12px;padding:1px 4px;';
+                    // We need the raw content here, so we'll pass originalContent
+                    editBtn.onclick = () => window.initiateEdit(msg.id, originalContent);
+                    hoverToolbar.appendChild(editBtn);
+                }
 
                 // Sil butonu (sadece kendi mesajıysa)
                 if (isMine) {
@@ -1283,9 +1369,28 @@ function appendMessage(msg) {
 
     const avatarStyle = msg.profile_pic ? `background-image: url('${msg.profile_pic}'); background-size: cover; background-position: center; color: transparent;` : `background-color: ${msg.avatarColor || '#6366f1'}`;
 
-    messageEl.innerHTML = `<div class="message-avatar" style="${avatarStyle}">${msg.profile_pic ? '' : initial}</div><div class="message-content"><div class="message-header"><div><span class="message-username" style="color: ${msg.avatarColor || '#5865F2'}">${escapeHtml(msg.username)}</span><span class="message-timestamp" style="font-size:11px;color:var(--text-muted);margin-left:8px;">${timeStr}</span></div></div>${replyHtml}<div class="msg-row-wrapper" data-message-id="${msg.id}" style="position:relative;display:block;"><div class="message-text" data-message-id="${msg.id}">${safeContent}</div><div class="reaction-bar">${buildReactionsHtml(msg.id, msg.reactions || '{}')}</div></div></div>`;
+    const editBadgeHtml = msg.is_edited ? `<span class="edit-badge" style="font-size:10px; color:var(--text-muted); margin-left:6px; cursor:pointer; text-decoration:underline;" data-history='${msg.edit_history ? msg.edit_history.replace(/'/g, "&#39;") : "[]"}' onclick="window.viewEditHistory(this)">(düzenlendi)</span>` : '';
+    
+    messageEl.innerHTML = `<div class="message-avatar" style="${avatarStyle}">${msg.profile_pic ? '' : initial}</div><div class="message-content"><div class="message-header"><div><span class="message-username" style="color: ${msg.avatarColor || '#5865F2'}">${escapeHtml(msg.username)}</span><span class="message-timestamp" style="font-size:11px;color:var(--text-muted);margin-left:8px;">${timeStr}</span></div></div>${replyHtml}<div class="msg-row-wrapper" data-message-id="${msg.id}" style="position:relative;display:block;"><div class="message-text" data-message-id="${msg.id}">${safeContent}</div>${editBadgeHtml}<div class="reaction-bar">${buildReactionsHtml(msg.id, msg.reactions || '{}')}</div></div></div>`;
 
     el.chatMessages.appendChild(messageEl);
+
+    window.viewEditHistory = async (badgeElem) => {
+        if (!badgeElem.dataset.history) return;
+        const hArr = JSON.parse(badgeElem.dataset.history);
+        let historyHtml = '<b>Geçmiş Sürümler:</b><br><br>';
+        for (let i = 0; i < hArr.length; i++) {
+            const hItem = hArr[i];
+            const dateStr = new Date(hItem.edited_at).toLocaleTimeString();
+            try {
+                const oldDecrypted = await decryptMessage(hItem.content);
+                historyHtml += `<i>[${dateStr} öncesi]</i><br>${DOMPurify.sanitize(oldDecrypted)}<br><hr style="border-top:1px solid var(--border-light);margin:4px 0">`;
+            } catch(e) {
+                historyHtml += `<i>[${dateStr} öncesi]</i><br>[Şifre çözülemedi]<br><hr>`;
+            }
+        }
+        window.showConfirmModal(historyHtml, () => {});
+    };
 
     // İlk mesaj satırına hover toolbar ekle (sağ tarafta görünür, devam satırlarına benzer şekilde)
     const firstRowWrapper = messageEl.querySelector('.msg-row-wrapper');
@@ -1311,6 +1416,19 @@ function appendMessage(msg) {
             eBtn.onclick = () => window.sendReaction(msg.id, em);
             hoverToolbar.appendChild(eBtn);
         });
+
+        // Düzenle butonu (sadece kendi mesajıysa ve 15 dk geçmediyse)
+        const msgTime = new Date(msg.created_at).getTime();
+        const isEditable = isMine && (Date.now() - msgTime <= 15 * 60 * 1000);
+        
+        if (isEditable && msg.type === 'message') {
+            const editBtn = document.createElement('button');
+            editBtn.innerHTML = '✏️';
+            editBtn.title = 'Düzenle';
+            editBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:12px;padding:1px 4px;';
+            editBtn.onclick = () => window.initiateEdit(msg.id, originalContent);
+            hoverToolbar.appendChild(editBtn);
+        }
 
         // Sil butonu (sadece kendi mesajıysa)
         if (isMine) {
@@ -2325,20 +2443,61 @@ async function sendMessage() {
             }
         }
 
-        // Varsa metni gönder
+        // Varsa metni gönder veya düzenle
         if (rawContent) {
             const encryptedContent = await encryptMessage(rawContent);
-            state.socket.emit('send-message', {
-                content: encryptedContent,
-                type: 'message',
-                replyTo: state.replyingTo ? state.replyingTo.id : null
-            });
+            if (state.editingMessageId) {
+                state.socket.emit('edit-message', {
+                    messageId: state.editingMessageId,
+                    newContent: encryptedContent
+                });
+            } else {
+                state.socket.emit('send-message', {
+                    content: encryptedContent,
+                    type: 'message',
+                    replyTo: state.replyingTo ? state.replyingTo.id : null
+                });
+            }
         }
 
         el.messageInput.value = '';
         el.messageInput.style.height = 'auto';
         window.cancelReply();
+        if (window.cancelEdit) window.cancelEdit();
         setTimeout(() => el.messageInput.focus(), 10);
+    };
+
+    window.initiateEdit = (messageId, rawContent) => {
+        state.editingMessageId = messageId;
+        el.messageInput.value = rawContent;
+        el.messageInput.focus();
+        
+        // Düzenleme UI (Cancel butonu göster vs)
+        const container = document.getElementById('chat-input-container');
+        let editBar = document.getElementById('edit-bar');
+        if (!editBar) {
+            editBar = document.createElement('div');
+            editBar.id = 'edit-bar';
+            editBar.style.cssText = 'background:var(--bg-light); border-top:1px solid var(--border-medium); padding:6px 12px; font-size:12px; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center;';
+            container.insertBefore(editBar, container.firstChild);
+        }
+        editBar.style.display = 'flex';
+        editBar.innerHTML = `<span>Mesaj düzenleniyor...</span><button onclick="window.cancelEdit()" style="background:none;border:none;color:var(--accent-primary);cursor:pointer;">İptal</button>`;
+        
+        // Send butonu iconunu değiştir (Kaydet)
+        const sendIcon = el.sendBtn.querySelector('i') || el.sendBtn;
+        sendIcon.className = 'fas fa-check';
+    };
+
+    window.cancelEdit = () => {
+        state.editingMessageId = null;
+        el.messageInput.value = '';
+        const editBar = document.getElementById('edit-bar');
+        if (editBar) editBar.style.display = 'none';
+        
+        // Send butonu iconunu geri al
+        const sendIcon = el.sendBtn.querySelector('i') || el.sendBtn;
+        sendIcon.className = 'fas fa-paper-plane';
     };
 
     if (hasImages) {

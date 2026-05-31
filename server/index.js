@@ -274,6 +274,7 @@ async function startServer(portArg = null) {
             'join-room':       { max: 3,   windowMs: 10000 }, // 10 sn'de 3 deneme
             'toggle-reaction': { max: 30,  windowMs: 5000  }, // 5 sn'de 30 tepki
             'typing':          { max: 20,  windowMs: 5000  }, // 5 sn'de 20 yazıyor sinyali
+            'edit-message':    { max: 10,  windowMs: 5000  }, // 5 sn'de 10 düzenleme
         };
 
         function _rateCheck(eventName) {
@@ -569,6 +570,56 @@ async function startServer(portArg = null) {
 
             db.prepare('DELETE FROM messages WHERE id = ?').run(messageId);
             io.to(socket.roomKey).emit('message-deleted', messageId);
+        });
+
+        // Mesaj düzenleme işlemi
+        socket.on('edit-message', ({ messageId, newContent } = {}) => {
+            if (!_rateCheck('edit-message')) return;
+            if (!socket.roomKey || !messageId || !newContent) return;
+
+            const msg = db.prepare('SELECT username, user_id, session_id, content, created_at, edit_history FROM messages WHERE id = ? AND room_key = ?').get(messageId, socket.roomKey);
+            if (!msg) return;
+
+            const isOwner =
+                (socket.sessionId && msg.session_id && socket.sessionId === msg.session_id) ||
+                (socket.userId    && msg.user_id    && socket.userId    === msg.user_id);
+
+            if (!isOwner) {
+                console.warn(`[GÜVENLİK] Yetkisiz mesaj düzenleme denemesi: ${socket.nickname} (id: ${messageId})`);
+                return;
+            }
+
+            // 15 Dakika kontrolü
+            const msgTime = new Date(msg.created_at).getTime();
+            const now = Date.now();
+            if (now - msgTime > 15 * 60 * 1000) {
+                // Zaman aşımı
+                socket.emit('error', 'Mesaj düzenleme süresi (15 dk) doldu.');
+                return;
+            }
+
+            // Geçmişi kaydet (Edit History)
+            let historyArray = [];
+            try {
+                if (msg.edit_history) historyArray = JSON.parse(msg.edit_history);
+            } catch(e) {}
+            
+            historyArray.push({
+                content: msg.content,
+                edited_at: new Date().toISOString()
+            });
+            const newHistoryStr = JSON.stringify(historyArray);
+
+            // Veritabanını güncelle
+            db.prepare('UPDATE messages SET content = ?, is_edited = 1, edit_history = ? WHERE id = ?').run(newContent, newHistoryStr, messageId);
+
+            // Odaya duyur
+            io.to(socket.roomKey).emit('message-edited', {
+                messageId: messageId,
+                newContent: newContent,
+                editHistory: historyArray,
+                isEdited: true
+            });
         });
 
         // Mesaj Tepkisi Ekle/Çıkar (Toggle)
