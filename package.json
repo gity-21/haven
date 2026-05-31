@@ -1,7 +1,7 @@
 {
     "name": "haven",
-    "version": "1.0.0",
-    "description": "Private desktop chat application - Premium Discord-like invite-only rooms",
+    "version": "1.0.2",
+    "description": "Haven",
     "homepage": "https://github.com/haven-chat/haven",
     "main": "app/main.js",
     "scripts": {
@@ -34,7 +34,9 @@
             {
                 "from": "node_modules/cloudflared/bin/",
                 "to": "cloudflared",
-                "filter": ["**/*"]
+                "filter": [
+                    "**/*"
+                ]
             }
         ],
         "win": {

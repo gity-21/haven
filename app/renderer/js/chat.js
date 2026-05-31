@@ -20,9 +20,18 @@ if (!localStorage.getItem('haven_user_id')) {
     localStorage.setItem('haven_user_id', 'user_' + Date.now() + '_' + Math.floor(Math.random() * 100000));
 }
 
+// FIX: IDOR zafiyetine karşı gizli oturum anahtarı oluştur (asla yayınlanmaz)
+if (!localStorage.getItem('haven_user_secret')) {
+    const array = new Uint8Array(16);
+    crypto.getRandomValues(array);
+    const secret = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+    localStorage.setItem('haven_user_secret', 'secret_' + secret);
+}
+
 const state = {
     socket: null,
     userId: localStorage.getItem('haven_user_id'),
+    userSecret: localStorage.getItem('haven_user_secret'),
     nickname: localStorage.getItem('haven_nickname'),
     roomKey: localStorage.getItem('haven_room'),
     avatarColor: localStorage.getItem('haven_avatar') || '#6366f1',
@@ -335,6 +344,7 @@ function connectSocket() {
         // Odaya Gir
         state.socket.emit('join-room', {
             userId: state.userId,
+            userSecret: state.userSecret,
             nickname: state.nickname,
             roomKey: state.roomKey,
             avatarColor: state.avatarColor,
@@ -357,13 +367,37 @@ function connectSocket() {
     // Bağlantı hatası
     state.socket.on('connect_error', (err) => {
         console.error('[HATA] Sunucuya bağlanılamadı:', err.message);
-        updateStatus((window.i18n ? window.i18n.t('conn_failed') : 'Bağlantı hatası!') + ' ' + err.message, 'reconnecting');
-        showToast((window.i18n ? window.i18n.t('conn_failed') : 'Bağlantı Hatası') + ': ' + err.message, 'error');
+        
+        // Sesli aramayı kapat
+        if (voiceState.isInVoice) {
+            leaveVoiceRoom();
+        }
+        
+        // Odadan atılma (Login'e dön)
+        localStorage.setItem('haven_login_error', "Sunucu bağlantısı koptu (Websocket Error). Odayı kuran kişi uygulamayı kapatmış olabilir.");
+        if (window.electronAPI && window.electronAPI.navigateToLogin) {
+            window.electronAPI.navigateToLogin();
+        } else {
+            window.location.href = 'login.html';
+        }
     });
 
 
     state.socket.on('disconnect', () => {
-        updateStatus(window.i18n ? window.i18n.t('conn_lost') : 'Bağlantı koptu. Yeniden deneniyor...', 'reconnecting');
+        console.log('[HATA] Bağlantı koptu.');
+        
+        // Sesli aramayı kapat
+        if (voiceState.isInVoice) {
+            leaveVoiceRoom();
+        }
+        
+        // Odadan atılma (Login'e dön)
+        localStorage.setItem('haven_login_error', "Sunucu bağlantısı koptu (Disconnect). Odayı kuran kişi uygulamayı kapatmış olabilir.");
+        if (window.electronAPI && window.electronAPI.navigateToLogin) {
+            window.electronAPI.navigateToLogin();
+        } else {
+            window.location.href = 'login.html';
+        }
     });
 
     // Odaya birisi girdiğinde (notification)
@@ -1758,7 +1792,7 @@ function setupEventListeners() {
     // Oturum Kapatma (Login ekranına dön)
     el.btnLogout.addEventListener('click', () => {
         window.showConfirmModal(window.i18n ? window.i18n.t('msg_leave_room') : 'Gizli odadan çıkmak istediğinize emin misiniz?', () => {
-            localStorage.removeItem('haven_nickname');
+            // FIX: Kullanıcı adı (nickname) kalıcı olması için silinmez.
             localStorage.removeItem('haven_room');
             localStorage.removeItem('haven_auth_key');
             // FIX #4: haven_room_password artık localStorage'da yok; sessionStorage da temizleniyor.
@@ -2638,6 +2672,81 @@ async function joinVoiceRoom(withVideo = false) {
     voiceState.isVideoOn = withVideo;
     voiceState.isScreenOn = false;
 
+    // ===== NOISE GATE (Gürültü Kapısı) =====
+    // Mikrofon sinyalini WebRTC'ye göndermeden önce bir Noise Gate katmanından geçir.
+    // Eşik altındaki sesler (fan, klavye, arka plan uğultusu) tamamen kesilir.
+    const useNoiseGate = localStorage.getItem('haven_noise_suppression') !== 'false';
+    if (useNoiseGate) {
+        try {
+            const ngContext = new (window.AudioContext || window.webkitAudioContext)();
+            const source = ngContext.createMediaStreamSource(stream);
+            const analyser = ngContext.createAnalyser();
+            analyser.fftSize = 2048;
+            analyser.smoothingTimeConstant = 0.3;
+            const gainNode = ngContext.createGain();
+            gainNode.gain.value = 1.0;
+            const destination = ngContext.createMediaStreamDestination();
+            
+            source.connect(analyser);
+            source.connect(gainNode);
+            gainNode.connect(destination);
+            
+            const dataArray = new Float32Array(analyser.fftSize);
+            const NOISE_THRESHOLD = -50; // dB - bu eşiğin altındaki sesler kesilir
+            const ATTACK_TIME = 0.01;    // Ses açılma hızı (saniye)
+            const RELEASE_TIME = 0.15;   // Ses kapanma hızı (saniye)
+            let isGateOpen = false;
+            
+            function processNoiseGate() {
+                if (!voiceState.isInVoice) return;
+                analyser.getFloatTimeDomainData(dataArray);
+                
+                // RMS (Root Mean Square) hesapla - daha doğru ses seviyesi ölçümü
+                let sumSquares = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    sumSquares += dataArray[i] * dataArray[i];
+                }
+                const rms = Math.sqrt(sumSquares / dataArray.length);
+                const dB = 20 * Math.log10(Math.max(rms, 1e-10));
+                
+                const now = ngContext.currentTime;
+                if (dB > NOISE_THRESHOLD) {
+                    // Ses eşiği geçti, kapıyı aç (konuşma algılandı)
+                    if (!isGateOpen) {
+                        gainNode.gain.cancelScheduledValues(now);
+                        gainNode.gain.setTargetAtTime(1.0, now, ATTACK_TIME);
+                        isGateOpen = true;
+                    }
+                } else {
+                    // Ses eşiğin altında, kapıyı kapat (gürültü)
+                    if (isGateOpen) {
+                        gainNode.gain.cancelScheduledValues(now);
+                        gainNode.gain.setTargetAtTime(0.0, now, RELEASE_TIME);
+                        isGateOpen = false;
+                    }
+                }
+                requestAnimationFrame(processNoiseGate);
+            }
+            processNoiseGate();
+            
+            // İşlenmiş sesi kullan (video track varsa koru)
+            const processedStream = destination.stream;
+            if (withVideo) {
+                const videoTrack = stream.getVideoTracks()[0];
+                if (videoTrack) processedStream.addTrack(videoTrack);
+            }
+            voiceState.localStream = processedStream;
+            
+            // Noise Gate referanslarını sakla (temizlik için)
+            voiceState._noiseGate = { context: ngContext, source, analyser, gainNode, destination };
+            
+            console.log('[Noise Gate] Aktif - Eşik:', NOISE_THRESHOLD, 'dB');
+        } catch (ngErr) {
+            console.warn('[Noise Gate] Kurulamadı, ham mikrofon kullanılıyor:', ngErr);
+            voiceState.localStream = stream;
+        }
+    }
+
     el.voiceContainer.style.display = 'block';
     if (el.activeCallBanner) el.activeCallBanner.style.display = 'none';
     el.btnJoinVoice.style.display = 'none';
@@ -2647,10 +2756,10 @@ async function joinVoiceRoom(withVideo = false) {
     updateToggleButtonsUI();
 
     // UI'a Kendimizi ekleyelim
-    createMediaElement('local', state.nickname, state.avatarColor, true, stream, state.profilePic);
+    createMediaElement('local', state.nickname, state.avatarColor, true, voiceState.localStream, state.profilePic);
 
     // Kendi sesimizi analiz için bağlayalım
-    setupVolumeMeter(stream, 'local');
+    setupVolumeMeter(voiceState.localStream, 'local');
 
     state.socket.emit('voice-join');
     showToast(withVideo ? (window.i18n ? window.i18n.t('joined_video') : 'Görüntülü sohbete katıldınız!') : (window.i18n ? window.i18n.t('joined_voice') : 'Sesli sohbete katıldınız!'), 'success');

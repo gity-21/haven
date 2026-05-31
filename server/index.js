@@ -39,7 +39,7 @@ const server = http.createServer(app);
 // Kendi sabit tünel domaininiz varsa TUNNEL_ORIGIN env'e ekleyin.
 const CORS_WHITELIST = new Set([
     'http://localhost:3847',
-    'http://127.0.0.1:3847',        
+    'http://127.0.0.1:3847',
     process.env.TUNNEL_ORIGIN, // Opsiyonel: sabit Cloudflare tünel domain'i
 ].filter(Boolean));
 
@@ -47,13 +47,20 @@ const corsOptions = {
     origin: function (origin, callback) {
         // Electron file:// ve Node.js iç isteklerinde origin null gelir → izin ver
         // Electron'da origin null VEYA 'file://' olarak gelebilir — her ikisine izin ver
-        if (!origin || origin === 'file://' || origin.startsWith('file://')) {
+        // Postman, curl vb. origin göndermeyen (tarayıcı dışı) istekler için izin ver.
+        // Ancak 'null' stringi sandboxed iframe'lerden gelir, buna İZİN VERME!
+        if (origin === undefined) {
             return callback(null, true);
         }
-        // Whitelist kontrolü
+
+        // Electron 'file://' protokolü ile çalışır
+        if (origin === 'file://' || origin.startsWith('file://')) {
+            return callback(null, true);
+        }
+
+        // Whitelist (localhost ve process.env.TUNNEL_ORIGIN)
         if (CORS_WHITELIST.has(origin)) return callback(null, true);
-        // Cloudflare ücretsiz tünel subdomain'leri dinamik; pattern ile izin ver
-        if (origin.endsWith('.trycloudflare.com')) return callback(null, true);
+
         // Diğer tüm origin'ler reddedilir
         console.warn(`[CORS] Reddedilen origin: ${origin}`);
         callback(new Error(`CORS: İzin verilmeyen origin → ${origin}`));
@@ -78,17 +85,20 @@ app.options('*', cors(corsOptions)); // Preflight isteklerini karşıla
 app.use(express.json());
 
 // DDoS / Brute-Force koruması (Rate Limiting)
-// /socket.io/ polling endpoint'i hiçbir zaman rate-limit'e dahil etme!
 const apiLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 dakika
     max: 300,
-    message: 'Çok fazla istek gönderdiniz, lütfen biraz bekleyin.',
-    skip: (req) => req.path.startsWith('/socket.io')
+    message: 'Çok fazla istek gönderdiniz, lütfen biraz bekleyin.'
 });
 
-// Rate limiter’ı yalnızca API rotalarına uygula
-// FIX #14: /api/upload zaten /api zinciri altında olduğundan ikinci satır kaldırıldı.
-// İki kez uygulanması upload limitinin 2x hızlı dolmasına neden oluyordu.
+const socketLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 dakika
+    max: 1500, // Socket.io pingleri fazla olabilir, limiti daha geniş tuttuk
+    message: 'Çok fazla bağlantı isteği gönderdiniz.'
+});
+
+// Rate limiter’ları uygula
+app.use('/socket.io', socketLimiter);
 app.use('/api', apiLimiter);
 
 // Uploads ve Statik Dosyalar
@@ -96,7 +106,13 @@ app.use(express.static(path.join(__dirname, '../app/renderer')));
 const uploadsDir = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, 'uploads') : path.join(__dirname, '../data/uploads');
 const fs = require('fs');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-app.use('/uploads', express.static(uploadsDir));
+
+// XSS Koruması (MIME Sniffing engelleme)
+app.use('/uploads', express.static(uploadsDir, {
+    setHeaders: (res, path) => {
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+    }
+}));
 
 // Upload routes
 const uploadRoutes = require('./upload');
@@ -230,10 +246,10 @@ async function startServer(portArg = null) {
         // Her bağlantı için bağımsız sayaç; pencere dolunca event sessizce görmezden gelinir.
         const _eventCounters = {};
         const _LIMITS = {
-            'send-message':    { max: 15,  windowMs: 5000  }, // 5 sn'de 15 mesaj
-            'join-room':       { max: 3,   windowMs: 10000 }, // 10 sn'de 3 deneme
-            'toggle-reaction': { max: 30,  windowMs: 5000  }, // 5 sn'de 30 tepki
-            'typing':          { max: 20,  windowMs: 5000  }, // 5 sn'de 20 yazıyor sinyali
+            'send-message': { max: 15, windowMs: 5000 }, // 5 sn'de 15 mesaj
+            'join-room': { max: 3, windowMs: 10000 }, // 10 sn'de 3 deneme
+            'toggle-reaction': { max: 30, windowMs: 5000 }, // 5 sn'de 30 tepki
+            'typing': { max: 20, windowMs: 5000 }, // 5 sn'de 20 yazıyor sinyali
         };
 
         function _rateCheck(eventName) {
@@ -254,7 +270,7 @@ async function startServer(portArg = null) {
         }
 
         // Kullanıcı giriş yaptığında (Bir Odaya katıldığında)
-        socket.on('join-room', ({ userId, nickname, roomKey, avatarColor, profilePic, authKey, mode }) => {
+        socket.on('join-room', ({ userId, userSecret, nickname, roomKey, avatarColor, profilePic, authKey, mode } = {}) => {
             if (!_rateCheck('join-room')) return;
             if (!nickname || !roomKey || !authKey) {
                 socket.emit('join-error', 'Takma ad, oda anahtarı ve şifre gereklidir.');
@@ -292,6 +308,7 @@ async function startServer(portArg = null) {
             }
 
             socket.userId = userId || null;
+            socket.userSecret = userSecret || null;
             socket.nickname = nickname;
             socket.roomKey = roomKey;
             socket.avatarColor = avatarColor || '#6366f1';
@@ -299,16 +316,16 @@ async function startServer(portArg = null) {
             socket.sessionId = uuidv4(); // Mesaj silme güvenliği için benzersiz oturum ID
 
             // Eski mesajları sahiplenme ve güncelleme
-            if (socket.userId) {
+            if (socket.userSecret) {
                 try {
-                    // 1) user_id ile eşleşen mesajların ismini güncelle
-                    db.prepare('UPDATE messages SET username = ?, avatar_color = ?, profile_pic = ? WHERE user_id = ? AND room_key = ? AND username != ?')
-                        .run(nickname, socket.avatarColor, socket.profilePic, socket.userId, roomKey, nickname);
+                    // 1) user_secret ile eşleşen mesajların ismini güncelle
+                    db.prepare('UPDATE messages SET username = ?, avatar_color = ?, profile_pic = ? WHERE user_secret = ? AND room_key = ? AND username != ?')
+                        .run(nickname, socket.avatarColor, socket.profilePic, socket.userSecret, roomKey, nickname);
 
-                    // 2) user_id'si olmayan ama aynı profile_pic'e sahip mesajları da sahiplen
+                    // 2) user_secret'i olmayan ama aynı profile_pic'e sahip mesajları da sahiplen
                     if (socket.profilePic) {
-                        db.prepare('UPDATE messages SET user_id = ?, username = ?, avatar_color = ? WHERE profile_pic = ? AND room_key = ? AND (user_id IS NULL OR user_id = ?)')
-                            .run(socket.userId, nickname, socket.avatarColor, socket.profilePic, roomKey, socket.userId);
+                        db.prepare('UPDATE messages SET user_id = ?, user_secret = ?, username = ?, avatar_color = ? WHERE profile_pic = ? AND room_key = ? AND (user_secret IS NULL OR user_secret = ?)')
+                            .run(socket.userId, socket.userSecret, nickname, socket.avatarColor, socket.profilePic, roomKey, socket.userSecret);
                     }
                 } catch (e) {
                     console.error('Eski mesaj güncelleme hatası:', e);
@@ -335,8 +352,9 @@ async function startServer(portArg = null) {
             socket.to(roomKey).emit('user-joined', { msg: `${nickname} odaya katıldı.` });
 
             // Son 100 mesaj geçmişini gönder (LEFT JOIN ile yanıtlanan mesajı da getir)
+            // GÜVENLİK (IDOR): user_secret'in istemciye sızmasını engellemek için SELECT ile sadece gereken kolonları alıyoruz
             const history = db.prepare(`
-                SELECT m.*, r.username as reply_username, r.content as reply_content 
+                SELECT m.id, m.room_key, m.username, m.avatar_color, m.content, m.type, m.reply_to, m.profile_pic, m.reactions, m.user_id, m.created_at, r.username as reply_username, r.content as reply_content 
                 FROM messages m 
                 LEFT JOIN messages r ON m.reply_to = r.id 
                 WHERE m.room_key = ? 
@@ -376,12 +394,12 @@ async function startServer(portArg = null) {
             socket.avatarColor = avatarColor || socket.avatarColor;
             socket.profilePic = profilePic !== undefined ? profilePic : socket.profilePic;
 
-            // Veritabanındaki eski mesajları güncelle (userId veya eski isim ile)
+            // Veritabanındaki eski mesajları güncelle (userSecret veya eski isim ile)
             try {
-                if (socket.userId) {
-                    // userId varsa, aynı kullanıcıya ait TÜM mesajları güncelle
-                    db.prepare('UPDATE messages SET username = ?, avatar_color = ?, profile_pic = ? WHERE user_id = ? AND room_key = ?')
-                        .run(socket.nickname, socket.avatarColor, socket.profilePic, socket.userId, socket.roomKey);
+                if (socket.userSecret) {
+                    // userSecret varsa, aynı kullanıcıya ait TÜM mesajları güncelle
+                    db.prepare('UPDATE messages SET username = ?, avatar_color = ?, profile_pic = ? WHERE user_secret = ? AND room_key = ?')
+                        .run(socket.nickname, socket.avatarColor, socket.profilePic, socket.userSecret, socket.roomKey);
                 } else if (prevNickname && prevNickname !== socket.nickname) {
                     // userId yoksa, eski isme göre güncelle (geriye uyumluluk)
                     db.prepare('UPDATE messages SET username = ? WHERE username = ? AND room_key = ?')
@@ -408,7 +426,7 @@ async function startServer(portArg = null) {
                         voiceUser.username = socket.nickname;
                         voiceUser.avatarColor = socket.avatarColor;
                         voiceUser.profilePic = socket.profilePic;
-                        
+
                         io.to(socket.roomKey).emit('active-voice-users', Array.from(voiceRoom.values()));
                     }
                 }
@@ -440,11 +458,11 @@ async function startServer(portArg = null) {
             // DB'ye kaydet
             let result;
             if (replyTo) {
-                result = db.prepare(`INSERT INTO messages (room_key, username, avatar_color, profile_pic, content, type, reply_to, session_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-                    .run(socket.roomKey, socket.nickname, socket.avatarColor, socket.profilePic, safeContent, msgType, replyTo, socket.sessionId, socket.userId || null);
+                result = db.prepare(`INSERT INTO messages (room_key, username, avatar_color, profile_pic, content, type, reply_to, session_id, user_id, user_secret) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+                    .run(socket.roomKey, socket.nickname, socket.avatarColor, socket.profilePic, safeContent, msgType, replyTo, socket.sessionId, socket.userId || null, socket.userSecret || null);
             } else {
-                result = db.prepare(`INSERT INTO messages (room_key, username, avatar_color, profile_pic, content, type, session_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-                    .run(socket.roomKey, socket.nickname, socket.avatarColor, socket.profilePic, safeContent, msgType, socket.sessionId, socket.userId || null);
+                result = db.prepare(`INSERT INTO messages (room_key, username, avatar_color, profile_pic, content, type, session_id, user_id, user_secret) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+                    .run(socket.roomKey, socket.nickname, socket.avatarColor, socket.profilePic, safeContent, msgType, socket.sessionId, socket.userId || null, socket.userSecret || null);
             }
 
             let replyData = null;
@@ -489,14 +507,14 @@ async function startServer(portArg = null) {
         socket.on('delete-message', ({ messageId }) => {
             if (!socket.roomKey || !messageId) return;
 
-            // FIX #10: Sahiplik kontrolü session_id > user_id sırasıyla yapılıyor.
-            // Eski nickname eşleşmesi kaldırıldı — nickname değiştirilerek spoofing yapılabiliyordu.
-            const msg = db.prepare('SELECT username, user_id, session_id FROM messages WHERE id = ? AND room_key = ?').get(messageId, socket.roomKey);
+            // FIX #10: Sahiplik kontrolü user_secret > session_id sırasıyla yapılıyor.
+            // IDOR Zafiyeti Kapatıldı: Herkese yayınlanan user_id yerine gizli user_secret kullanılıyor.
+            const msg = db.prepare('SELECT username, user_secret, session_id FROM messages WHERE id = ? AND room_key = ?').get(messageId, socket.roomKey);
             if (!msg) return;
 
             const isOwner =
-                (socket.sessionId && msg.session_id && socket.sessionId === msg.session_id) ||
-                (socket.userId    && msg.user_id    && socket.userId    === msg.user_id);
+                (socket.userSecret && msg.user_secret && socket.userSecret === msg.user_secret) ||
+                (socket.sessionId && msg.session_id && socket.sessionId === msg.session_id);
 
             if (!isOwner) {
                 console.warn(`[GÜVENLİK] Yetkisiz mesaj silme denemesi: ${socket.nickname} (id: ${messageId})`);

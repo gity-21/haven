@@ -172,9 +172,13 @@ async function initializeDatabase() {
             session_id   TEXT,
             reactions    TEXT DEFAULT '{}',
             user_id      TEXT,
+            user_secret  TEXT,
             created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
+
+    // Geriye dönük uyumluluk: Mevcut tabloya user_secret eklemeyi dene
+    try { sqliteDb.run('ALTER TABLE messages ADD COLUMN user_secret TEXT'); } catch(e){ /* zaten varsa görmezden gel */ }
 
     sqliteDb.run(`
         CREATE INDEX IF NOT EXISTS idx_messages_room
