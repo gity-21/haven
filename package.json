@@ -34,7 +34,9 @@
             {
                 "from": "node_modules/cloudflared/bin/",
                 "to": "cloudflared",
-                "filter": ["**/*"]
+                "filter": [
+                    "**/*"
+                ]
             }
         ],
         "win": {

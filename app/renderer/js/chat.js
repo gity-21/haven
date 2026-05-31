@@ -19,10 +19,14 @@ const defaultServer = isWeb ? window.location.origin : 'http://localhost:3847';
 if (!localStorage.getItem('haven_user_id')) {
     localStorage.setItem('haven_user_id', 'user_' + Date.now() + '_' + Math.floor(Math.random() * 100000));
 }
+if (!localStorage.getItem('haven_user_token')) {
+    localStorage.setItem('haven_user_token', crypto.randomUUID ? crypto.randomUUID() : 'token_' + Date.now() + '_' + Math.floor(Math.random() * 1000000000));
+}
 
 const state = {
     socket: null,
     userId: localStorage.getItem('haven_user_id'),
+    userToken: localStorage.getItem('haven_user_token'),
     nickname: localStorage.getItem('haven_nickname'),
     roomKey: localStorage.getItem('haven_room'),
     avatarColor: localStorage.getItem('haven_avatar') || '#6366f1',
@@ -168,7 +172,9 @@ function clientSanitize(text) {
     // Tüm etiketleri bul; izin verilmeyenleri encode et
     return text.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)(?:\s[^>]*)?>|<([a-zA-Z][a-zA-Z0-9]*)(?:\s[^>]*)?>/g, (match, tag1, tag2) => {
         const tag = (tag1 || tag2 || '').toLowerCase();
-        if (ALLOWED.includes(tag)) return match;
+        if (ALLOWED.includes(tag)) {
+            return match.startsWith('</') ? `</${tag}>` : (tag === 'br' ? '<br>' : `<${tag}>`);
+        }
         // İzin verilmeyen etiketi encode et
         return match.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     });
@@ -335,6 +341,7 @@ function connectSocket() {
         // Odaya Gir
         state.socket.emit('join-room', {
             userId: state.userId,
+            userToken: state.userToken,
             nickname: state.nickname,
             roomKey: state.roomKey,
             avatarColor: state.avatarColor,
@@ -342,6 +349,11 @@ function connectSocket() {
             authKey: state.authKey,
             mode: state.joinMode
         });
+    });
+
+    // Upload token'ı geldiğinde sakla
+    state.socket.on('upload-token', (token) => {
+        state.uploadToken = token;
     });
 
     // Odaya Giriş Hatası
@@ -1666,6 +1678,9 @@ function setupEventListeners() {
             const uploadUrl = state.serverUrl.endsWith('/') ? `${state.serverUrl}api/upload` : `${state.serverUrl}/api/upload`;
 
             xhr.open('POST', uploadUrl, true);
+            if (state.uploadToken) {
+                xhr.setRequestHeader('x-upload-token', state.uploadToken);
+            }
 
             xhr.upload.onprogress = (e) => {
                 if (e.lengthComputable) {
@@ -3605,6 +3620,7 @@ window.openUserMenu = function (e, userId) {
             try {
                 const response = await fetch(`${state.serverUrl}/api/upload`, {
                     method: 'POST',
+                    headers: state.uploadToken ? { 'x-upload-token': state.uploadToken } : {},
                     body: formData
                 });
                 const data = await response.json();
