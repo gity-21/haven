@@ -48,6 +48,12 @@ app.commandLine.appendSwitch('enable-speech-dispatcher');
 app.commandLine.appendSwitch('enable-usermedia-screen-capturing');
 app.commandLine.appendSwitch('allow-http-screen-capture');
 
+// FIX: Uygulama arka plana atıldığında veya simge durumunda (minimized) iken
+// mikrofonun ve WebRTC yayınlarının donmasını engellemek için Chromium'un tasarruf modlarını tamamen kapatıyoruz.
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+
 // FIX: Electron DNS çözümleme sorunu — STUN sunucuları çözülemeyebilir.
 // Chromium'un async DNS çözücüsünü etkinleştir (sistem DNS'ini daha güvenilir kullanır)
 app.commandLine.appendSwitch('enable-features', 'AsyncDns');
@@ -93,7 +99,10 @@ function createWindow() {
             experimentalFeatures: true,
             // FIX: WebRTC audio elementlerinin kullanıcı etkileşimi olmadan oynatılmasını sağla.
             // Bu olmadan Electron, uzak katılımcıların sesini autoplay ile oynatamıyor.
-            autoplayPolicy: 'no-user-gesture-required'
+            autoplayPolicy: 'no-user-gesture-required',
+            // FIX: Uygulama arka plana veya simge durumuna küçültüldüğünde mikrofon/ses
+            // iletişiminin kesilmesini önlemek için arka plan kısıtlamalarını kapat.
+            backgroundThrottling: false
         }
     });
 
@@ -124,13 +133,10 @@ function createWindow() {
         }
     });
 
-    // Kapatma düğmesine basıldığında arka plana (Tray) küçült
+    // FIX: Kullanıcılar uygulamanın kapandığını düşünüp mikrofonlarının açık kalmasından şikayetçi.
+    // Bu yüzden X tuşuna basıldığında uygulama arka planda gizlenmek yerine doğrudan kapatılacak.
     mainWindow.on('close', function (event) {
-        if (!isQuiting) {
-            event.preventDefault();
-            mainWindow.hide();
-        }
-        return false;
+        // Artık hide() yapmıyoruz, varsayılan Electron kapanma davranışına izin veriyoruz.
     });
 }
 
@@ -386,26 +392,6 @@ ipcMain.handle('desktop-capturer-get-sources', async (event, opts) => {
 app.whenReady().then(async () => {
     const { session } = require('electron');
 
-    if (!serverInstance) {
-        try {
-            const { startServer } = require('../server/index.js');
-            serverInstance = await startServer(3847);
-            console.log(`[Electron] Sunucu başarıyla başlatıldı, port: ${serverInstance.server.address().port}`);
-        } catch (err) {
-            console.error('[Electron] Sunucu başlatılamadı:', err.message);
-            if (err.code === 'EADDRINUSE') {
-                console.log('[Electron] Port 3847 meşgul, rastgele port deneniyor...');
-                try {
-                    const { startServer } = require('../server/index.js');
-                    serverInstance = await startServer(0);
-                    console.log(`[Electron] Sunucu rastgele portta başlatıldı: ${serverInstance.server.address().port}`);
-                } catch (err2) {
-                    console.error('[Electron] Sunucu hiçbir portta başlatılamadı:', err2.message);
-                }
-            }
-        }
-    }
-
     // FIX #3: Sadece gerekli izinler onaylanıyor.
     // Eski kod tüm izinleri (konum, USB, Bluetooth dahil) kayıtsız şartsız onaylıyordu.
     const ALLOWED_PERMISSIONS = new Set([
@@ -424,6 +410,7 @@ app.whenReady().then(async () => {
         return ALLOWED_PERMISSIONS.has(permission);
     });
 
+    // Arayüzün yüklenmesini engellememek için pencereyi hemen oluştur
     createWindow();
 
     // Sistem Tepsisi (Tray) İkonu ve Menüsü
@@ -462,6 +449,29 @@ app.whenReady().then(async () => {
             createWindow();
         }
     });
+
+    // Sunucuyu arka planda başlat (Windows Güvenlik Duvarı onay beklerken UI donmasını önler)
+    if (!serverInstance) {
+        (async () => {
+            try {
+                const { startServer } = require('../server/index.js');
+                serverInstance = await startServer(3847);
+                console.log(`[Electron] Sunucu başarıyla başlatıldı, port: ${serverInstance.server.address().port}`);
+            } catch (err) {
+                console.error('[Electron] Sunucu başlatılamadı:', err.message);
+                if (err.code === 'EADDRINUSE') {
+                    console.log('[Electron] Port 3847 meşgul, rastgele port deneniyor...');
+                    try {
+                        const { startServer } = require('../server/index.js');
+                        serverInstance = await startServer(0);
+                        console.log(`[Electron] Sunucu rastgele portta başlatıldı: ${serverInstance.server.address().port}`);
+                    } catch (err2) {
+                        console.error('[Electron] Sunucu hiçbir portta başlatılamadı:', err2.message);
+                    }
+                }
+            }
+        })();
+    }
 });
 
 app.on('window-all-closed', () => {

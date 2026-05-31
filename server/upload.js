@@ -77,12 +77,21 @@ function detectMime(buffer) {
     return null;
 }
 
-// ── Multer: önce belleğe al, sonra MIME kontrolü, sonra diske yaz ──
-const storage = multer.memoryStorage();
+// ── Multer: RAM şişmesini önlemek için doğrudan diske yaz ──
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDir); // Dosya geçici olarak uploads klasörüne yazılır
+    },
+    filename: (req, file, cb) => {
+        // Geçici bir isimle kaydet
+        const tempName = 'temp_' + crypto.randomBytes(8).toString('hex') + path.extname(file.originalname);
+        cb(null, tempName);
+    }
+});
 
 const upload = multer({
     storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
     fileFilter: (req, file, cb) => {
         // 1. Uzantı ön kontrolü (hızlı ret)
         const ext = path.extname(file.originalname).toLowerCase();
@@ -107,39 +116,52 @@ router.post('/', (req, res) => {
             return res.status(400).json({ success: false, message: 'Dosya bulunamadı' });
         }
 
-        // FIX #11: 2. Magic bytes ile gerçek MIME kontrolü
-        const detectedMime = detectMime(req.file.buffer);
-
-        // text/plain için magic byte yok; uzantı .txt ise kabul et
-        const ext = path.extname(req.file.originalname).toLowerCase();
-        const finalMime = detectedMime || (ext === '.txt' ? 'text/plain' : null);
-
-        if (!finalMime || !ALLOWED_MIMES.has(finalMime)) {
-            console.warn(`[UPLOAD] MIME reddi: bildirilen=${req.file.mimetype}, tespit=${detectedMime}, dosya=${req.file.originalname}`);
-            return res.status(400).json({
-                success: false,
-                message: 'Dosya içeriği izin verilen türlerle eşleşmiyor.',
-            });
-        }
-
-        // 3. Güvenli rastgele isimle diske yaz
-        const safeExt   = ext; // uzantı zaten whitelist'ten geçti
-        const safeName  = crypto.randomBytes(16).toString('hex') + safeExt;
-        const destPath  = path.join(uploadDir, safeName);
-
+        const tempFilePath = req.file.path;
+        
         try {
-            fs.writeFileSync(destPath, req.file.buffer);
-        } catch (writeErr) {
-            console.error('[UPLOAD] Diske yazma hatası:', writeErr);
-            return res.status(500).json({ success: false, message: 'Dosya kaydedilemedi' });
-        }
+            // FIX #11: 2. Magic bytes ile gerçek MIME kontrolü
+            // Dosyanın sadece ilk 12 byte'ını oku (Tüm dosyayı RAM'e almamak için)
+            const buffer = Buffer.alloc(12);
+            const fd = fs.openSync(tempFilePath, 'r');
+            fs.readSync(fd, buffer, 0, 12, 0);
+            fs.closeSync(fd);
+            
+            const detectedMime = detectMime(buffer);
 
-        res.json({
-            success:  true,
-            url:      `/uploads/${safeName}`,
-            filename: req.file.originalname,
-            mimetype: finalMime,
-        });
+            // text/plain için magic byte yok; uzantı .txt ise kabul et
+            const ext = path.extname(req.file.originalname).toLowerCase();
+            const finalMime = detectedMime || (ext === '.txt' ? 'text/plain' : null);
+
+            if (!finalMime || !ALLOWED_MIMES.has(finalMime)) {
+                console.warn(`[UPLOAD] MIME reddi: tespit=${detectedMime}, dosya=${req.file.originalname}`);
+                fs.unlinkSync(tempFilePath); // Zararlı veya bozuk dosyayı diskten sil
+                return res.status(400).json({
+                    success: false,
+                    message: 'Dosya içeriği izin verilen türlerle eşleşmiyor.',
+                });
+            }
+
+            // 3. Güvenli rastgele isimle yeniden adlandır
+            const safeExt   = ext; 
+            const safeName  = crypto.randomBytes(16).toString('hex') + safeExt;
+            const destPath  = path.join(uploadDir, safeName);
+
+            // Geçici dosyayı nihai ismine taşı
+            fs.renameSync(tempFilePath, destPath);
+
+            res.json({
+                success:  true,
+                url:      `/uploads/${safeName}`,
+                filename: req.file.originalname,
+                mimetype: finalMime,
+            });
+            
+        } catch (error) {
+            console.error('[UPLOAD] İşlem hatası:', error);
+            // Hata olursa geçici dosyayı temizle
+            if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
+            return res.status(500).json({ success: false, message: 'Dosya işlenemedi' });
+        }
     });
 });
 

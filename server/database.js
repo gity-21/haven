@@ -172,15 +172,9 @@ async function initializeDatabase() {
             session_id   TEXT,
             reactions    TEXT DEFAULT '{}',
             user_id      TEXT,
-            is_edited    BOOLEAN DEFAULT 0,
-            edit_history TEXT DEFAULT '[]',
             created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
-
-    // Geriye dönük uyumluluk: Eski veritabanı dosyaları için sütunları eklemeyi dene
-    try { sqliteDb.run('ALTER TABLE messages ADD COLUMN is_edited BOOLEAN DEFAULT 0'); } catch (e) { /* Sütun zaten varsa hata verir, yoksay */ }
-    try { sqliteDb.run("ALTER TABLE messages ADD COLUMN edit_history TEXT DEFAULT '[]'"); } catch (e) { /* Sütun zaten varsa hata verir, yoksay */ }
 
     sqliteDb.run(`
         CREATE INDEX IF NOT EXISTS idx_messages_room

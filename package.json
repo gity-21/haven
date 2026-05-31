@@ -1,6 +1,6 @@
 {
     "name": "haven",
-    "version": "1.0.2",
+    "version": "1.0.0",
     "description": "Private desktop chat application - Premium Discord-like invite-only rooms",
     "homepage": "https://github.com/haven-chat/haven",
     "main": "app/main.js",
