@@ -42,7 +42,8 @@ const state = {
     pendingImages: [], // Gönderilmeyi bekleyen görseller (Blob objeleri)
     currentPreviewIndex: 0,
     viewOnceEnabled: false,
-    editingMessageId: null // Düzenlenen mesajın ID'si
+    editingMessageId: null, // Düzenlenen mesajın ID'si
+    isSelfDestructText: false // Kendini imha eden metin mesajları için
 };
 
 // Aktif Masaüstü Bildirimleri Takibi
@@ -1188,6 +1189,19 @@ function appendMessage(msg) {
     state.lastMessageUserId = msg.username;
     state.lastMessageTime = msgTime;
 
+    // XSS Koruması — linkify ve markdown sadece düz metin mesajlarda çalışsın, dosya mesajlarında işleme yapma
+    let safeContent;
+    if (msg.type === 'self-destruct') {
+        const uniqueId = 'sd-' + msg.id;
+        // Metni data attribute'a koyuyoruz
+        const b64Content = btoa(encodeURIComponent(msg.content));
+        safeContent = `<div id="${uniqueId}" class="self-destruct-msg" style="cursor:pointer; display:inline-flex; align-items:center; gap:8px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:8px 14px; border-radius:8px; color:#ef4444;" onclick="window.viewSelfDestruct('${uniqueId}', '${b64Content}', ${msg.id})"><span class="sd-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span><span style="font-weight:600; font-size:13px; filter:blur(4px); transition:filter 0.3s; user-select:none;">Gizli Mesaj (Tıkla)</span></div>`;
+    } else if (msg.type === 'file' || msg.type === 'p2p-announce') {
+        safeContent = escapeHtml(msg.content);
+    } else {
+        safeContent = parseMarkdown(escapeHtml(msg.content));
+    }
+
     const messageEl = document.createElement('div');
     messageEl.className = `message-group ${isSameUser ? 'continuation' : ''}`;
 
@@ -1196,12 +1210,6 @@ function appendMessage(msg) {
     const initial = msg.username ? msg.username[0].toUpperCase() : '?';
 
     const isMine = msg.username === state.nickname || (state.userId && msg.user_id === state.userId);
-
-    // XSS Koruması — linkify sadece düz metin mesajlarda çalışsın, dosya mesajlarında işleme yapma
-    let safeContent = (msg.type === 'file' || msg.type === 'p2p-announce')
-        ? escapeHtml(msg.content)
-        : linkify(escapeHtml(msg.content)).replace(/\n/g, '<br>');
-
 
     if (msg.type === 'p2p-announce') {
         try {
@@ -1550,6 +1558,22 @@ function setupEventListeners() {
         }
     });
 
+    const btnSelfDestruct = document.getElementById('btn-self-destruct');
+    if (btnSelfDestruct) {
+        btnSelfDestruct.addEventListener('click', () => {
+            state.isSelfDestructText = !state.isSelfDestructText;
+            if (state.isSelfDestructText) {
+                btnSelfDestruct.style.background = 'rgba(239, 68, 68, 0.2)'; // Kırmızımsı arka plan
+                btnSelfDestruct.style.color = '#ef4444'; // Kırmızı ikon
+                if (el.messageInput) el.messageInput.placeholder = window.i18n && window.i18n.t('chat_placeholder_sd') ? window.i18n.t('chat_placeholder_sd') : 'Gizli mesaj yazılıyor...';
+            } else {
+                btnSelfDestruct.style.background = 'rgba(255,255,255,0.05)';
+                btnSelfDestruct.style.color = 'var(--text-muted)';
+                if (el.messageInput) el.messageInput.placeholder = window.i18n && window.i18n.t('chat_placeholder') ? window.i18n.t('chat_placeholder') : 'Gizli odaya mesaj gönder...';
+            }
+        });
+    }
+
     // Yazıyor göstergesi gönder - her 1.5 saniyede tekrar sinyal gönder
     el.messageInput.addEventListener('input', () => {
         if (!state.socket) return;
@@ -1583,6 +1607,36 @@ function setupEventListeners() {
                 await window.sendP2PFile(file);
             }
             e.target.value = '';
+        }
+    });
+
+    // Sürükle ve Bırak (Drag & Drop) Dosya Yükleme
+    document.body.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.chatMessages.style.boxShadow = 'inset 0 0 0 2px var(--accent-primary)';
+    });
+    
+    document.body.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.chatMessages.style.boxShadow = 'none';
+    });
+
+    document.body.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.chatMessages.style.boxShadow = 'none';
+        
+        const dt = e.dataTransfer;
+        if (dt && dt.files && dt.files.length > 0) {
+            for (const file of dt.files) {
+                if (file.type.startsWith('image/')) {
+                    window.addPendingImage(file);
+                } else {
+                    await window.sendP2PFile(file);
+                }
+            }
         }
     });
 
@@ -2474,9 +2528,20 @@ async function sendMessage() {
             } else {
                 state.socket.emit('send-message', {
                     content: encryptedContent,
-                    type: 'message',
+                    type: state.isSelfDestructText ? 'self-destruct' : 'message',
                     replyTo: state.replyingTo ? state.replyingTo.id : null
                 });
+                
+                // Gönderdikten sonra self-destruct modunu kapat (tek seferlik)
+                if (state.isSelfDestructText) {
+                    state.isSelfDestructText = false;
+                    const btnSelfDestruct = document.getElementById('btn-self-destruct');
+                    if (btnSelfDestruct) {
+                        btnSelfDestruct.style.background = 'rgba(255,255,255,0.05)';
+                        btnSelfDestruct.style.color = 'var(--text-muted)';
+                    }
+                    if (el.messageInput) el.messageInput.placeholder = window.i18n && window.i18n.t('chat_placeholder') ? window.i18n.t('chat_placeholder') : 'Gizli odaya mesaj gönder...';
+                }
             }
         }
 
@@ -2518,6 +2583,73 @@ async function sendMessage() {
         // Send butonu iconunu geri al
         const sendIcon = el.sendBtn.querySelector('i') || el.sendBtn;
         sendIcon.className = 'fas fa-paper-plane';
+    };
+
+    window.viewSelfDestruct = (uniqueId, b64Content, messageId) => {
+        const box = document.getElementById(uniqueId);
+        if (!box || box.dataset.viewed === 'true') return;
+        
+        box.dataset.viewed = 'true';
+        box.style.cursor = 'default';
+        box.onclick = null; // tıklamayı kapat
+        const textSpan = box.querySelector('span:not(.sd-icon)');
+        const iconContainer = box.querySelector('.sd-icon');
+        
+        try {
+            const rawContent = decodeURIComponent(atob(b64Content));
+            if (textSpan) {
+                textSpan.innerHTML = parseMarkdown(escapeHtml(rawContent));
+                textSpan.style.filter = 'none';
+                textSpan.style.userSelect = 'text';
+            }
+            if (iconContainer) iconContainer.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>';
+            box.style.background = 'rgba(245, 158, 11, 0.1)';
+            box.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+            box.style.color = '#f59e0b';
+        } catch (e) {
+            if (textSpan) textSpan.textContent = 'Şifre Çözülemedi';
+        }
+
+        // Geri sayım göstergesi
+        let secondsLeft = 5;
+        const countdownEl = document.createElement('span');
+        countdownEl.style.cssText = 'font-size:11px; opacity:0.7; margin-left:4px; min-width:18px; text-align:center; font-weight:700;';
+        countdownEl.textContent = secondsLeft + 's';
+        box.appendChild(countdownEl);
+
+        const countdownInterval = setInterval(() => {
+            secondsLeft--;
+            if (countdownEl) countdownEl.textContent = secondsLeft + 's';
+        }, 1000);
+
+        // 5 saniye sonra yok et
+        setTimeout(() => {
+            clearInterval(countdownInterval);
+            box.style.transition = 'opacity 0.5s, transform 0.5s';
+            box.style.opacity = '0';
+            box.style.transform = 'scale(0.9)';
+            
+            setTimeout(() => {
+                // Sunucuya sil komutunu gönder
+                if (state.socket && state.socket.connected) {
+                    state.socket.emit('delete-message', { messageId: Number(messageId) });
+                }
+                // DOM'dan kaldır (message-deleted eventi gelirse zaten silinir,
+                // ama gelmezse de lokal olarak temizle)
+                const rowWrapper = document.querySelector(`.msg-row-wrapper[data-message-id="${messageId}"]`);
+                if (rowWrapper) {
+                    const parentGroup = rowWrapper.closest('.message-group');
+                    rowWrapper.remove();
+                    if (parentGroup && parentGroup.querySelectorAll('.msg-row-wrapper').length === 0) {
+                        parentGroup.remove();
+                    }
+                } else if (box.parentElement) {
+                    // fallback: box'ın en yakın message-group'unu sil
+                    const parentGroup = box.closest('.message-group');
+                    if (parentGroup) parentGroup.remove();
+                }
+            }, 500);
+        }, 5000);
     };
 
     if (hasImages) {
@@ -2751,6 +2883,37 @@ function linkify(text) {
     });
 }
 
+/**
+ * Temel Markdown Ayrıştırıcı (Kalın, Eğik, Üstü Çizili, Kod, Satır Sonu)
+ * HTML kaçış işleminden SONRA çağrılmalıdır.
+ */
+function parseMarkdown(text) {
+    if (!text) return '';
+    let html = text;
+
+    // Kod blokları (satır içi) - `kod`
+    html = html.replace(/&#39;(.*?)&#39;/g, "<code style='background:rgba(255,255,255,0.1);padding:2px 4px;border-radius:4px;font-family:monospace;font-size:13px;'>$1</code>");
+    // Web Crypto veya Input kaçışlarında ` karakteri işlenmiş veya olduğu gibi gelmiş olabilir, ona da bakalım.
+    html = html.replace(/`(.*?)`/g, "<code style='background:rgba(255,255,255,0.1);padding:2px 4px;border-radius:4px;font-family:monospace;font-size:13px;'>$1</code>");
+
+    // Kalın - **kalın**
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Eğik - *eğik*
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Üstü Çizili - ~~çizili~~
+    html = html.replace(/~~(.*?)~~/g, '<del>$1</del>');
+
+    // Linkleri dönüştür
+    html = linkify(html);
+
+    // Satır sonlarını <br> yap
+    html = html.replace(/\n/g, '<br>');
+    
+    return html;
+}
+
 
 
 
@@ -2862,18 +3025,22 @@ async function joinVoiceRoom(withVideo = false) {
             analyser.fftSize = 2048;
             analyser.smoothingTimeConstant = 0.3;
             const gainNode = ngContext.createGain();
-            gainNode.gain.value = 1.0;
+            gainNode.gain.value = 0.0; // Başlangıçta kapatık
             const destination = ngContext.createMediaStreamDestination();
             
+            // Doğru bağlantı: source -> analyser (sadece analiz için)
+            //              source -> gainNode -> destination (ses geçişi için)
             source.connect(analyser);
             source.connect(gainNode);
             gainNode.connect(destination);
             
             const dataArray = new Float32Array(analyser.fftSize);
-            const NOISE_THRESHOLD = -25; // dB - Eşik daha da yükseltildi, sadece çok yüksek sesler (insan sesi) mikrofonu açacak.
+            const NOISE_THRESHOLD = -40; // dB - Daha geniş eşik, insan sesi genellikle -20 ile -50 dB arasında
             const ATTACK_TIME = 0.01;    // Ses açılma hızı (saniye)
-            const RELEASE_TIME = 0.05;   // Ses kapanma hızı (saniye) - Çok hızlı kapanarak klavye ve arkadaki reels seslerini engelleyecek.
+            const RELEASE_TIME = 0.15;   // Ses kapanma hızı - daha uzun = daha akıcı konuşma
+            const HOLD_FRAMES = 15;      // Gate kapanmadan önce bekle (titreme engelleme)
             let isGateOpen = false;
+            let holdCounter = 0;
             
             function processNoiseGate() {
                 if (!voiceState.isInVoice) return;
@@ -2890,14 +3057,18 @@ async function joinVoiceRoom(withVideo = false) {
                 const now = ngContext.currentTime;
                 if (dB > NOISE_THRESHOLD) {
                     // Ses eşiği geçti, kapıyı aç (konuşma algılandı)
+                    holdCounter = HOLD_FRAMES;
                     if (!isGateOpen) {
                         gainNode.gain.cancelScheduledValues(now);
                         gainNode.gain.setTargetAtTime(1.0, now, ATTACK_TIME);
                         isGateOpen = true;
                     }
                 } else {
-                    // Ses eşiğin altında, kapıyı kapat (gürültü)
-                    if (isGateOpen) {
+                    // Ses eşiğin altında, hold counter'a bak
+                    if (holdCounter > 0) {
+                        holdCounter--;
+                    } else if (isGateOpen) {
+                        // Hold bitti, kapıyı kapat (gürültü)
                         gainNode.gain.cancelScheduledValues(now);
                         gainNode.gain.setTargetAtTime(0.0, now, RELEASE_TIME);
                         isGateOpen = false;
@@ -2914,6 +3085,8 @@ async function joinVoiceRoom(withVideo = false) {
                 if (videoTrack) processedStream.addTrack(videoTrack);
             }
             voiceState.localStream = processedStream;
+            // Ham stream'i sakla (kapatma için)
+            voiceState._rawStream = stream;
             
             // Noise Gate referanslarını sakla (temizlik için)
             voiceState._noiseGate = { context: ngContext, source, analyser, gainNode, destination };
@@ -3327,6 +3500,18 @@ function leaveVoiceRoom() {
     if (voiceState.screenStream) {
         voiceState.screenStream.getTracks().forEach(track => track.stop());
         voiceState.screenStream = null;
+    }
+
+    // Ham stream'i durdur (Noise Gate aktifse processedStream'in altındaki gerçek mikrofon)
+    if (voiceState._rawStream) {
+        voiceState._rawStream.getTracks().forEach(track => track.stop());
+        voiceState._rawStream = null;
+    }
+
+    // Noise Gate AudioContext'ini kapat
+    if (voiceState._noiseGate) {
+        try { voiceState._noiseGate.context.close(); } catch (_) {}
+        voiceState._noiseGate = null;
     }
 
     voiceState.isVideoOn = false;
@@ -4158,7 +4343,7 @@ async function checkAdminStatus() {
 
     if (isLocalhostHost) {
         // Electron'daysa admin token'ı otomatik al (sunucu başlarken üretip dosyaya yazmıştır)
-        if (window.electronAPI && window.electronAPI.getAdminToken && !state.adminToken) {
+        if (window.electronAPI && window.electronAPI.getAdminToken) {
             try {
                 const token = await window.electronAPI.getAdminToken();
                 if (token) {

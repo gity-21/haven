@@ -18,14 +18,24 @@ const adminTokenFile = process.env.DATA_DIR
 
 let ADMIN_TOKEN = process.env.ADMIN_TOKEN || null;
 if (!ADMIN_TOKEN) {
-    ADMIN_TOKEN = crypto.randomBytes(32).toString('hex');
-    try {
-        const tokenDir = path.dirname(adminTokenFile);
-        if (!fs.existsSync(tokenDir)) fs.mkdirSync(tokenDir, { recursive: true });
-        fs.writeFileSync(adminTokenFile, ADMIN_TOKEN, 'utf-8');
-        console.log('[ADMIN] Otomatik admin token üretildi ve kaydedildi.');
-    } catch (e) {
-        console.error('[ADMIN] Token dosyası yazılamadı:', e.message);
+    if (fs.existsSync(adminTokenFile)) {
+        try {
+            ADMIN_TOKEN = fs.readFileSync(adminTokenFile, 'utf-8').trim();
+        } catch (e) {
+            console.error('[ADMIN] Token dosyası okunamadı, yeni üretilecek:', e.message);
+        }
+    }
+    
+    if (!ADMIN_TOKEN) {
+        ADMIN_TOKEN = crypto.randomBytes(32).toString('hex');
+        try {
+            const tokenDir = path.dirname(adminTokenFile);
+            if (!fs.existsSync(tokenDir)) fs.mkdirSync(tokenDir, { recursive: true });
+            fs.writeFileSync(adminTokenFile, ADMIN_TOKEN, 'utf-8');
+            console.log('[ADMIN] Otomatik admin token üretildi ve kaydedildi.');
+        } catch (e) {
+            console.error('[ADMIN] Token dosyası yazılamadı:', e.message);
+        }
     }
 }
 

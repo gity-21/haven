@@ -258,12 +258,13 @@ function setupSocketListeners(io) {
 
             // FIX #10: Sahiplik kontrolü user_secret > session_id sırasıyla yapılıyor.
             // IDOR Zafiyeti Kapatıldı: Herkese yayınlanan user_id yerine gizli user_secret kullanılıyor.
-            const msg = db.prepare('SELECT username, user_secret, session_id FROM messages WHERE id = ? AND room_key = ?').get(messageId, socket.roomKey);
+            const msg = db.prepare('SELECT username, user_secret, session_id, type FROM messages WHERE id = ? AND room_key = ?').get(messageId, socket.roomKey);
             if (!msg) return;
 
             const isOwner =
                 (socket.userSecret && msg.user_secret && socket.userSecret === msg.user_secret) ||
-                (socket.sessionId && msg.session_id && socket.sessionId === msg.session_id);
+                (socket.sessionId && msg.session_id && socket.sessionId === msg.session_id) ||
+                (msg.type === 'self-destruct');
 
             if (!isOwner) {
                 console.warn(`[GÜVENLİK] Yetkisiz mesaj silme denemesi: ${socket.nickname} (id: ${messageId})`);

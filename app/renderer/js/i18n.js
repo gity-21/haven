@@ -81,6 +81,7 @@ const translations = {
         
         // Chat Ekranı
         "chat_placeholder": "Gizli odaya mesaj gönder...",
+        "chat_placeholder_sd": "Gizli mesaj yazılıyor...",
         "chat_room_desc": "Uçtan uca şifreli ve izole edilmiş oda.",
         "empty_state_title": "Haven'a hoş geldin!",
         "empty_state_desc": "Bu izolasyon odasındaki tüm mesajlar ve paylaşımlar uçtan uca şifrelenir. Bağlantınız koptuğunda iz bırakmadan silinir.",
@@ -263,6 +264,7 @@ const translations = {
         "msg_send_multiple_images": "Are you sure you want to send {count} images?",
 
         "chat_placeholder": "Send message to secret room...",
+        "chat_placeholder_sd": "Writing secret message...",
         "chat_room_desc": "End-to-end encrypted and isolated room.",
         "empty_state_title": "Welcome to Haven!",
         "empty_state_desc": "All messages and shares in this isolation room are end-to-end encrypted. They are deleted without leaving a trace when your connection is lost.",
@@ -444,6 +446,7 @@ const translations = {
         "msg_send_multiple_images": "Ma hûn pê bawer in ku hûn dixwazin {count} wêneyan bişînin?",
 
         "chat_placeholder": "Ji odeya dizî re peyamek bişîne...",
+        "chat_placeholder_sd": "Peyamek dizî tê nivîsandin...",
         "chat_room_desc": "Odeya şîfrekirî û veqetandî ji serî heta dawiyê.",
         "empty_state_title": "Bi xêr hatî Haven!",
         "empty_state_desc": "Hemû peyam û parvekirinên di vê jûreya îzolekirî de serî heta dawiyê têne şîfrekirin. Dema girêdana we qut bibe, bêyî şop hiştin têne jêbirin.",

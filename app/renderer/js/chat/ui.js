@@ -216,9 +216,16 @@ function appendMessage(msg) {
     const isMine = msg.username === state.nickname || (state.userId && msg.user_id === state.userId);
 
     // XSS Koruması — linkify sadece düz metin mesajlarda çalışsın, dosya mesajlarında işleme yapma
-    let safeContent = (msg.type === 'file' || msg.type === 'p2p-announce')
-        ? escapeHtml(msg.content)
-        : linkify(escapeHtml(msg.content)).replace(/\n/g, '<br>');
+    let safeContent;
+    if (msg.type === 'self-destruct') {
+        const uniqueId = 'sd-' + msg.id;
+        const b64Content = btoa(encodeURIComponent(msg.content));
+        safeContent = `<div id="${uniqueId}" class="self-destruct-msg" style="cursor:pointer; display:inline-flex; align-items:center; gap:8px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:8px 14px; border-radius:8px; color:#ef4444;" onclick="window.viewSelfDestruct('${uniqueId}', '${b64Content}', ${msg.id})"><span class="sd-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span><span style="font-weight:600; font-size:13px; filter:blur(4px); transition:filter 0.3s; user-select:none;">Gizli Mesaj (Tıkla)</span></div>`;
+    } else if (msg.type === 'file' || msg.type === 'p2p-announce') {
+        safeContent = escapeHtml(msg.content);
+    } else {
+        safeContent = linkify(escapeHtml(msg.content)).replace(/\n/g, '<br>');
+    }
 
 
     if (msg.type === 'p2p-announce') {
@@ -556,6 +563,74 @@ function appendMessage(msg) {
 function scrollToBottom() {
     el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
 }
+
+// ============================================
+// KAYBOLAN MESAJ (SELF-DESTRUCT) GÖRÜNTÜLEME
+// ============================================
+window.viewSelfDestruct = (uniqueId, b64Content, messageId) => {
+    const box = document.getElementById(uniqueId);
+    if (!box || box.dataset.viewed === 'true') return;
+
+    box.dataset.viewed = 'true';
+    box.style.cursor = 'default';
+    box.onclick = null;
+    const textSpan = box.querySelector('span:not(.sd-icon)');
+    const iconContainer = box.querySelector('.sd-icon');
+
+    try {
+        const rawContent = decodeURIComponent(atob(b64Content));
+        if (textSpan) {
+            textSpan.innerHTML = linkify(escapeHtml(rawContent)).replace(/\n/g, '<br>');
+            textSpan.style.filter = 'none';
+            textSpan.style.userSelect = 'text';
+        }
+        if (iconContainer) iconContainer.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>';
+        box.style.background = 'rgba(245, 158, 11, 0.1)';
+        box.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+        box.style.color = '#f59e0b';
+    } catch (e) {
+        if (textSpan) textSpan.textContent = 'Şifre Çözülemedi';
+    }
+
+    // Geri sayım göstergesi
+    let secondsLeft = 5;
+    const countdownEl = document.createElement('span');
+    countdownEl.style.cssText = 'font-size:11px; opacity:0.7; margin-left:6px; min-width:18px; text-align:center; font-weight:700;';
+    countdownEl.textContent = secondsLeft + 's';
+    box.appendChild(countdownEl);
+
+    const countdownInterval = setInterval(() => {
+        secondsLeft--;
+        if (countdownEl) countdownEl.textContent = secondsLeft + 's';
+    }, 1000);
+
+    // 5 saniye sonra sil
+    setTimeout(() => {
+        clearInterval(countdownInterval);
+        box.style.transition = 'opacity 0.5s, transform 0.5s';
+        box.style.opacity = '0';
+        box.style.transform = 'scale(0.9)';
+
+        setTimeout(() => {
+            // Sunucuya sil komutu gönder
+            if (state.socket && state.socket.connected) {
+                state.socket.emit('delete-message', { messageId: Number(messageId) });
+            }
+            // Lokal olarak DOM'dan kaldır
+            const rowWrapper = document.querySelector(`.msg-row-wrapper[data-message-id="${messageId}"]`);
+            if (rowWrapper) {
+                const parentGroup = rowWrapper.closest('.message-group');
+                rowWrapper.remove();
+                if (parentGroup && parentGroup.querySelectorAll('.msg-row-wrapper').length === 0) {
+                    parentGroup.remove();
+                }
+            } else {
+                const parentGroup = box.closest('.message-group');
+                if (parentGroup) parentGroup.remove();
+            }
+        }, 500);
+    }, 5000);
+};
 
 function renderUsersModal() {
     if (!el.usersModalList) return;

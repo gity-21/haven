@@ -35,6 +35,28 @@ function setupEventListeners() {
         el.fileInput?.click();
     });
 
+    // Kaybolan Mesaj (Self-Destruct) Modu
+    const btnSD = document.getElementById('btn-self-destruct');
+    if (btnSD) {
+        btnSD.addEventListener('click', () => {
+            state.isSelfDestructText = !state.isSelfDestructText;
+            if (state.isSelfDestructText) {
+                btnSD.style.background = 'rgba(239,68,68,0.2)';
+                btnSD.style.color = '#ef4444';
+                btnSD.style.boxShadow = '0 0 8px rgba(239,68,68,0.4)';
+                btnSD.title = 'Kaybolan Mesaj AÇIK — Kapatmak için tıkla';
+                el.messageInput.placeholder = '💣 Kaybolan mesaj yazılıyor...';
+                el.messageInput.focus();
+            } else {
+                btnSD.style.background = 'rgba(255,255,255,0.05)';
+                btnSD.style.color = 'var(--text-muted)';
+                btnSD.style.boxShadow = 'none';
+                btnSD.title = 'Kaybolan Mesaj';
+                el.messageInput.placeholder = window.i18n ? window.i18n.t('chat_placeholder') : 'Mesaj yaz...';
+            }
+        });
+    }
+
     el.fileInput?.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -941,9 +963,21 @@ async function sendMessage() {
                 console.log("Emitting send-message");
                 state.socket.emit('send-message', {
                     content: encryptedContent,
-                    type: 'message',
+                    type: state.isSelfDestructText ? 'self-destruct' : 'message',
                     replyTo: state.replyingTo ? state.replyingTo.id : null
                 });
+
+                // Kaybolan mesaj modu tek seferlik — gönderdikten sonra kapat
+                if (state.isSelfDestructText) {
+                    state.isSelfDestructText = false;
+                    const btnSD = document.getElementById('btn-self-destruct');
+                    if (btnSD) {
+                        btnSD.style.background = 'rgba(255,255,255,0.05)';
+                        btnSD.style.color = 'var(--text-muted)';
+                        btnSD.title = 'Kaybolan Mesaj';
+                    }
+                    el.messageInput.placeholder = window.i18n ? window.i18n.t('chat_placeholder') : 'Mesaj yaz...';
+                }
             }
         }
 

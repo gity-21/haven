@@ -46,7 +46,8 @@ const state = {
     pendingImages: [], // Gönderilmeyi bekleyen görseller (Blob objeleri)
     currentPreviewIndex: 0,
     viewOnceEnabled: false,
-    editingMessageId: null // Düzenlenen mesajın ID'si
+    editingMessageId: null, // Düzenlenen mesajın ID'si
+    isSelfDestructText: false // Kaybolan mesaj modu
 };
 
 // Aktif Masaüstü Bildirimleri Takibi
