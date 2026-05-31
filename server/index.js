@@ -282,14 +282,18 @@ async function startServer(portArg = null) {
             const now = Date.now();
             const c = _eventCounters[eventName];
             if (!c || (now - c.start) > limit.windowMs) {
-                _eventCounters[eventName] = { count: 1, start: now };
+                _eventCounters[eventName] = { count: 1, start: now, warned: false };
                 return true;
             }
-            c.count++;
-            if (c.count > limit.max) {
-                console.warn(`[RATE] ${socket.nickname || socket.id} → '${eventName}' limit aşıldı`);
+            if (c.count >= limit.max) {
+                // Sadece limit aşıldığında bir kere log bas, konsolu boğma (DoS önlemi)
+                if (!c.warned) {
+                    console.warn(`[RATE] ${socket.nickname || socket.id} → '${eventName}' limit aşıldı!`);
+                    c.warned = true;
+                }
                 return false;
             }
+            c.count++;
             return true;
         }
 
