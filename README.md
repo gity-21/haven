@@ -10,6 +10,7 @@ Haven, tam gizlilik odaklı, sıfır kayıt mantığıyla çalışan premium bir
 |--------|------|
 | [@mehmetsolves](https://github.com/mehmetsolves) | Geliştirici |
 | [@Taruk21](https://github.com/Taruk21) | Geliştirici |
+| [@emresosuke](https://github.com/emresosuke) | Geliştirici |
 
 ---
 
