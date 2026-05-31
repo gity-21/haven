@@ -15,6 +15,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const net = require('net');
+const { autoUpdater } = require('electron-updater');
 
 const checkPort = (port) => new Promise((resolve) => {
     const tester = net.createServer()
@@ -372,6 +373,32 @@ ipcMain.handle('clipboard:write', (event, text) => {
     return false;
 });
 
+// Otomatik Güncelleme IPC Handlers
+ipcMain.handle('install-update', () => {
+    isQuiting = true;
+    autoUpdater.quitAndInstall();
+});
+
+// AutoUpdater Event Listeners
+autoUpdater.on('update-available', (info) => {
+    console.log('[AutoUpdater] Güncelleme bulundu:', info.version);
+    if (mainWindow) mainWindow.webContents.send('update-status', { type: 'available', info });
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+    if (mainWindow) mainWindow.webContents.send('update-status', { type: 'progress', progress: progressObj });
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+    console.log('[AutoUpdater] Güncelleme indirildi, kuruluma hazır.');
+    if (mainWindow) mainWindow.webContents.send('update-status', { type: 'downloaded', info });
+});
+
+autoUpdater.on('error', (err) => {
+    console.error('[AutoUpdater] Güncelleme hatası:', err);
+    if (mainWindow) mainWindow.webContents.send('update-status', { type: 'error', error: err.message });
+});
+
 // ============================================
 // Uygulama Yaşam Döngüsü
 // ============================================
@@ -477,6 +504,14 @@ app.whenReady().then(async () => {
                 }
             }
         })();
+    }
+
+    // Geliştirici modunda değilsek güncellemeleri denetle
+    if (app.isPackaged) {
+        console.log('[AutoUpdater] Güncellemeler kontrol ediliyor...');
+        autoUpdater.checkForUpdatesAndNotify().catch(err => {
+            console.error('[AutoUpdater] Kontrol hatası:', err);
+        });
     }
 });
 

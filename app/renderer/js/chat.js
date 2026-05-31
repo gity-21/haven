@@ -841,6 +841,7 @@ function connectSocket() {
         try {
             await pc.setRemoteDescription(new RTCSessionDescription(offer));
             const answer = await pc.createAnswer();
+            answer.sdp = forceHighQualityAudio(answer.sdp);
             await pc.setLocalDescription(answer);
             state.socket.emit('webrtc-answer', { targetId: senderId, answer: pc.localDescription });
         } catch (err) {
@@ -2763,11 +2764,31 @@ const rtcConfig = {
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         // Alternatif STUN sunucuları (Google DNS çözülemediğinde yedek)
-        { urls: 'stun:stun.cloudflare.com:3478' },
-        // TODO (Güvenlik): Google STUN yerine aşağıdaki gibi bir TURN sunucusu eklenmesi IP sızıntılarını tamamen durdurur:
-        // { urls: 'turn:ornek-turn.com:3478', username: 'kullanici', credential: 'sifre' }
+        { urls: 'stun:stun.cloudflare.com:3478' }
     ]
 };
+
+// Yüksek Kalite Ses İçin SDP Müdahalesi (128 kbps, Stereo)
+function forceHighQualityAudio(sdp) {
+    let lines = sdp.split('\r\n');
+    let mLineIndex = -1;
+    let opusPayload = null;
+
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].startsWith('m=audio ')) {
+            mLineIndex = i;
+        }
+        if (mLineIndex !== -1 && lines[i].startsWith('a=rtpmap:') && lines[i].toLowerCase().includes('opus/48000')) {
+            opusPayload = lines[i].split(':')[1].split(' ')[0];
+        }
+        if (opusPayload && lines[i].startsWith('a=fmtp:' + opusPayload)) {
+            // Varolan fmtp parametrelerine stereo ve bitrate ekle
+            lines[i] += '; stereo=1; sprop-stereo=1; maxaveragebitrate=384000; cbr=1';
+            return lines.join('\r\n');
+        }
+    }
+    return sdp;
+}
 
 async function initiateVoiceCall(withVideo = false) {
     try {
@@ -2849,9 +2870,9 @@ async function joinVoiceRoom(withVideo = false) {
             gainNode.connect(destination);
             
             const dataArray = new Float32Array(analyser.fftSize);
-            const NOISE_THRESHOLD = -50; // dB - bu eşiğin altındaki sesler kesilir
+            const NOISE_THRESHOLD = -25; // dB - Eşik daha da yükseltildi, sadece çok yüksek sesler (insan sesi) mikrofonu açacak.
             const ATTACK_TIME = 0.01;    // Ses açılma hızı (saniye)
-            const RELEASE_TIME = 0.15;   // Ses kapanma hızı (saniye)
+            const RELEASE_TIME = 0.05;   // Ses kapanma hızı (saniye) - Çok hızlı kapanarak klavye ve arkadaki reels seslerini engelleyecek.
             let isGateOpen = false;
             
             function processNoiseGate() {
@@ -3426,6 +3447,7 @@ async function createPeerConnection(targetId, isInitiator) {
             console.log(`[Ses] Olay İstendi (NegotiationNeeded) -> ${targetId}`);
             // Görüntü/Ekran gibi yeni bir medya eklendiğinde WebRTC'yi yeniden yapılandırır
             const offer = await pc.createOffer();
+            offer.sdp = forceHighQualityAudio(offer.sdp);
             await pc.setLocalDescription(offer);
             state.socket.emit('webrtc-offer', { targetId, offer: pc.localDescription });
         } catch (err) {

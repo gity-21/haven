@@ -74,5 +74,12 @@ npm run build:win
 - **Ağ / Tünelleme**: Cloudflare Tunnel (TryCloudflare)
 - **Kriptografi**: İstemci tarafında Web Crypto API (AES-GCM), Sunucuda Bcrypt
 
+## 🗺️ Yol Haritası (Gelecek Planları)
+- **Gelişmiş Sohbet Deneyimi:** Mesaj yanıtlama, emoji tepkileri (reactions) ve Markdown desteği.
+- **Sürükle & Bırak:** Dosyaları doğrudan sohbet penceresine sürükleyerek P2P transferi başlatma.
+- **Güvenlik Artırımı:** Görüldükten sonra kendini imha eden mesajlar ve MITM saldırılarına karşı anahtar (fingerprint) doğrulama.
+- **Kişiselleştirme:** Arama ekranlarında mikrofon/kamera cihaz seçimi ve arka plan bulanıklaştırma.
+- **DevOps:** Electron otomatik güncelleme (auto-updater) entegrasyonu.
+
 ---
 **GITY Team** tarafından <3 ile geliştirilmiştir.
