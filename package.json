@@ -1,10 +1,15 @@
 {
     "name": "haven",
     "version": "2.0.0",
+<<<<<<< HEAD
     "description": "Haven",
+=======
+    "description": "Private desktop chat application - Premium Discord-like invite-only rooms",
+>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf
     "homepage": "https://github.com/haven-chat/haven",
     "main": "app/dist/main.js",
     "scripts": {
+<<<<<<< HEAD
         "build:server": "tsc -p server/tsconfig.json",
         "build:main": "tsc -p app/tsconfig.main.json",
         "build:renderer": "vite build --config app/renderer/vite.config.ts",
@@ -12,6 +17,10 @@
         "start": "npm run build:ts && electron .",
         "launch": "electron .",
         "server": "npm run build:server && node server/dist/index.js",
+=======
+        "start": "electron .",
+        "server": "node server/server.js",
+>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf
         "dev": "electron . --dev",
         "dev:server": "tsc -p server/tsconfig.json --watch",
         "dev:renderer": "vite --config app/renderer/vite.config.ts",
@@ -29,6 +38,11 @@
         "asar": true,
         "directories": {
             "output": "dist"
+        },
+        "publish": {
+            "provider": "github",
+            "owner": "haven-chat",
+            "repo": "haven"
         },
         "files": [
             "app/dist/**/*",
@@ -77,10 +91,10 @@
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",
-        "better-sqlite3": "^12.8.0",
         "cloudflared": "^0.7.1",
         "cors": "^2.8.5",
         "dotenv": "^16.4.7",
+        "electron-updater": "^6.8.3",
         "express": "^4.21.2",
         "express-rate-limit": "^8.2.1",
         "multer": "^2.0.2",

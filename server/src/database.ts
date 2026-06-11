@@ -123,11 +123,14 @@ function createBetterSqlite3Wrapper(db: SqlJsDatabase): DatabaseWrapper {
                     try {
                         db.run(sql, flatParams.length > 0 ? flatParams as initSqlJs.BindParams : undefined);
                         isDirty = true;
+                        // Kaydetmeden ÖNCE ID ve değişiklik sayısını al!
+                        const changes = db.getRowsModified();
+                        const insertId = getLastInsertRowId(db);
                         // Hemen kaydet (veri kaybını önlemek için)
                         saveToDisk();
                         return {
-                            changes: db.getRowsModified(),
-                            lastInsertRowid: getLastInsertRowId(db)
+                            changes: changes,
+                            lastInsertRowid: insertId
                         };
                     } catch (e) {
                         throw e;
@@ -204,8 +207,17 @@ export async function initializeDatabase(): Promise<DatabaseWrapper> {
         )
     `);
 
+<<<<<<< HEAD:server/src/database.ts
     // Geriye dönük uyumluluk: Mevcut tabloya user_secret eklemeyi dene
     try { sqliteDb.run('ALTER TABLE messages ADD COLUMN user_secret TEXT'); } catch (_) { /* zaten varsa görmezden gel */ }
+=======
+    // Migration: Eğer veritabanı eski versiyonsa user_secret kolonunu ekle
+    try {
+        sqliteDb.run("ALTER TABLE messages ADD COLUMN user_secret TEXT");
+    } catch (e) {
+        // Kolon zaten varsa (veya başka bir hata ise) yoksay
+    }
+>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/database.js
 
     sqliteDb.run(`
         CREATE INDEX IF NOT EXISTS idx_messages_room

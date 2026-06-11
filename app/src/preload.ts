@@ -55,7 +55,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.invoke('desktop-capturer-get-sources', opts),
 
     // Admin token'ını al (sunucu sahibi için otomatik yetkilendirme)
+<<<<<<< HEAD:app/src/preload.ts
     getAdminToken: (): Promise<string | null> => ipcRenderer.invoke('get-admin-token')
+=======
+    getAdminToken: () => ipcRenderer.invoke('get-admin-token'),
+
+    // Otomatik Güncelleme
+    onUpdateStatus: (callback) => ipcRenderer.on('update-status', (event, data) => callback(data)),
+    installUpdate: () => ipcRenderer.invoke('install-update')
+>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:app/preload.js
 });
 
 // DOM yüklendiğinde Ctrl+Scroll ve Ctrl+Plus/Minus zoom'u engelle
