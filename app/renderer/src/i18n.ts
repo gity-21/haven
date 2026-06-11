@@ -1,6 +1,19 @@
-const translations = {
+/**
+ * i18n.ts — Çoklu Dil (Internationalization) Modülü
+ *
+ * Türkçe (tr), İngilizce (en) ve Kürtçe (ku) çeviri desteği.
+ * DOM'daki data-lang-key ve data-lang-title attribute'larını otomatik çevirir.
+ */
+
+// ── Çeviri tipleri ──
+
+type TranslationMap = Record<string, string>;
+type Translations = Record<string, TranslationMap>;
+
+// ── Çeviri Verileri ──
+
+const translations: Translations = {
     tr: {
-        // Genel Ayarlar
         "settings_title": "Ayarlar",
         "settings_profile": "Profil",
         "settings_audio": "Ses",
@@ -15,8 +28,6 @@ const translations = {
         "title_close": "Kapat",
         "you": "Sen",
         "users_in_room": "Odada Kimler Var?",
-        
-        // Login & Ağ Ekranı
         "app_title": "Haven",
         "app_subtitle": "Güvenli ve Anonim İletişim Ağı",
         "tab_create": "Ağ Kur",
@@ -25,6 +36,8 @@ const translations = {
         "server_placeholder": "Uzak sunucu adresi (localhost/davet)",
         "room_label": "Ağ Anahtarı",
         "room_placeholder": "Doğrulanmış ağ kimliği",
+        "room_placeholder_create": "Yeni uçtan uca şifreli ağ bağlamı oluşturun",
+        "room_placeholder_join": "Kriptografik erişim odası anahtarı",
         "password_label": "Erişim Şifresi (E2EE)",
         "password_placeholder": "Şifrenizi güvenle girin",
         "btn_connect": "Bağlan",
@@ -37,16 +50,15 @@ const translations = {
         "username_color_label": "Takma Ad Rengi",
         "color_preview_text": "Önizleme:",
         "sample_user": "Örnek Kullanıcı",
-        
         "audio_settings": "Ses Ayarları",
         "audio_settings_desc": "Ses giriş ve çıkış cihazlarınızı seçin ve test edin.",
         "mic_label": "Giriş Aygıtı (Mikrofon)",
         "speaker_label": "Çıkış Aygıtı (Hoparlör)",
+        "noise_suppression_label": "Gürültü Engelleme (Yapay Zeka)",
         "btn_test_mic": "🎙️ Mikrofonu Test Et",
         "btn_test_speaker": "🔊 Hoparlörü Test Et",
         "btn_stop_test": "⏹️ Testi Durdur",
         "select_loading": "Yükleniyor...",
-        
         "appearance_settings": "Görünüm Ayarları",
         "appearance_settings_desc": "Uygulamanın görsel temasını buradan değiştirebilirsiniz.",
         "theme_label": "Giriş Ekranı Teması",
@@ -54,7 +66,6 @@ const translations = {
         "theme_hacker": "Hacker",
         "theme_white": "Beyaz",
         "lang_label": "Uygulama Dili",
-        
         "invite_title": "Odanız Kuruldu!",
         "invite_desc": "Aşağıdaki bilgileri arkadaşınıza göndererek odaya katılmasını sağlayabilirsiniz.",
         "invite_server_label": "Sunucu Davet Linki",
@@ -64,7 +75,6 @@ const translations = {
         "btn_copied": "Kopyalandı!",
         "btn_copy_all": "Tümünü Kopyala",
         "btn_start_chat": "Sohbete Geç",
-        // FIX #15: duplicate connecting kaldırıldı ("Bağlantı Kuruluyor..." → "Bağlanıyor..." geçerli)
         "loading": "Yükleniyor...",
         "msg_replying": "yanıtlanıyor",
         "confirm_title": "Emin misiniz?",
@@ -75,16 +85,15 @@ const translations = {
         "msg_leave_room": "Gizli odadan çıkmak istediğinize emin misiniz?",
         "msg_delete_message": "Bu mesajı silmek istediğinize emin misiniz?",
         "msg_send_multiple_images": "{count} adet görseli göndermek istediğinize emin misiniz?",
-        
-        // Chat Ekranı
         "chat_placeholder": "Gizli odaya mesaj gönder...",
         "chat_room_desc": "Uçtan uca şifreli ve izole edilmiş oda.",
         "empty_state_title": "Haven'a hoş geldin!",
         "empty_state_desc": "Bu izolasyon odasındaki tüm mesajlar ve paylaşımlar uçtan uca şifrelenir. Bağlantınız koptuğunda iz bırakmadan silinir.",
         "date_today": "Bugün",
         "date_yesterday": "Dün",
+        "today": "Bugün",
+        "yesterday": "Dün",
         "tab_admin": "Sunucu Yönetimi",
-        // FIX #15: duplicate admin_label kaldırıldı ("YÖNETİCİ" → "Yönetici" geçerli)
         "admin_desc": "Sunucunuzdaki tüm odaları buradan yönetebilirsiniz. Bu panel sadece sunucu sahibine görünür.",
         "admin_loading": "Yükleniyor...",
         "btn_delete_all_rooms": "Tüm Odaları Sil",
@@ -113,12 +122,9 @@ const translations = {
         "chat_cam_off": "Kamerayı Aç",
         "chat_status_ringing": "Aranıyor...",
         "online_count": "Çevrimiçi",
-        
         "modal_screen_share_title": "Ekran Paylaşımı",
         "tab_entire_screen": "Tüm Ekran",
         "tab_windows": "Pencereler",
-
-        // Dinamik JS metinleri
         "connecting": "Bağlanıyor...",
         "conn_failed": "Bağlantı hatası!",
         "conn_lost": "Bağlantı koptu. Yeniden deneniyor...",
@@ -127,11 +133,11 @@ const translations = {
         "typing_one": "yazıyor...",
         "typing_two": "yazıyor...",
         "typing_many": "kişi yazıyor...",
-        // FIX #17: i18n'e taşınan yeni anahtarlar
         "p2p_loading": "Yükleniyor... Lütfen sekmeyi kapatmayın.",
         "resources_loading": "Kaynaklar yükleniyor...",
         "rooms_loading": "Odalar yükleniyor...",
         "screen_sharing": "Ekran Paylaşılıyor",
+        "sharing_screen": "ekranını paylaşıyor",
         "calling": "Arıyor...",
         "call_rejected": "aramayı reddetti!",
         "call_cancelled": "Arama iptal edildi.",
@@ -173,8 +179,7 @@ const translations = {
         "settings_menu": "Ayarlar",
         "leave_room": "Odadan Çık",
         "invite_link": "Davet Linki",
-
-        // Bildirimler
+        "no_users": "Henüz kimse yok.",
         "toast_connected": "Sunucuya başarıyla bağlanıldı.",
         "toast_disconnected": "Sunucu bağlantısı koptu! Yeniden bağlanılıyor...",
         "toast_screen_share_started": "Ekran paylaşımı başlatıldı!",
@@ -196,7 +201,6 @@ const translations = {
         "title_close": "Close",
         "you": "You",
         "users_in_room": "Who is in the Room?",
-        
         "app_title": "Haven",
         "app_subtitle": "Secure and Anonymous Communication Network",
         "tab_create": "Create Network",
@@ -205,6 +209,8 @@ const translations = {
         "server_placeholder": "Remote server address (localhost/invite)",
         "room_label": "Network Key",
         "room_placeholder": "Verified network ID",
+        "room_placeholder_create": "Create a new end-to-end encrypted network context",
+        "room_placeholder_join": "Cryptographic access room key",
         "password_label": "Access Password (E2EE)",
         "password_placeholder": "Enter your password securely",
         "btn_connect": "Connect",
@@ -217,16 +223,15 @@ const translations = {
         "username_color_label": "Nickname Color",
         "color_preview_text": "Preview:",
         "sample_user": "Sample User",
-        
         "audio_settings": "Audio Settings",
-        "audio_settings_desc": "Select and test your audio inputs and outputs.",
+        "audio_settings_desc": "Select and test your audio input and output devices.",
         "mic_label": "Input Device (Microphone)",
         "speaker_label": "Output Device (Speaker)",
+        "noise_suppression_label": "Noise Suppression (AI)",
         "btn_test_mic": "🎙️ Test Microphone",
         "btn_test_speaker": "🔊 Test Speaker",
         "btn_stop_test": "⏹️ Stop Test",
         "select_loading": "Loading...",
-        
         "appearance_settings": "Appearance Settings",
         "appearance_settings_desc": "Change the visual theme of the app from here.",
         "theme_label": "App Theme",
@@ -234,7 +239,6 @@ const translations = {
         "theme_hacker": "Hacker",
         "theme_white": "White",
         "lang_label": "App Language",
-        
         "invite_title": "Your Room is Created!",
         "invite_desc": "Send the information below to your friend to let them join.",
         "invite_server_label": "Server Invite Link",
@@ -244,7 +248,6 @@ const translations = {
         "btn_copied": "Copied!",
         "btn_copy_all": "Copy All",
         "btn_start_chat": "Start Chatting",
-        // FIX #15: duplicate connecting kaldırıldı ("Connecting..." → ikincisi geçerli)
         "loading": "Loading...",
         "msg_replying": "is being replied",
         "confirm_title": "Are you sure?",
@@ -255,15 +258,15 @@ const translations = {
         "msg_leave_room": "Are you sure you want to leave the secret room?",
         "msg_delete_message": "Are you sure you want to delete this message?",
         "msg_send_multiple_images": "Are you sure you want to send {count} images?",
-
         "chat_placeholder": "Send message to secret room...",
         "chat_room_desc": "End-to-end encrypted and isolated room.",
         "empty_state_title": "Welcome to Haven!",
         "empty_state_desc": "All messages and shares in this isolation room are end-to-end encrypted. They are deleted without leaving a trace when your connection is lost.",
         "date_today": "Today",
         "date_yesterday": "Yesterday",
+        "today": "Today",
+        "yesterday": "Yesterday",
         "tab_admin": "Server Management",
-        // FIX #15: duplicate admin_label kaldırıldı ("ADMIN" → "Admin" geçerli)
         "admin_desc": "You can manage all rooms on your server here. This panel is only visible to the server owner.",
         "admin_loading": "Loading...",
         "btn_delete_all_rooms": "Delete All Rooms",
@@ -292,18 +295,10 @@ const translations = {
         "chat_cam_off": "Turn on Camera",
         "chat_status_ringing": "Ringing...",
         "online_count": "Online",
-        
         "modal_screen_share_title": "Screen Share",
         "tab_entire_screen": "Entire Screen",
         "tab_windows": "Windows",
-
-        // Dynamic JS strings
         "connecting": "Connecting...",
-        // FIX #17: i18n keys added
-        "p2p_loading": "Loading... Please keep the tab open.",
-        "resources_loading": "Loading sources...",
-        "rooms_loading": "Loading rooms...",
-        "screen_sharing": "Screen Sharing",
         "conn_failed": "Connection error!",
         "conn_lost": "Connection lost. Reconnecting...",
         "socketio_fail": "Socket.IO library failed to load!",
@@ -311,6 +306,11 @@ const translations = {
         "typing_one": "is typing...",
         "typing_two": "are typing...",
         "typing_many": "people are typing...",
+        "p2p_loading": "Loading... Please keep the tab open.",
+        "resources_loading": "Loading sources...",
+        "rooms_loading": "Loading rooms...",
+        "screen_sharing": "Screen Sharing",
+        "sharing_screen": "is sharing screen",
         "calling": "is Calling...",
         "call_rejected": "rejected the call!",
         "call_cancelled": "Call cancelled.",
@@ -352,7 +352,7 @@ const translations = {
         "settings_menu": "Settings",
         "leave_room": "Leave Room",
         "invite_link": "Invite Link",
-
+        "no_users": "No one here yet.",
         "toast_connected": "Connected to server successfully.",
         "toast_disconnected": "Disconnected from server! Reconnecting...",
         "toast_screen_share_started": "Screen sharing started!",
@@ -374,7 +374,6 @@ const translations = {
         "title_close": "Bigire",
         "you": "Tu",
         "users_in_room": "Kê di Odê de ye?",
-        
         "app_title": "Haven",
         "app_subtitle": "Tora Ragihandinê ya Ewle û Nenaskirî",
         "tab_create": "Tora Çêke",
@@ -383,6 +382,8 @@ const translations = {
         "server_placeholder": "Navnîşana serverê (localhost/vexwendin)",
         "room_label": "Bişkojka Torê",
         "room_placeholder": "Nasnameya torê ya pejirandî",
+        "room_placeholder_create": "Têkiliyek nû ya tora şîfrekirî ji serî heta dawiyê biafirînin",
+        "room_placeholder_join": "Mifteya odeya gihîştina krîptografîk",
         "password_label": "Şîfreya Gihîştinê",
         "password_placeholder": "Şîfreya xwe bi ewlehî binivîse",
         "btn_connect": "Têkeve",
@@ -395,16 +396,15 @@ const translations = {
         "username_color_label": "Rengê Navê",
         "color_preview_text": "Pêşdîtin:",
         "sample_user": "Bikarhênerê Mînak",
-        
-        "audio_settings": "Mîhengên Deng",
-        "audio_settings_desc": "Cîhazên dengê xwe hilbijêrin û biceribînin.",
-        "mic_label": "Amûra Têketinê (Mîkrofon)",
+        "audio_settings": "Mîhengên Dengê",
+        "audio_settings_desc": "Amûrên deng ên ketin û derketinê hilbijêrin û biceribînin.",
+        "mic_label": "Amûra Ketinê (Mîkrofon)",
         "speaker_label": "Amûra Derketinê (Axaftvan)",
-        "btn_test_mic": "🎙️ Mîkrofon Biceribîne",
+        "noise_suppression_label": "Kêmkirina Dengê Zêde (AI)",
+        "btn_test_mic": "🎙️ Mîkrofonê Biceribîne",
         "btn_test_speaker": "🔊 Axaftvan Biceribîne",
         "btn_stop_test": "⏹️ Testê Rawestîne",
         "select_loading": "Tê barkirin...",
-        
         "appearance_settings": "Mîhengên Xuyangiyê",
         "appearance_settings_desc": "Temaya dîtbar a sepanê ji vir biguherînin.",
         "theme_label": "Temaya Têketinê",
@@ -412,7 +412,6 @@ const translations = {
         "theme_hacker": "Hacker",
         "theme_white": "Sipî",
         "lang_label": "Zimanê Sepanê",
-        
         "invite_title": "Odeya Te Hate Çêkirin!",
         "invite_desc": "Agahiyên jêrîn ji hevalê xwe re bişînin ku ew jî tevli bibe.",
         "invite_server_label": "Lînkê Vexwendina Pêşkêşkar",
@@ -422,7 +421,6 @@ const translations = {
         "btn_copied": "Kopî Bû!",
         "btn_copy_all": "Tevahî Kopî Bike",
         "btn_start_chat": "Dest bi Sohbetê",
-        // FIX #15: duplicate connecting kaldırıldı (415. satır, login bloğu)
         "loading": "Tê barkirin...",
         "msg_replying": "tê bersivandin",
         "confirm_title": "Ma hûn pê bawer in?",
@@ -433,15 +431,15 @@ const translations = {
         "msg_leave_room": "Ma hûn pê bawer in ku hûn dixwazin ji odeya dizî derkevin?",
         "msg_delete_message": "Ma hûn pê bawer in ku hûn dixwazin vê peyamê jê bibin?",
         "msg_send_multiple_images": "Ma hûn pê bawer in ku hûn dixwazin {count} wêneyan bişînin?",
-
         "chat_placeholder": "Ji odeya dizî re peyamek bişîne...",
         "chat_room_desc": "Odeya şîfrekirî û veqetandî ji serî heta dawiyê.",
         "empty_state_title": "Bi xêr hatî Haven!",
         "empty_state_desc": "Hemû peyam û parvekirinên di vê jûreya îzolekirî de serî heta dawiyê têne şîfrekirin. Dema girêdana we qut bibe, bêyî şop hiştin têne jêbirin.",
         "date_today": "Îro",
         "date_yesterday": "Duh",
+        "today": "Îro",
+        "yesterday": "Duh",
         "tab_admin": "Rêvebiriya Pêşkêşkar",
-        // FIX #15: duplicate admin_label kaldırıldı ("RÊVEBER" → "Rêvebir" geçerli)
         "admin_desc": "Hûn dikarin hemî odeyên li ser pêşkêşkara xwe ji vir birêve bibin. Ev panel tenê ji xwediyê pêşkêşkarê re xuya ye.",
         "admin_loading": "Tê barkirin...",
         "btn_delete_all_rooms": "Hemî Odeyan Jê Bibe",
@@ -470,18 +468,10 @@ const translations = {
         "chat_cam_off": "Kamerayê Veke",
         "chat_status_ringing": "Tê gerîn...",
         "online_count": "Serhêl",
-        
         "modal_screen_share_title": "Parvekirina Dîmenderê",
         "tab_entire_screen": "Tevahiya Dîmenderê",
         "tab_windows": "Paceyên Taybet",
-
-        // Dynamic JS strings
         "connecting": "Tê girêdan...",
-        // FIX #17: i18n keys (ku)
-        "p2p_loading": "Tê barkirin... Ji kerema xwe tabloyê negire.",
-        "resources_loading": "Çavkanî tên barkirin...",
-        "rooms_loading": "Odeyên tên barkirin...",
-        "screen_sharing": "Dîmender Tê Parve Kirin",
         "conn_failed": "Xeletiya girêdanê!",
         "conn_lost": "Girêdan qut bû. Dîsa tê ceribandin...",
         "socketio_fail": "Pirtûkxaneya Socket.IO bar nebû!",
@@ -489,6 +479,11 @@ const translations = {
         "typing_one": "dinivîse...",
         "typing_two": "dinivîsin...",
         "typing_many": "kes dinivîsin...",
+        "p2p_loading": "Tê barkirin... Ji kerema xwe tabloyê negire.",
+        "resources_loading": "Çavkanî tên barkirin...",
+        "rooms_loading": "Odeyên tên barkirin...",
+        "screen_sharing": "Dîmender Tê Parve Kirin",
+        "sharing_screen": "dîmenderê parve dike",
         "calling": "Digere...",
         "call_rejected": "bang red kir!",
         "call_cancelled": "Bang hate betalkirin.",
@@ -530,7 +525,7 @@ const translations = {
         "settings_menu": "Mîheng",
         "leave_room": "Ji Odeyê Derkeve",
         "invite_link": "Lînka Vexwendinê",
-
+        "no_users": "Hêj kes li vir nine.",
         "toast_connected": "Bi serkeftî bi serverê ve hat girêdan.",
         "toast_disconnected": "Girêdana pêşkêşkar qut bû! Dîsa tê girêdan...",
         "toast_screen_share_started": "Parvekirina ekranê dest pê kir!",
@@ -539,51 +534,60 @@ const translations = {
     }
 };
 
-let currentLang = localStorage.getItem('dc_app_lang') || 'tr';
+// ── Modül durumu ──
 
-function translatePage() {
-    document.querySelectorAll('[data-lang-key]').forEach(el => {
+let currentLang: string = localStorage.getItem('haven_app_lang') || 'tr';
+
+// ── Çeviri fonksiyonları ──
+
+function translatePage(): void {
+    document.querySelectorAll('[data-lang-key]').forEach((el: Element) => {
         const key = el.getAttribute('data-lang-key');
-        if (translations[currentLang] && translations[currentLang][key]) {
-            // Placeholder ise placeholderı değiş, değilse text veya HTML'i değiş
-            if ((el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && el.hasAttribute('placeholder')) {
-                el.placeholder = translations[currentLang][key];
-            } else if (el.tagName === 'TITLE') {
-                 document.title = translations[currentLang][key];
-            } else {
-                el.innerText = translations[currentLang][key];
-            }
+        if (!key || !translations[currentLang] || !translations[currentLang][key]) return;
+
+        if ((el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && el.hasAttribute('placeholder')) {
+            (el as HTMLInputElement).placeholder = translations[currentLang][key];
+        } else if (el.tagName === 'TITLE') {
+            document.title = translations[currentLang][key];
+        } else {
+            (el as HTMLElement).innerText = translations[currentLang][key];
         }
     });
 
-    document.querySelectorAll('[data-lang-title]').forEach(el => {
+    document.querySelectorAll('[data-lang-title]').forEach((el: Element) => {
         const key = el.getAttribute('data-lang-title');
-        if (translations[currentLang] && translations[currentLang][key]) {
-            el.title = translations[currentLang][key];
+        if (key && translations[currentLang] && translations[currentLang][key]) {
+            (el as HTMLElement).title = translations[currentLang][key];
         }
     });
 }
 
-function t(key) {
-    return (translations[currentLang] && translations[currentLang][key]) ? translations[currentLang][key] : key;
+function t(key: string): string {
+    return (translations[currentLang] && translations[currentLang][key])
+        ? translations[currentLang][key]
+        : key;
 }
 
-function setLanguage(lang) {
+function setLanguage(lang: string): void {
     if (!translations[lang]) return;
     currentLang = lang;
-    localStorage.setItem('dc_app_lang', lang);
+    localStorage.setItem('haven_app_lang', lang);
     translatePage();
 }
 
-// Global'e çıkart - currentLang'ı getter ile sunarak her zaman güncel değeri verelim
+// ── Global'e çıkart ──
+
 window.i18n = {
     t,
     setLanguage,
-    get currentLang() { return currentLang; },
+    get currentLanguage(): string { return currentLang; },
     translatePage
-};
+} as any;
 
-// Yüklendiğinde direkt çalıştır
+// ── Yüklendiğinde direkt çalıştır ──
+
 document.addEventListener('DOMContentLoaded', () => {
     translatePage();
 });
+
+export { t, setLanguage, translatePage, translations };

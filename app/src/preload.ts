@@ -1,18 +1,18 @@
 /**
- * preload.js - Güvenli IPC Köprüsü (Context Bridge)
+ * preload.ts - Güvenli IPC Köprüsü (Context Bridge)
  * 
  * Neler Var:
  * - Renderer process (ön yüz) ile Main process (arka plan) arasında güvenli ve yalıtılmış iletişim sağlar.
- * - Node.js entegrasyonu tamamen kapatıldığı için önyüzün yapabileceği işlemler (pencere küçültme, tünel açtırma vb.) burada sınırlandırılır.
+ * - Node.js entegrasyonu tamamen kapatıldığı için önyüzün yapabileceği işlemler burada sınırlandırılır.
  * 
- * Ayarlar/Expose Edilen Fonksiyonlar:
+ * Expose Edilen Fonksiyonlar:
  * - Pencere kontrolleri (minimizeWindow, maximizeWindow, vb.)
  * - Yönlendirmeler (navigateToChat, navigateToLogin)
  * - Tünel/Sunucu Başlatma ve Okuma (startHost, getLocalServerUrl, getTunnelUrl)
  * - Ekran paylaşımı için masaüstü kaynaklarını alma (getDesktopSources)
  */
 
-const { contextBridge, ipcRenderer, webFrame } = require('electron');
+import { contextBridge, ipcRenderer, webFrame } from 'electron';
 
 // Zoom seviyesini sıfırla ve kilitle (Zoom bug'ını önler)
 webFrame.setZoomLevel(0);
@@ -25,49 +25,50 @@ webFrame.setVisualZoomLevelLimits(1, 1);
  */
 contextBridge.exposeInMainWorld('electronAPI', {
     // Pencere kontrolleri (chat.js ve login.js'nin beklediği format)
-    minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
-    maximizeWindow: () => ipcRenderer.invoke('window:maximize'),
-    closeWindow: () => ipcRenderer.invoke('window:close'),
-    isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
-    focusWindow: () => ipcRenderer.invoke('window:focus'),
+    minimizeWindow: (): Promise<void> => ipcRenderer.invoke('window:minimize'),
+    maximizeWindow: (): Promise<boolean> => ipcRenderer.invoke('window:maximize'),
+    closeWindow: (): Promise<void> => ipcRenderer.invoke('window:close'),
+    isMaximized: (): Promise<boolean> => ipcRenderer.invoke('window:isMaximized'),
+    focusWindow: (): Promise<void> => ipcRenderer.invoke('window:focus'),
 
     // Sayfa navigasyonu (Electron navigasyonlarını IPC üzerinden yönet)
-    navigateToChat: () => ipcRenderer.invoke('navigate:chat'),
-    navigateToLogin: () => ipcRenderer.invoke('navigate:login'),
+    navigateToChat: (): Promise<void> => ipcRenderer.invoke('navigate:chat'),
+    navigateToLogin: (): Promise<void> => ipcRenderer.invoke('navigate:login'),
 
     // Cloudflare Tunnel URL'sini otomatik oku (Asenkron)
-    getTunnelUrl: () => ipcRenderer.invoke('get-tunnel-url'),
+    getTunnelUrl: (): Promise<string | null> => ipcRenderer.invoke('get-tunnel-url'),
 
     // Uygulama içi Host'u başlat
-    startHost: () => ipcRenderer.invoke('start-host'),
+    startHost: (): Promise<string> => ipcRenderer.invoke('start-host'),
 
     // Lokal sunucu URL'sini al (her zaman doğru portu döner)
-    getLocalServerUrl: () => ipcRenderer.invoke('get-local-server-url'),
+    getLocalServerUrl: (): Promise<string> => ipcRenderer.invoke('get-local-server-url'),
 
     // Harici bağlantıları varsayılan tarayıcıda aç
-    openExternal: (url) => ipcRenderer.invoke('open-external-url', url),
+    openExternal: (url: string): Promise<void> => ipcRenderer.invoke('open-external-url', url),
 
     // Clipboard (Pano)
-    writeToClipboard: (text) => ipcRenderer.invoke('clipboard:write', text),
+    writeToClipboard: (text: string): Promise<boolean> => ipcRenderer.invoke('clipboard:write', text),
 
     // Ekran Paylaşımı (Ekran/Pencere Listesi Alma)
-    getDesktopSources: (opts) => ipcRenderer.invoke('desktop-capturer-get-sources', opts),
+    getDesktopSources: (opts: { types: string[] }): Promise<Electron.DesktopCapturerSource[]> =>
+        ipcRenderer.invoke('desktop-capturer-get-sources', opts),
 
     // Admin token'ını al (sunucu sahibi için otomatik yetkilendirme)
-    getAdminToken: () => ipcRenderer.invoke('get-admin-token')
+    getAdminToken: (): Promise<string | null> => ipcRenderer.invoke('get-admin-token')
 });
 
 // DOM yüklendiğinde Ctrl+Scroll ve Ctrl+Plus/Minus zoom'u engelle
 window.addEventListener('DOMContentLoaded', () => {
     // Ctrl + Scroll (tekerlek) ile zoom'u engelle
-    document.addEventListener('wheel', (e) => {
+    document.addEventListener('wheel', (e: WheelEvent) => {
         if (e.ctrlKey) {
             e.preventDefault();
         }
     }, { passive: false });
 
     // Ctrl+Plus / Ctrl+Minus / Ctrl+0 zoom kısayollarını engelle
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
         if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
             e.preventDefault();
         }

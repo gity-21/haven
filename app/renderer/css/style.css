@@ -2600,10 +2600,21 @@ body {
 /* Hover toolbar — saf CSS ile gizle/göster (JS event listener yükü yok) */
 .msg-row-wrapper .row-hover-toolbar {
     display: none;
+    pointer-events: none;
 }
 
 .msg-row-wrapper:hover .row-hover-toolbar {
     display: flex !important;
+    pointer-events: auto;
+}
+
+/* Gruplanan mesajlarda hover toolbar doğru görünsün */
+.msg-row-wrapper {
+    position: relative;
+}
+
+.msg-row-wrapper:hover {
+    z-index: 5;
 }
 
 /* 7. Input Area Floating */

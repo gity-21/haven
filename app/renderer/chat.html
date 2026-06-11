@@ -8,15 +8,12 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/soft-login.css">
     <link rel="stylesheet" href="css/antigravity.css">
-    <script src="js/socket.io.min.js"></script>
     <script>
         // Tema ayarlarını sayfa render olmadan önce yükle (FOUC Engelleme)
         const savedTheme = localStorage.getItem('haven_login_theme') || 'space';
         document.documentElement.setAttribute('data-theme', savedTheme);
     </script>
-    <script src="js/matrix.js"></script>
-    <script src="js/antigravity.js"></script>
-    <script src="js/i18n.js"></script>
+    <script type="module" src="src/chat/index.ts"></script>
 </head>
 
 <body>
@@ -815,7 +812,7 @@
         </div>
     </div>
 
-    <script src="js/chat.js"></script>
+
 </body>
 
 </html>

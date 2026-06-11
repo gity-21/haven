@@ -63,7 +63,15 @@ echo [OK] Login ekraninda otomatik doldurulacak.
 echo.
 echo [APP] Haven Masaustu uygulamasi aciliyor...
 echo [INFO] Sunucu Electron tarafindan otomatik baslatilacak.
-npm start
+
+:: dist/ klasoru varsa build'i atla, yoksa ilk kez derle
+if exist "app\renderer\dist\login.html" (
+    echo [FAST] Onceki build mevcut, derleme atlanıyor...
+    npm run launch
+) else (
+    echo [BUILD] Ilk calistirma, derleniyor...
+    npm start
+)
 
 :: Kapanıs
 echo.

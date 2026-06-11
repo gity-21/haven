@@ -1,5 +1,8 @@
 /**
- * matrix.js - Matrix Digital Rain Effect
+ * matrix.ts — Matrix Digital Rain Effect
+ *
+ * "Hacker" teması aktif olduğunda canvas üzerine Matrix animasyonu çizer.
+ * MutationObserver ile tema değişikliklerini dinler.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -10,29 +13,29 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.style.left = '0';
     canvas.style.width = '100vw';
     canvas.style.height = '100vh';
-    canvas.style.zIndex = '0'; // Arkada kalması için
+    canvas.style.zIndex = '0';
     canvas.style.pointerEvents = 'none';
     canvas.style.opacity = '0';
     canvas.style.transition = 'opacity 0.8s ease-in-out';
-    document.body.prepend(canvas); // En arkaya ekleyelim
+    document.body.prepend(canvas);
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d')!;
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
 
     const characters = '日ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
     const fontSize = 16;
     let columns = width / fontSize;
-    const drops = [];
+    const drops: number[] = [];
 
     for (let x = 0; x < columns; x++) {
         drops[x] = 1;
     }
 
-    let matrixInterval = null;
+    let matrixInterval: ReturnType<typeof setInterval> | null = null;
     let isMatrixActive = false;
 
-    function draw() {
+    function draw(): void {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
         ctx.fillRect(0, 0, width, height);
 
@@ -61,12 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function checkTheme() {
+    function checkTheme(): void {
         const theme = document.documentElement.getAttribute('data-theme');
         if (theme === 'hacker') {
             if (!isMatrixActive) {
                 isMatrixActive = true;
-                canvas.style.opacity = '0.35'; // Biraz şeffaf, yazıları kapatmasın
+                canvas.style.opacity = '0.35';
                 ctx.fillStyle = '#000';
                 ctx.fillRect(0, 0, width, height);
                 matrixInterval = setInterval(draw, 33);
@@ -75,14 +78,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isMatrixActive) {
                 isMatrixActive = false;
                 canvas.style.opacity = '0';
-                clearInterval(matrixInterval);
-                matrixInterval = null;
+                if (matrixInterval) {
+                    clearInterval(matrixInterval);
+                    matrixInterval = null;
+                }
             }
         }
     }
 
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
+    const observer = new MutationObserver((mutations: MutationRecord[]) => {
+        mutations.forEach((mutation: MutationRecord) => {
             if (mutation.attributeName === 'data-theme') {
                 checkTheme();
             }
