@@ -150,6 +150,7 @@ export interface VoiceUserData {
     username: string;
     avatarColor: string;
     profilePic: string | null;
+    isMicOn?: boolean;
 }
 
 export interface UsernameChangedData {

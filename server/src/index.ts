@@ -722,7 +722,7 @@ export async function startServer(portArg: number | null = null): Promise<Server
         });
 
         // WebRTC P2P Sesli İletişim (Sinyal)
-        socket.on('voice-join', () => {
+        socket.on('voice-join', (data?: { isMicOn?: boolean }) => {
             if (!socket.roomKey) return;
 
             if (activeRinging.has(socket.roomKey)) {
@@ -737,7 +737,8 @@ export async function startServer(portArg: number | null = null): Promise<Server
                 userId: socket.id,
                 username: socket.nickname!,
                 avatarColor: socket.avatarColor!,
-                profilePic: socket.profilePic || null
+                profilePic: socket.profilePic || null,
+                isMicOn: !!(data?.isMicOn)
             });
 
             // Güncel sesli kanal listesini tüm odaya bildir
@@ -749,7 +750,8 @@ export async function startServer(portArg: number | null = null): Promise<Server
                 userId: socket.id,
                 username: socket.nickname,
                 avatarColor: socket.avatarColor,
-                profilePic: socket.profilePic
+                profilePic: socket.profilePic,
+                isMicOn: !!(data?.isMicOn)
             });
         });
 
@@ -771,6 +773,19 @@ export async function startServer(portArg: number | null = null): Promise<Server
             socket.to(socket.roomKey).emit('voice-leave', {
                 userId: socket.id,
                 username: socket.nickname
+            });
+        });
+
+        socket.on('mic-state', (data: { isMicOn: boolean }) => {
+            if (!socket.roomKey) return;
+            const users = activeVoiceUsers.get(socket.roomKey);
+            if (users) {
+                const user = users.get(socket.id);
+                if (user) user.isMicOn = !!data.isMicOn;
+            }
+            socket.to(socket.roomKey).emit('user-mic-state', {
+                userId: socket.id,
+                isMicOn: !!data.isMicOn
             });
         });
 

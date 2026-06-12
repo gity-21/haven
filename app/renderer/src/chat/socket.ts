@@ -166,6 +166,10 @@ export function connectSocket(): void {
         }
     });
 
+    state.socket.on('user-mic-state', ({ userId, isMicOn }: { userId: string, isMicOn: boolean }) => {
+        import('./ui/voice-ui').then(m => m.updateMicStatusUI(userId, isMicOn));
+    });
+
     // ── Messages ──
     state.socket.on('new-message', async (msg: any) => {
         if (el.emptyState) el.emptyState.style.display = 'none';
@@ -390,9 +394,10 @@ export function connectSocket(): void {
     state.socket.on('call-cancelled', () => { stopRingtone(); el.modalIncomingCall?.classList.remove('visible'); showToast(window.i18n ? window.i18n.t('call_cancelled') : 'Arama iptal edildi.', 'info'); });
     state.socket.on('active-voice-users', (voiceUsers: any[]) => updateActiveCallBanner(voiceUsers));
 
-    state.socket.on('voice-join', async (data: { userId: string; username: string; avatarColor: string; profilePic?: string }) => {
+    state.socket.on('voice-join', async (data: { userId: string; username: string; avatarColor: string; profilePic?: string; isMicOn?: boolean }) => {
         if (!voiceState.isInVoice) return;
         createMediaElement(data.userId, data.username, data.avatarColor, false, null, data.profilePic || null);
+        import('./ui/voice-ui').then(m => m.updateMicStatusUI(data.userId, !!data.isMicOn));
         await createPeerConnection(data.userId, true);
     });
 

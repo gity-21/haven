@@ -147,6 +147,7 @@ export function createMediaElement(
             <span style="font-size:14px; color:var(--text-primary); font-weight:600; text-align:center; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
               ${escapeHtml(username)} ${isLocal ? (window.i18n ? `(${window.i18n.t('you')})` : '(Sen)') : ''}
             </span>
+            <div id="mic-status-${userId}" style="color:var(--accent-danger); font-size:16px; margin-top:-8px; display:none;">🔇</div>
         </div>
         ${videoContent}
         ${audioContent}
@@ -213,5 +214,15 @@ export async function loadAudioDevices(): Promise<void> {
         }
     } catch (err) {
         console.error('Ses cihazları alınamadı:', err);
+    }
+}
+
+/**
+ * Mikrofon durum ikonunu günceller.
+ */
+export function updateMicStatusUI(userId: string, isMicOn: boolean): void {
+    const micStatusEl = document.getElementById(`mic-status-${userId}`);
+    if (micStatusEl) {
+        micStatusEl.style.display = isMicOn ? 'none' : 'block';
     }
 }

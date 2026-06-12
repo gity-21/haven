@@ -9,7 +9,7 @@ import { state, voiceState, volumeMeters, playRingtone, stopRingtone } from './s
 import { el } from './elements';
 import { escapeHtml } from './utils';
 import { showToast } from './ui/toast';
-import { createMediaElement, setupVolumeMeter, updateScreenShareBadge, updateActiveCallBanner } from './ui/voice-ui';
+import { createMediaElement, setupVolumeMeter, updateScreenShareBadge, updateActiveCallBanner, updateMicStatusUI } from './ui/voice-ui';
 
 // ── RTC Config ──
 
@@ -288,7 +288,7 @@ export async function joinVoiceRoom(withVideo = false): Promise<void> {
     createMediaElement('local', state.nickname, state.avatarColor, true, voiceState.localStream, state.profilePic);
     setupVolumeMeter(voiceState.localStream, 'local');
 
-    state.socket!.emit('voice-join');
+    state.socket!.emit('voice-join', { isMicOn: voiceState.isMicOn });
     showToast(withVideo
         ? (window.i18n ? window.i18n.t('joined_video') : 'Görüntülü sohbete katıldınız!')
         : (window.i18n ? window.i18n.t('joined_voice') : 'Sesli sohbete katıldınız!'), 'success');
@@ -349,6 +349,8 @@ export function toggleMic(): void {
         voiceState.isMicOn = !voiceState.isMicOn;
         audioTracks[0].enabled = voiceState.isMicOn;
         updateToggleButtonsUI();
+        state.socket!.emit('mic-state', { isMicOn: voiceState.isMicOn });
+        updateMicStatusUI('local', voiceState.isMicOn);
     }
 }
 

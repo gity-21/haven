@@ -12,6 +12,9 @@ tunnel.log
 
 # TypeScript Migration — Legacy JS (artık kullanılmıyor)
 **/_legacy/
+server/*.js
+app/main.js
+app/renderer/js/
 
 # TypeScript build output
 server/dist/

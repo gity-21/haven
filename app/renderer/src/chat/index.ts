@@ -577,9 +577,7 @@ function setupSettingsModal(): void {
         showToast(window.i18n ? window.i18n.t('settings_saved') : 'Ayarları kaydettiniz!', 'success');
     });
 
-    el.chatSettingsModal.addEventListener('click', (e: MouseEvent) => {
-        if (e.target === el.chatSettingsModal) closeChatSettings();
-    });
+    // Eski listener, aşağıda clone edilerek değiştirildi
 
     el.chatAvatarUpload?.addEventListener('change', (e: Event) => {
         const file = (e.target as HTMLInputElement).files?.[0];
@@ -612,6 +610,103 @@ function setupSettingsModal(): void {
             document.documentElement.setAttribute('data-theme', (e.target as HTMLSelectElement).value);
         });
     }
+
+    // ── Ses Testleri (Mikrofon & Hoparlör) ──
+    let chatMicTestStream: MediaStream | null = null;
+    let chatMicTestAnimFrame: number | null = null;
+
+    function chatStopMicTest(): void {
+        if (chatMicTestAnimFrame) cancelAnimationFrame(chatMicTestAnimFrame);
+        if (chatMicTestStream) {
+            chatMicTestStream.getTracks().forEach(t => t.stop());
+            chatMicTestStream = null;
+        }
+        const container = document.getElementById('mic-level-container');
+        const bar = document.getElementById('mic-level-bar');
+        if (container) container.style.display = 'none';
+        if (bar) (bar as HTMLElement).style.width = '0%';
+        const btn = document.getElementById('btn-test-mic');
+        if (btn) btn.textContent = '🎙️ Mikrofonu Test Et';
+    }
+
+    const btnTestMic = document.getElementById('btn-test-mic');
+    if (btnTestMic) {
+        btnTestMic.addEventListener('click', async () => {
+            if (chatMicTestStream) { chatStopMicTest(); return; }
+
+            const micSelect = document.getElementById('settings-mic-select') as HTMLSelectElement | null;
+            const deviceId = micSelect?.value || undefined;
+
+            try {
+                const constraints: MediaStreamConstraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
+                chatMicTestStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+                btnTestMic.textContent = '⏹️ Testi Durdur';
+                const container = document.getElementById('mic-level-container');
+                const bar = document.getElementById('mic-level-bar') as HTMLElement | null;
+                if (container) container.style.display = 'block';
+
+                const testCtx = new AudioContext();
+                const source = testCtx.createMediaStreamSource(chatMicTestStream);
+                const analyser = testCtx.createAnalyser();
+                analyser.fftSize = 256;
+                analyser.smoothingTimeConstant = 0.5;
+                source.connect(analyser);
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+                function updateBar(): void {
+                    analyser.getByteFrequencyData(dataArray);
+                    let sum = 0;
+                    for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+                    const avg = sum / dataArray.length;
+                    const percent = Math.min(100, (avg / 50) * 100);
+                    if (bar) bar.style.width = percent + '%';
+                    chatMicTestAnimFrame = requestAnimationFrame(updateBar);
+                }
+                updateBar();
+            } catch (err) {
+                const error = err as DOMException;
+                if ((window as any).showAlertModal) (window as any).showAlertModal('Mikrofon erişilemedi: ' + error.message);
+            }
+        });
+    }
+
+    const btnTestSpeaker = document.getElementById('btn-test-speaker');
+    if (btnTestSpeaker) {
+        btnTestSpeaker.addEventListener('click', () => {
+            const speakerSelect = document.getElementById('settings-speaker-select') as HTMLSelectElement | null;
+            const testAudio = new Audio('../../assets/notification.mp3');
+
+            if (speakerSelect?.value && typeof (testAudio as any).setSinkId === 'function') {
+                (testAudio as any).setSinkId(speakerSelect.value).then(() => {
+                    testAudio.play();
+                }).catch((e: Error) => {
+                    console.warn('setSinkId hatası:', e);
+                    testAudio.play();
+                });
+            } else {
+                testAudio.play();
+            }
+        });
+    }
+
+    // Modal kapanırken testi durdur
+    function closeChatSettingsWrapper() {
+        chatStopMicTest();
+        closeChatSettings();
+    }
+
+    // Override the click listener for closing settings
+    const btnCloseChatSettings = document.getElementById('btn-close-chat-settings');
+    if (btnCloseChatSettings) {
+        const newBtn = btnCloseChatSettings.cloneNode(true);
+        btnCloseChatSettings.parentNode?.replaceChild(newBtn, btnCloseChatSettings);
+        newBtn.addEventListener('click', closeChatSettingsWrapper);
+    }
+    
+    el.chatSettingsModal.addEventListener('click', (e: MouseEvent) => {
+        if (e.target === el.chatSettingsModal) closeChatSettingsWrapper();
+    });
 
     // Settings Modal Tab Logic
     const settingsTabs = document.querySelectorAll('.settings-tab');
