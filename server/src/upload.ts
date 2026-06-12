@@ -1,4 +1,4 @@
-/**
+﻿/**
  * upload.ts - Dosya Yükleme Servisi
  *
  * FIX #11: Magic bytes (MIME) doğrulaması eklendi.
@@ -116,18 +116,8 @@ const upload = multer({
     },
 });
 
-<<<<<<< HEAD:server/src/upload.ts
 router.post('/', (req: Request, res: Response) => {
     upload.single('file')(req, res, (err: unknown) => {
-=======
-router.post('/', (req, res) => {
-    const token = req.headers['x-upload-token'];
-    if (!token || !global.validUploadTokens || !global.validUploadTokens.has(token)) {
-        return res.status(403).json({ success: false, message: 'Yetkisiz dosya yükleme girişimi. Lütfen odaya tekrar bağlanın.' });
-    }
-
-    upload.single('file')(req, res, (err) => {
->>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/upload.js
         if (err) {
             const message = err instanceof Error ? err.message : 'Dosya yüklenemedi';
             return res.status(400).json({ success: false, message });

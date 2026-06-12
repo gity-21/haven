@@ -10,20 +10,12 @@
  * - Ekran ve kamera/ses izinlerine otomatik onay veren güvenlik ayarları.
  */
 
-<<<<<<< HEAD:app/src/main.ts
 import { app, BrowserWindow, ipcMain, shell, clipboard, Tray, Menu, desktopCapturer, session, IpcMainInvokeEvent } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { spawn, ChildProcess } from 'child_process';
 import net from 'net';
-=======
-const { app, BrowserWindow, ipcMain, shell, clipboard, Tray, Menu } = require('electron');
-const path = require('path');
-const fs = require('fs');
-const { spawn } = require('child_process');
-const net = require('net');
-const { autoUpdater } = require('electron-updater');
->>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:app/main.js
+import { autoUpdater } from 'electron-updater';
 
 // ── Yardımcı: Port kontrolü ──
 
@@ -130,17 +122,7 @@ function createWindow(): void {
         : path.join(__dirname, '..', 'renderer', 'dist');
     mainWindow.loadFile(path.join(rendererDir, 'login.html'));
 
-<<<<<<< HEAD:app/src/main.ts
     // Zoom seviyesini kilitle
-=======
-    // BROWSER KONSOLUNU DOSYAYA YAZ (Hata Ayıklama İçin)
-    mainWindow.webContents.on('console-message', (event) => {
-        const fs = require('fs');
-        fs.appendFileSync('browser-debug.log', `[BROWSER CONSOLE] [${event.level}] ${event.message}\n`);
-    });
-
-    // Zoom seviyesini kilitle (Zoom bug'ını önler - cascade/tekrarlama hatası)
->>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:app/main.js
     mainWindow.webContents.on('did-finish-load', () => {
         mainWindow?.webContents.setZoomFactor(1);
         mainWindow?.webContents.setZoomLevel(0);
@@ -297,11 +279,7 @@ ipcMain.handle('start-host', async () => {
             if (inUse) {
                 console.log('[Electron-IPC] Port 3847 zaten kullanımda, arka plan sunucusu çalışıyor kabul ediliyor.');
             } else {
-<<<<<<< HEAD:app/src/main.ts
                 const { startServer } = require('../../server/dist/index');
-=======
-                const { startServer } = require('../server/server.js');
->>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:app/main.js
                 serverInstance = await startServer(3847);
                 const addr = serverInstance!.server.address();
                 const port = typeof addr === 'object' && addr ? addr.port : 3847;
@@ -416,21 +394,21 @@ ipcMain.handle('install-update', () => {
 });
 
 // AutoUpdater Event Listeners
-autoUpdater.on('update-available', (info) => {
+autoUpdater.on('update-available', (info: any) => {
     console.log('[AutoUpdater] Güncelleme bulundu:', info.version);
     if (mainWindow) mainWindow.webContents.send('update-status', { type: 'available', info });
 });
 
-autoUpdater.on('download-progress', (progressObj) => {
+autoUpdater.on('download-progress', (progressObj: any) => {
     if (mainWindow) mainWindow.webContents.send('update-status', { type: 'progress', progress: progressObj });
 });
 
-autoUpdater.on('update-downloaded', (info) => {
+autoUpdater.on('update-downloaded', (info: any) => {
     console.log('[AutoUpdater] Güncelleme indirildi, kuruluma hazır.');
     if (mainWindow) mainWindow.webContents.send('update-status', { type: 'downloaded', info });
 });
 
-autoUpdater.on('error', (err) => {
+autoUpdater.on('error', (err: Error) => {
     console.error('[AutoUpdater] Güncelleme hatası:', err);
     if (mainWindow) mainWindow.webContents.send('update-status', { type: 'error', error: err.message });
 });
@@ -519,11 +497,7 @@ app.whenReady().then(async () => {
     if (!serverInstance) {
         (async () => {
             try {
-<<<<<<< HEAD:app/src/main.ts
                 const { startServer } = require('../../server/dist/index');
-=======
-                const { startServer } = require('../server/server.js');
->>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:app/main.js
                 serverInstance = await startServer(3847);
                 const addr = serverInstance!.server.address();
                 const port = typeof addr === 'object' && addr ? addr.port : 3847;
@@ -534,11 +508,7 @@ app.whenReady().then(async () => {
                 if (error.code === 'EADDRINUSE') {
                     console.log('[Electron] Port 3847 meşgul, rastgele port deneniyor...');
                     try {
-<<<<<<< HEAD:app/src/main.ts
                         const { startServer } = require('../../server/dist/index');
-=======
-                        const { startServer } = require('../server/server.js');
->>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:app/main.js
                         serverInstance = await startServer(0);
                         const addr2 = serverInstance!.server.address();
                         const port2 = typeof addr2 === 'object' && addr2 ? addr2.port : 0;
@@ -554,7 +524,7 @@ app.whenReady().then(async () => {
     // Geliştirici modunda değilsek güncellemeleri denetle
     if (app.isPackaged) {
         console.log('[AutoUpdater] Güncellemeler kontrol ediliyor...');
-        autoUpdater.checkForUpdatesAndNotify().catch(err => {
+        autoUpdater.checkForUpdatesAndNotify().catch((err: Error) => {
             console.error('[AutoUpdater] Kontrol hatası:', err);
         });
     }

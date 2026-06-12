@@ -1,4 +1,3 @@
-<<<<<<<< HEAD:server/src/index.ts
 /**
  * index.ts - Minimal Oda Tabanlı Sohbet Sunucusu (Backend Server)
  * 
@@ -60,6 +59,15 @@ interface HavenSocket extends Socket {
     avatarColor?: string;
     profilePic?: string | null;
     sessionId?: string;
+    uploadToken?: string;
+}
+
+// Global upload token store
+declare global {
+    var validUploadTokens: Set<string>;
+}
+if (!global.validUploadTokens) {
+    global.validUploadTokens = new Set<string>();
 }
 
 // ── Rate limiter iç tipi ──
@@ -72,6 +80,7 @@ interface RateLimitConfig {
 interface RateCounter {
     count: number;
     start: number;
+    warned?: boolean;
 }
 
 // ── Sabitler ──
@@ -279,11 +288,6 @@ app.delete('/api/admin/rooms', adminOnly, (_req: Request, res: Response) => {
 });
 
 app.get('/', (_req: Request, res: Response) => res.sendFile(path.join(__dirname, '../../app/renderer/login.html')));
-========
-const { dbWrapper: db } = require('./database');
-const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
 
 // Aktif arama (ringing) durumları: roomKey -> { callerId, callerName, avatarColor, profilePic }
 const activeRinging = new Map<string, RingingData>();
@@ -291,7 +295,6 @@ const activeRinging = new Map<string, RingingData>();
 // Sesli kanaldaki kullanıcılar: roomKey -> Map<socketId, VoiceUserData>
 const activeVoiceUsers = new Map<string, Map<string, VoiceUserData>>();
 
-<<<<<<<< HEAD:server/src/index.ts
 // ── Server'ı başlat ──
 
 export interface ServerResult {
@@ -316,17 +319,6 @@ export async function startServer(portArg: number | null = null): Promise<Server
             'join-room': { max: 3, windowMs: 10000 }, // 10 sn'de 3 deneme
             'toggle-reaction': { max: 30, windowMs: 5000 }, // 5 sn'de 30 tepki
             'typing': { max: 20, windowMs: 5000 }, // 5 sn'de 20 yazıyor sinyali
-========
-function setupSocketListeners(io) {
-    io.on('connection', (socket) => {
-
-        const _eventCounters = {};
-        const _LIMITS = {
-            'send-message':    { max: 15,  windowMs: 5000  }, // 5 sn'de 15 mesaj
-            'join-room':       { max: 3,   windowMs: 10000 }, // 10 sn'de 3 deneme
-            'toggle-reaction': { max: 30,  windowMs: 5000  }, // 5 sn'de 30 tepki
-            'typing':          { max: 20,  windowMs: 5000  }, // 5 sn'de 20 yazıyor sinyali
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
         };
 
         function _rateCheck(eventName: string): boolean {
@@ -357,11 +349,7 @@ function setupSocketListeners(io) {
         }
 
         // Kullanıcı giriş yaptığında (Bir Odaya katıldığında)
-<<<<<<<< HEAD:server/src/index.ts
         socket.on('join-room', (data: JoinRoomPayload) => {
-========
-        socket.on('join-room', ({ userId, nickname, roomKey, avatarColor, profilePic, authKey, mode, sessionId, userToken }) => {
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
             if (!_rateCheck('join-room')) return;
             const { userId, userSecret, nickname, roomKey, avatarColor, profilePic, authKey, mode } = data;
             if (!nickname || !roomKey || !authKey) {
@@ -371,36 +359,24 @@ function setupSocketListeners(io) {
 
             const joinMode = mode || 'create';
 
-<<<<<<<< HEAD:server/src/index.ts
             // Odanın parolasını kontrol et (veya oluştur)
             let room = db.prepare('SELECT password_hash FROM rooms WHERE room_key = ?').get(roomKey) as { password_hash: string } | undefined;
-========
-            let room = db.prepare('SELECT password_hash FROM rooms WHERE room_key = ?').get(roomKey);
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
 
             if (!room) {
                 if (joinMode === 'join') {
                     socket.emit('join-error', 'Bu oda mevcut değil! Lütfen geçerli bir oda anahtarı girin.');
                     return;
                 }
-<<<<<<<< HEAD:server/src/index.ts
                 // FIX #1: Her oda için kriptografik olarak rastgele salt üretiliyor.
                 // Eski sabit 'HavenSecureSalt2026' tüm odalarda aynı AES anahtarını
                 // türetiyordu; rainbow table saldırısına açık bir tasarımdı.
                 const e2eeSalt = crypto.randomBytes(32).toString('hex'); // 64 hex karakter
-========
-                const e2eeSalt = crypto.randomBytes(32).toString('hex');
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
                 const hash = bcrypt.hashSync(authKey, 10);
                 db.prepare('INSERT INTO rooms (room_key, password_hash, e2ee_salt) VALUES (?, ?, ?)').run(roomKey, hash, e2eeSalt);
                 console.log(`[AUTH] Yeni oda oluşturuldu: ${roomKey}`);
             } else {
-<<<<<<<< HEAD:server/src/index.ts
                 // Odaya giriliyor, şifre doğrula
                 if (!bcrypt.compareSync(authKey, room.password_hash as string)) {
-========
-                if (!bcrypt.compareSync(authKey, room.password_hash)) {
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
                     console.log(`[AUTH] ${nickname} yanlış şifre ile ${roomKey} odasına girmeyi denedi.`);
                     socket.emit('join-error', 'Geçersiz oda şifresi!');
                     return;
@@ -414,8 +390,8 @@ function setupSocketListeners(io) {
             socket.roomKey = roomKey;
             socket.avatarColor = avatarColor || '#6366f1';
             socket.profilePic = profilePic || null;
-            socket.sessionId = sessionId || crypto.randomUUID();
-            socket.userSecret = userToken || null;
+            socket.sessionId = data.userId || crypto.randomUUID();
+            socket.userSecret = data.userSecret || null;
 
             const uploadToken = crypto.randomBytes(16).toString('hex');
             socket.uploadToken = uploadToken;
@@ -442,14 +418,10 @@ function setupSocketListeners(io) {
 
             socket.join(roomKey);
 
-<<<<<<<< HEAD:server/src/index.ts
             // FIX #1: E2EE salt'ını istemciye gönder — istemci bunu PBKDF2'ye
             // parametre olarak kullanarak oda'ya özgü AES anahtarı türetir.
             // Salt gizli değil, şifre gibi saklama gerekliliği yok; per-room benzersizliği yeterli.
             const roomSaltRow = db.prepare('SELECT e2ee_salt FROM rooms WHERE room_key = ?').get(roomKey) as { e2ee_salt: string | null } | undefined;
-========
-            const roomSaltRow = db.prepare('SELECT e2ee_salt FROM rooms WHERE room_key = ?').get(roomKey);
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
             if (roomSaltRow && roomSaltRow.e2ee_salt) {
                 socket.emit('room-e2ee-salt', { salt: roomSaltRow.e2ee_salt });
             } else {
@@ -491,12 +463,8 @@ function setupSocketListeners(io) {
             }
         });
 
-<<<<<<<< HEAD:server/src/index.ts
         // Kullanıcı kendi profilini güncellediğinde
         socket.on('update-profile', (data: UpdateProfilePayload) => {
-========
-        socket.on('update-profile', ({ oldNickname, nickname, avatarColor, profilePic } = {}) => {
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
             if (!socket.roomKey) return;
             const { oldNickname, nickname, avatarColor, profilePic } = data;
             const prevNickname = oldNickname || socket.nickname;
@@ -543,12 +511,8 @@ function setupSocketListeners(io) {
             updateOnlineUsers(io, socket.roomKey);
         });
 
-<<<<<<<< HEAD:server/src/index.ts
         // Yeni mesaj geldiğinde
         socket.on('send-message', (data: SendMessagePayload) => {
-========
-        socket.on('send-message', ({ content, type, replyTo } = {}) => {
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
             if (!_rateCheck('send-message')) return;
             const { content, type, replyTo } = data;
             if (!socket.roomKey || !content) return;
@@ -595,12 +559,8 @@ function setupSocketListeners(io) {
             io.to(socket.roomKey).emit('new-message', messageData);
         });
 
-<<<<<<<< HEAD:server/src/index.ts
         // Yazıyor göstergesi
         socket.on('typing', (data: TypingPayload) => {
-========
-        socket.on('typing', ({ isTyping } = {}) => {
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
             if (!_rateCheck('typing')) return;
             if (!socket.roomKey) return;
             socket.to(socket.roomKey).emit('user-typing', {
@@ -609,22 +569,14 @@ function setupSocketListeners(io) {
             });
         });
 
-<<<<<<<< HEAD:server/src/index.ts
         // Mesaj silme işlemi
         socket.on('delete-message', (data: DeleteMessagePayload) => {
             const { messageId } = data;
-========
-        socket.on('delete-message', ({ messageId } = {}) => {
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
             if (!socket.roomKey || !messageId) return;
 
             // FIX #10: Sahiplik kontrolü user_secret > session_id sırasıyla yapılıyor.
             // IDOR Zafiyeti Kapatıldı: Herkese yayınlanan user_id yerine gizli user_secret kullanılıyor.
-<<<<<<<< HEAD:server/src/index.ts
-            const msg = db.prepare('SELECT username, user_secret, session_id FROM messages WHERE id = ? AND room_key = ?').get(messageId, socket.roomKey) as { username: string; user_secret: string | null; session_id: string | null } | undefined;
-========
-            const msg = db.prepare('SELECT username, user_secret, session_id, type FROM messages WHERE id = ? AND room_key = ?').get(messageId, socket.roomKey);
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
+            const msg = db.prepare('SELECT username, user_secret, session_id, type FROM messages WHERE id = ? AND room_key = ?').get(messageId, socket.roomKey) as { username: string; user_secret: string | null; session_id: string | null; type: string | null } | undefined;
             if (!msg) return;
 
             const isOwner =
@@ -641,58 +593,8 @@ function setupSocketListeners(io) {
             io.to(socket.roomKey).emit('message-deleted', messageId);
         });
 
-<<<<<<<< HEAD:server/src/index.ts
         // Mesaj Tepkisi Ekle/Çıkar (Toggle)
         socket.on('toggle-reaction', (data: ToggleReactionPayload) => {
-========
-        socket.on('edit-message', ({ messageId, newContent } = {}) => {
-            if (!_rateCheck('edit-message')) return;
-            if (!socket.roomKey || !messageId || !newContent) return;
-
-            const msg = db.prepare('SELECT username, user_id, session_id, content, created_at, edit_history FROM messages WHERE id = ? AND room_key = ?').get(messageId, socket.roomKey);
-            if (!msg) return;
-
-            const isOwner =
-                (socket.sessionId && msg.session_id && socket.sessionId === msg.session_id) ||
-                (socket.userId    && msg.user_id    && socket.userId    === msg.user_id);
-
-            if (!isOwner) {
-                console.warn(`[GÜVENLİK] Yetkisiz mesaj düzenleme denemesi: ${socket.nickname} (id: ${messageId})`);
-                return;
-            }
-
-            let createdAtStr = msg.created_at;
-            if (createdAtStr && !createdAtStr.endsWith('Z')) createdAtStr += 'Z';
-            const msgTime = new Date(createdAtStr).getTime();
-            const now = Date.now();
-            if (now - msgTime > 15 * 60 * 1000) {
-                socket.emit('error', 'Mesaj düzenleme süresi (15 dk) doldu.');
-                return;
-            }
-
-            let historyArray = [];
-            try {
-                if (msg.edit_history) historyArray = JSON.parse(msg.edit_history);
-            } catch(e) {}
-            
-            historyArray.push({
-                content: msg.content,
-                edited_at: new Date().toISOString()
-            });
-            const newHistoryStr = JSON.stringify(historyArray);
-
-            db.prepare('UPDATE messages SET content = ?, is_edited = 1, edit_history = ? WHERE id = ?').run(newContent, newHistoryStr, messageId);
-
-            io.to(socket.roomKey).emit('message-edited', {
-                messageId: messageId,
-                newContent: newContent,
-                editHistory: historyArray,
-                isEdited: true
-            });
-        });
-
-        socket.on('toggle-reaction', ({ messageId, emoji } = {}) => {
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
             if (!_rateCheck('toggle-reaction')) return;
             const { messageId, emoji } = data;
             if (!socket.roomKey || !messageId || !emoji) return;
@@ -716,12 +618,8 @@ function setupSocketListeners(io) {
                     delete reactionsObj[emoji];
                 }
             } else {
-<<<<<<<< HEAD:server/src/index.ts
                 // Yoksa ekle
                 reactionsObj[emoji].push(socket.nickname!);
-========
-                reactionsObj[emoji].push(socket.nickname);
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
             }
 
             const newReactionsStr = JSON.stringify(reactionsObj);
@@ -775,7 +673,6 @@ function setupSocketListeners(io) {
             if (!activeVoiceUsers.has(socket.roomKey)) {
                 activeVoiceUsers.set(socket.roomKey, new Map());
             }
-<<<<<<<< HEAD:server/src/index.ts
             activeVoiceUsers.get(socket.roomKey)!.set(socket.id, {
                 userId: socket.id,
                 username: socket.nickname!,
@@ -787,13 +684,6 @@ function setupSocketListeners(io) {
             io.to(socket.roomKey).emit('active-voice-users',
                 Array.from(activeVoiceUsers.get(socket.roomKey)!.values())
             );
-========
-            
-            const users = activeVoiceUsers.get(socket.roomKey);
-            users.set(socket.id, { id: socket.id, username: socket.nickname, avatarColor: socket.avatarColor, profilePic: socket.profilePic, isMicOn: true });
-
-            io.to(socket.roomKey).emit('active-voice-users', Array.from(users.values()));
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
 
             socket.to(socket.roomKey).emit('voice-join', {
                 userId: socket.id,
@@ -858,52 +748,33 @@ function setupSocketListeners(io) {
             }
         });
 
-<<<<<<<< HEAD:server/src/index.ts
         // WebRTC: İki kişi arasında "Aramayı başlatıyorum" sinyali (SDP Offer)
         socket.on('webrtc-offer', (data: WebRTCOfferPayload) => {
             io.to(data.targetId).emit('webrtc-offer', {
-========
-        socket.on('webrtc-offer', ({ targetId, offer } = {}) => {
-            io.to(targetId).emit('webrtc-offer', {
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
                 senderId: socket.id,
                 senderName: socket.nickname,
                 offer: data.offer
             });
         });
 
-<<<<<<<< HEAD:server/src/index.ts
         // WebRTC: "Aramayı kabul ediyorum" sinyali (SDP Answer)
         socket.on('webrtc-answer', (data: WebRTCAnswerPayload) => {
             io.to(data.targetId).emit('webrtc-answer', {
-========
-        socket.on('webrtc-answer', ({ targetId, answer } = {}) => {
-            io.to(targetId).emit('webrtc-answer', {
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
                 senderId: socket.id,
                 answer: data.answer
             });
         });
 
-<<<<<<<< HEAD:server/src/index.ts
         // WebRTC: "Kamera/Mikrofon donanım yolları (ICE)" iletişimi
         socket.on('webrtc-candidate', (data: WebRTCCandidatePayload) => {
             io.to(data.targetId).emit('webrtc-candidate', {
-========
-        socket.on('webrtc-candidate', ({ targetId, candidate } = {}) => {
-            io.to(targetId).emit('webrtc-candidate', {
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
                 senderId: socket.id,
                 candidate: data.candidate
             });
         });
 
-<<<<<<<< HEAD:server/src/index.ts
         // Ekran paylaşımı durumunu diğer kullanıcılara ilet
         socket.on('screen-share-state', (data: ScreenShareStatePayload) => {
-========
-        socket.on('screen-share-state', ({ isSharing } = {}) => {
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
             if (!socket.roomKey) return;
             socket.to(socket.roomKey).emit('screen-share-state', {
                 userId: socket.id,
@@ -912,31 +783,11 @@ function setupSocketListeners(io) {
             });
         });
 
-<<<<<<<< HEAD:server/src/index.ts
         // ============================================
         // WEBRTC P2P DOSYA TRANSFER SİNYALLERİ
         // ============================================
         socket.on('p2p-file-offer', (data: P2PFileOfferPayload) => {
             io.to(data.targetId).emit('p2p-file-offer', {
-========
-        socket.on('mic-state', ({ isMicOn } = {}) => {
-            if (!socket.roomKey) return;
-            
-            const users = activeVoiceUsers.get(socket.roomKey);
-            if (users) {
-                const user = users.get(socket.id);
-                if (user) user.isMicOn = !!isMicOn;
-            }
-            
-            socket.to(socket.roomKey).emit('user-mic-state', {
-                userId: socket.id,
-                isMicOn: !!isMicOn
-            });
-        });
-
-        socket.on('p2p-file-offer', ({ targetId, offer, fileMeta } = {}) => {
-            io.to(targetId).emit('p2p-file-offer', {
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
                 senderId: socket.id,
                 senderName: socket.nickname,
                 offer: data.offer,
@@ -944,46 +795,33 @@ function setupSocketListeners(io) {
             });
         });
 
-<<<<<<<< HEAD:server/src/index.ts
         socket.on('p2p-file-answer', (data: P2PFileAnswerPayload) => {
             io.to(data.targetId).emit('p2p-file-answer', {
-========
-        socket.on('p2p-file-answer', ({ targetId, answer, fileId } = {}) => {
-            io.to(targetId).emit('p2p-file-answer', {
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
                 senderId: socket.id,
                 answer: data.answer,
                 fileId: data.fileId
             });
         });
 
-<<<<<<<< HEAD:server/src/index.ts
         socket.on('p2p-file-candidate', (data: P2PFileCandidatePayload) => {
             io.to(data.targetId).emit('p2p-file-candidate', {
-========
-        socket.on('p2p-file-candidate', ({ targetId, candidate, fileId } = {}) => {
-            io.to(targetId).emit('p2p-file-candidate', {
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
                 senderId: socket.id,
                 candidate: data.candidate,
                 fileId: data.fileId
             });
         });
     });
-}
 
-<<<<<<<< HEAD:server/src/index.ts
     // Odaya özgü kullanıcı güncelleme fonksiyonu
-    function updateOnlineUsers(roomKey: string): void {
+    function updateOnlineUsers(ioServer: Server, roomKey: string): void {
         if (!roomKey) return;
 
-        // Bu odadaki socketleri bul
-        const sockets = io.sockets.adapter.rooms.get(roomKey);
+        const sockets = ioServer.sockets.adapter.rooms.get(roomKey);
         const users: OnlineUser[] = [];
 
         if (sockets) {
             for (const clientId of sockets) {
-                const clientSocket = io.sockets.sockets.get(clientId) as HavenSocket | undefined;
+                const clientSocket = ioServer.sockets.sockets.get(clientId) as HavenSocket | undefined;
                 if (clientSocket && clientSocket.nickname) {
                     users.push({
                         username: clientSocket.nickname,
@@ -992,36 +830,19 @@ function setupSocketListeners(io) {
                         id: clientId
                     });
                 }
-========
-function updateOnlineUsers(io, roomKey) {
-    if (!roomKey) return;
-
-    const sockets = io.sockets.adapter.rooms.get(roomKey);
-    const users = [];
-
-    if (sockets) {
-        for (const clientId of sockets) {
-            const clientSocket = io.sockets.sockets.get(clientId);
-            if (clientSocket && clientSocket.nickname) {
-                users.push({
-                    username: clientSocket.nickname,
-                    avatarColor: clientSocket.avatarColor,
-                    profilePic: clientSocket.profilePic || null,
-                    id: clientId
-                });
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
             }
         }
+
+        ioServer.to(roomKey).emit('online-users', users);
     }
 
-<<<<<<<< HEAD:server/src/index.ts
     return new Promise<ServerResult>((resolve, reject) => {
         const portToUse = portArg !== null ? portArg : PORT;
 
         server.once('error', (err: NodeJS.ErrnoException) => {
             if (err.code === 'EADDRINUSE') {
                 console.warn(`[UYARI] Port ${portToUse} kullanımda, rastgele port deneniyor...`);
-                server.listen(0, HOST); // Fallback to random port
+                server.listen(0, HOST);
             } else {
                 reject(err);
             }
@@ -1041,9 +862,3 @@ if (require.main === module) {
 }
 
 export default { startServer };
-========
-    io.to(roomKey).emit('online-users', users);
-}
-
-module.exports = { setupSocketListeners };
->>>>>>>> b68c809c20b10f0310297dfeaed894901e9030cf:server/socket.js
