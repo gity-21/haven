@@ -523,9 +523,9 @@ function setupSettingsModal(): void {
 
     if (el.btnInviteLink) {
         el.btnInviteLink.addEventListener('click', async () => {
-            const cleanUrl = window.location.href.split('?')[0];
-            const inviteLink = `${cleanUrl}/?room=${encodeURIComponent(state.room)}`;
-            const inviteText = `Haven Gizli Oda Daveti!\n\n🚀 Oda bağlantısı:\n${inviteLink}\n\nOda Anahtarı: ${state.room}\n\n⚠️ Şifreyi bu mesajla birlikte göndermeyin.\nŞifreyi ayrı bir kanaldan (SMS vb.) paylaşın.`;
+            const cleanUrl = state.serverUrl.endsWith('/') ? state.serverUrl.slice(0, -1) : state.serverUrl;
+            const inviteLink = `${cleanUrl}/?room=${encodeURIComponent(state.roomKey)}`;
+            const inviteText = `Haven Gizli Oda Daveti!\n\n🚀 Oda bağlantısı:\n${inviteLink}\n\nOda Anahtarı: ${state.roomKey}\n\n⚠️ Şifreyi bu mesajla birlikte göndermeyin.\nŞifreyi ayrı bir kanaldan (SMS vb.) paylaşın.`;
             
             try {
                 if (window.electronAPI?.writeToClipboard) {
