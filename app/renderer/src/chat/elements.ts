@@ -11,6 +11,7 @@ export interface ChatElements {
     messageInput: HTMLTextAreaElement | null;
     btnSend: HTMLElement | null;
     btnAttachFile: HTMLElement | null;
+    btnSelfDestruct: HTMLElement | null;
     fileInput: HTMLInputElement | null;
     emptyState: HTMLElement | null;
     toastContainer: HTMLElement | null;
@@ -72,6 +73,7 @@ export const el: ChatElements = {
     messageInput: document.getElementById('message-input') as HTMLTextAreaElement | null,
     btnSend: document.getElementById('btn-send'),
     btnAttachFile: document.getElementById('btn-attach-file'),
+    btnSelfDestruct: document.getElementById('btn-self-destruct'),
     fileInput: document.getElementById('file-input') as HTMLInputElement | null,
     emptyState: document.getElementById('empty-state'),
     toastContainer: document.getElementById('toast-container'),

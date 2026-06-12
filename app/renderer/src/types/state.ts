@@ -38,6 +38,8 @@ export interface AppState {
     _typingTimeout?: ReturnType<typeof setTimeout>;
     _lastTypingEmit?: number;
     _isTyping?: boolean;
+    isSelfDestructText: boolean;
+    editingMessageId: string | number | null;
 }
 
 export interface NoiseGateRefs {

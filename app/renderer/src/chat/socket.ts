@@ -8,7 +8,7 @@
 import { io, Socket } from 'socket.io-client';
 import { state, voiceState, activeNotifications, playRingtone, stopRingtone } from './state';
 import { el } from './elements';
-import { escapeHtml, clientSanitize } from './utils';
+import { escapeHtml, clientSanitize, linkify } from './utils';
 import { decryptMessage, getE2EEReadyPromise, setE2EEKey, isPendingE2EEInit, setPendingE2EEInit, deriveE2EEKey, resolveE2EEReady } from './e2ee';
 import { showToast } from './ui/toast';
 import { renderUsersModal } from './ui/users';
@@ -153,6 +153,19 @@ export function connectSocket(): void {
         }
     });
 
+    state.socket.on('admin-stats-update', () => {
+        // Admin paneli açıksa (tab aktif ve settings modal görünür) oda listesini yenile
+        const adminTabBtn = document.getElementById('admin-tab-btn');
+        const settingsModal = document.getElementById('chat-settings-modal');
+        const panelAdmin = document.getElementById('panel-admin');
+        const isAdminPanelVisible = adminTabBtn?.classList.contains('active')
+            && settingsModal && settingsModal.style.display !== 'none'
+            && panelAdmin && panelAdmin.style.display !== 'none';
+        if (isAdminPanelVisible) {
+            import('./ui/admin').then(m => m.loadAdminRooms());
+        }
+    });
+
     // ── Messages ──
     state.socket.on('new-message', async (msg: any) => {
         if (el.emptyState) el.emptyState.style.display = 'none';
@@ -248,7 +261,9 @@ export function connectSocket(): void {
             const child = children[i] as HTMLElement;
             if (!child.classList.contains('message-group') && child.id !== 'empty-state') {
                 const nextSibling = child.nextElementSibling;
-                if (!nextSibling || !nextSibling.classList.contains('message-group')) child.remove();
+                if (!nextSibling || (!nextSibling.classList.contains('message-group') && nextSibling.id !== 'empty-state')) {
+                    child.remove();
+                }
             }
         }
 
@@ -260,6 +275,27 @@ export function connectSocket(): void {
             el.chatMessages.innerHTML = '';
             el.chatMessages.appendChild(el.emptyState);
             el.emptyState.style.display = 'flex';
+        }
+    });
+
+    // ── Message Edited ──
+    state.socket.on('message-edited', async (data: { messageId: string | number, newContent: string, editHistory: string, isEdited: boolean }) => {
+        const messageRow = document.querySelector(`.msg-row-wrapper[data-message-id="${data.messageId}"]`);
+        if (messageRow) {
+            const textDiv = messageRow.querySelector('.message-text');
+            if (textDiv) {
+                try {
+                    const { decryptMessage } = await import('./e2ee');
+                    const raw = await decryptMessage(data.newContent);
+                    let newHtml = linkify(escapeHtml(raw)).replace(/\n/g, '<br>');
+                    if (data.isEdited) {
+                        newHtml += ` <span style="font-size:10px; color:var(--text-muted); opacity:0.7; font-style:italic; cursor:pointer;" onclick="window.viewEditHistory('${btoa(encodeURIComponent(data.editHistory))}')" title="Düzenleme Geçmişi">(düzenlendi)</span>`;
+                    }
+                    textDiv.innerHTML = newHtml;
+                } catch (e) {
+                    console.error('Mesaj güncellenirken hata:', e);
+                }
+            }
         }
     });
 

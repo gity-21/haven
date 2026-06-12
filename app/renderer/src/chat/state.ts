@@ -49,7 +49,9 @@ export const state: AppState = {
     adminToken: localStorage.getItem('haven_admin_token') || null,
     pendingImages: [],
     currentPreviewIndex: 0,
-    viewOnceEnabled: false
+    viewOnceEnabled: false,
+    isSelfDestructText: false,
+    editingMessageId: null
 };
 
 // ── WebRTC Durumları ──

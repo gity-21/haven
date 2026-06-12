@@ -8,7 +8,7 @@
 /**
  * Onay modalı gösterir (iki butonlu: Onayla / İptal).
  */
-export function showConfirmModal(message: string, onConfirm: () => void, singleButton = false): void {
+export function showConfirmModal(message: string, onConfirm: () => void, singleButton = false, isHtml = false): void {
     const modal = document.getElementById('custom-confirm-modal');
     const messageEl = document.getElementById('custom-confirm-message');
     const btnConfirm = document.getElementById('btn-custom-confirm-ok');
@@ -19,7 +19,11 @@ export function showConfirmModal(message: string, onConfirm: () => void, singleB
         return;
     }
 
-    messageEl.textContent = message;
+    if (isHtml) {
+        messageEl.innerHTML = message;
+    } else {
+        messageEl.textContent = message;
+    }
     modal.style.display = 'flex';
 
     if (singleButton) {

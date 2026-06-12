@@ -17,14 +17,14 @@ export async function checkAdminStatus(): Promise<void> {
     const isLocalhostHost = state.serverUrl.includes('localhost') || state.serverUrl.includes('127.0.0.1');
 
     if (isLocalhostHost) {
-        // Electron'daysa admin token'ı otomatik al
-        if (window.electronAPI?.getAdminToken && !state.adminToken) {
+        // Electron'daysa admin token'ı her zaman tazele
+        if (window.electronAPI?.getAdminToken) {
             try {
                 const token = await window.electronAPI.getAdminToken();
-                if (token) {
+                if (token && token !== state.adminToken) {
                     state.adminToken = token;
                     localStorage.setItem('haven_admin_token', token);
-                    console.log('[ADMIN] Admin token otomatik olarak alındı.');
+                    console.log('[ADMIN] Admin token otomatik olarak alındı/güncellendi.');
                 }
             } catch (e) {
                 console.warn('[ADMIN] Admin token alınamadı:', e);
@@ -50,7 +50,7 @@ export async function loadAdminRooms(): Promise<void> {
         const adminHeaders: Record<string, string> = state.adminToken
             ? { 'Authorization': `Bearer ${state.adminToken}` }
             : {};
-        const res = await fetch(`${state.serverUrl}/api/admin/rooms`, { headers: adminHeaders });
+        const res = await fetch(`${state.serverUrl}/api/admin/rooms`, { headers: adminHeaders, cache: 'no-store' });
         const data = await res.json();
 
         if (!data.success) {

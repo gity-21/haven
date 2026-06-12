@@ -18,7 +18,8 @@ import { connectSocket } from './socket';
 import { sendMessage, scrollToBottom } from './messages';
 import { showToast } from './ui/toast';
 import { setupWindowControls } from './ui/users';
-import { setupAdminEvents } from './ui/admin';
+import { setupAdminEvents, loadAdminRooms } from './ui/admin';
+import { loadAudioDevices } from './ui/voice-ui';
 import { escapeHtml } from './utils';
 import { rtcConfig, initiateVoiceCall, joinVoiceRoom, leaveVoiceRoom, toggleMic, toggleVideo, toggleScreen, startScreenShareWithStream } from './voice';
 
@@ -79,7 +80,29 @@ function setupEventListeners(): void {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
-            if (state.socket) state.socket.emit('typing', { isTyping: false });
+        } else {
+            handleTyping();
+        }
+    });
+
+    el.btnSelfDestruct?.addEventListener('click', () => {
+        state.isSelfDestructText = !state.isSelfDestructText;
+        if (state.isSelfDestructText) {
+            el.btnSelfDestruct!.style.background = 'rgba(239, 68, 68, 0.15)';
+            el.btnSelfDestruct!.style.color = '#ef4444';
+            el.btnSelfDestruct!.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.3)';
+            if (el.messageInput) {
+                el.messageInput.placeholder = 'Kendini imha eden mesaj yaz...';
+                el.messageInput.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+            }
+        } else {
+            el.btnSelfDestruct!.style.background = 'none';
+            el.btnSelfDestruct!.style.color = 'var(--text-muted)';
+            el.btnSelfDestruct!.style.boxShadow = 'none';
+            if (el.messageInput) {
+                el.messageInput.placeholder = 'Mesajınızı yazın...';
+                el.messageInput.style.borderColor = 'transparent';
+            }
         }
     });
 
@@ -503,12 +526,22 @@ function setupSettingsModal(): void {
             if (el.chatAvatarUploadIcon) el.chatAvatarUploadIcon.style.display = 'none';
         }
         el.chatSettingsModal!.style.display = 'flex';
+        setTimeout(() => el.chatSettingsModal!.style.opacity = '1', 10);
+
+        // Admin sekmesi zaten aktifse verileri tazele
+        const adminTabBtn = document.getElementById('admin-tab-btn');
+        if (adminTabBtn?.classList.contains('active')) {
+            loadAdminRooms();
+        }
     });
 
     const closeChatSettings = (): void => {
         const savedTheme = localStorage.getItem('haven_login_theme') || 'space';
         document.documentElement.setAttribute('data-theme', savedTheme);
-        el.chatSettingsModal!.style.display = 'none';
+        el.chatSettingsModal!.style.opacity = '0';
+        setTimeout(() => {
+            el.chatSettingsModal!.style.display = 'none';
+        }, 300);
     };
 
     el.btnCloseChatSettings?.addEventListener('click', closeChatSettings);
@@ -579,6 +612,30 @@ function setupSettingsModal(): void {
             document.documentElement.setAttribute('data-theme', (e.target as HTMLSelectElement).value);
         });
     }
+
+    // Settings Modal Tab Logic
+    const settingsTabs = document.querySelectorAll('.settings-tab');
+    const settingsPanels = document.querySelectorAll('.settings-panel');
+
+    settingsTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            settingsTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            const tabName = (tab as HTMLElement).dataset.tab;
+            settingsPanels.forEach(p => (p as HTMLElement).style.display = 'none');
+            const panel = document.getElementById(`panel-${tabName}`);
+            if (panel) panel.style.display = 'block';
+
+            if (tabName === 'ses') {
+                loadAudioDevices();
+            }
+
+            if (tabName === 'admin') {
+                loadAdminRooms();
+            }
+        });
+    });
 }
 
 // ── Mobile Menu (IIFE) ──

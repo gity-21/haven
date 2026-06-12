@@ -160,3 +160,58 @@ export function createMediaElement(
         if (vid) vid.srcObject = stream;
     }
 }
+
+/**
+ * Ses ayarlarındaki giriş/çıkış cihazlarını listeler ve kaydeder.
+ */
+export async function loadAudioDevices(): Promise<void> {
+    try {
+        let devices = await navigator.mediaDevices.enumerateDevices();
+        const needsPermission = devices.some(d => d.kind === 'audioinput' && d.label === '');
+
+        if (needsPermission) {
+            const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            tempStream.getTracks().forEach(t => t.stop());
+            devices = await navigator.mediaDevices.enumerateDevices();
+        }
+
+        const micSelect = document.getElementById('settings-mic-select') as HTMLSelectElement | null;
+        const speakerSelect = document.getElementById('settings-speaker-select') as HTMLSelectElement | null;
+
+        if (micSelect) {
+            micSelect.innerHTML = '';
+            const audioInputs = devices.filter(d => d.kind === 'audioinput');
+            if (audioInputs.length === 0) {
+                micSelect.innerHTML = `<option value="">${window.i18n ? window.i18n.t('mic_not_found') : 'Mikrofon bulunamadı'}</option>`;
+            } else {
+                audioInputs.forEach((device, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = device.deviceId;
+                    opt.textContent = device.label || `Mikrofon ${i + 1}`;
+                    micSelect.appendChild(opt);
+                });
+            }
+            const savedMic = localStorage.getItem('haven_mic_device');
+            if (savedMic) micSelect.value = savedMic;
+        }
+
+        if (speakerSelect) {
+            speakerSelect.innerHTML = '';
+            const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+            if (audioOutputs.length === 0) {
+                speakerSelect.innerHTML = `<option value="">${window.i18n ? window.i18n.t('speaker_not_found') : 'Hoparlör bulunamadı'}</option>`;
+            } else {
+                audioOutputs.forEach((device, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = device.deviceId;
+                    opt.textContent = device.label || `Hoparlör ${i + 1}`;
+                    speakerSelect.appendChild(opt);
+                });
+            }
+            const savedSpeaker = localStorage.getItem('haven_speaker_device');
+            if (savedSpeaker) speakerSelect.value = savedSpeaker;
+        }
+    } catch (err) {
+        console.error('Ses cihazları alınamadı:', err);
+    }
+}

@@ -203,12 +203,16 @@ export async function initializeDatabase(): Promise<DatabaseWrapper> {
             reactions    TEXT DEFAULT '{}',
             user_id      TEXT,
             user_secret  TEXT,
+            is_edited    BOOLEAN DEFAULT 0,
+            edit_history TEXT,
             created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
 
-    // Geriye dönük uyumluluk: Mevcut tabloya user_secret eklemeyi dene
+    // Geriye dönük uyumluluk: Mevcut tabloya user_secret, is_edited ve edit_history eklemeyi dene
     try { sqliteDb.run('ALTER TABLE messages ADD COLUMN user_secret TEXT'); } catch (_) { /* zaten varsa görmezden gel */ }
+    try { sqliteDb.run('ALTER TABLE messages ADD COLUMN is_edited BOOLEAN DEFAULT 0'); } catch (_) { /* zaten varsa görmezden gel */ }
+    try { sqliteDb.run('ALTER TABLE messages ADD COLUMN edit_history TEXT'); } catch (_) { /* zaten varsa görmezden gel */ }
 
     sqliteDb.run(`
         CREATE INDEX IF NOT EXISTS idx_messages_room

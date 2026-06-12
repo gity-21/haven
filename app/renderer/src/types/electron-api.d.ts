@@ -49,7 +49,7 @@ declare global {
         uploadFileToChat: (file: File) => Promise<unknown>;
         addPendingImage: (blob: Blob) => void;
         removePendingImage: (index: number) => void;
-        showConfirmModal: (message: string, onConfirm: () => void, singleButton?: boolean) => void;
+        showConfirmModal: (message: string, onConfirm: () => void, singleButton?: boolean, isHtml?: boolean) => void;
         showAlertModal: (message: string, title?: string) => Promise<void>;
         initiateReply: (msgId: number | string, username: string, content: string) => void;
         cancelReply: () => void;

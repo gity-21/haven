@@ -96,6 +96,18 @@ function createHoverToolbar(msg: ChatMessage, isMine: boolean): HTMLDivElement {
     });
 
     if (isMine) {
+        if (msg.type === 'message') {
+            const editBtn = document.createElement('button');
+            editBtn.innerHTML = '✏️';
+            editBtn.title = 'Düzenle';
+            editBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:12px;padding:1px 4px;';
+            editBtn.onclick = (e) => {
+                e.stopPropagation();
+                window.initiateEdit(msg.id, btoa(encodeURIComponent(msg.content)));
+            };
+            hoverToolbar.appendChild(editBtn);
+        }
+
         const delBtn = document.createElement('button');
         delBtn.innerHTML = '🗑️';
         delBtn.title = 'Sil';
@@ -123,6 +135,8 @@ export interface ChatMessage {
     reactions?: string;
     created_at?: string;
     user_id?: string;
+    is_edited?: boolean | number;
+    edit_history?: string;
 }
 
 // ── appendMessage ──
@@ -160,9 +174,20 @@ export function appendMessage(msg: ChatMessage): void {
     const isMine = msg.username === state.nickname || (state.userId && msg.user_id === state.userId);
 
     // İçerik hazırlama
-    let safeContent = (msg.type === 'file' || msg.type === 'p2p-announce')
-        ? escapeHtml(msg.content)
-        : linkify(escapeHtml(msg.content)).replace(/\n/g, '<br>');
+    let safeContent = '';
+    if (msg.type === 'self-destruct') {
+        const uniqueId = 'sd-' + msg.id;
+        const b64Content = btoa(encodeURIComponent(msg.content || ''));
+        safeContent = `<div id="${uniqueId}" class="self-destruct-msg" style="cursor:pointer; display:inline-flex; align-items:center; gap:8px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:8px 14px; border-radius:8px; color:#ef4444;" onclick="window.viewSelfDestruct('${uniqueId}', '${msg.content}', ${msg.id})"><span class="sd-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span><span style="font-weight:600; font-size:13px; filter:blur(4px); transition:filter 0.3s; user-select:none;">Gizli Mesaj (Tıkla)</span></div>`;
+    } else {
+        safeContent = (msg.type === 'file' || msg.type === 'p2p-announce')
+            ? escapeHtml(msg.content)
+            : linkify(escapeHtml(msg.content)).replace(/\n/g, '<br>');
+
+        if (msg.is_edited) {
+            safeContent += ` <span style="font-size:10px; color:var(--text-muted); opacity:0.7; font-style:italic; cursor:pointer;" onclick="window.viewEditHistory('${btoa(encodeURIComponent(msg.edit_history || '[]'))}')" title="Düzenleme Geçmişi">(düzenlendi)</span>`;
+        }
+    }
 
     // p2p-announce & file rendering (inline HTML — orijinal mantık korunuyor)
     if (msg.type === 'p2p-announce') {
@@ -355,11 +380,19 @@ export async function sendMessage(): Promise<void> {
 
         if (rawContent) {
             const encryptedContent = await encryptMessage(rawContent);
-            state.socket!.emit('send-message', {
-                content: encryptedContent,
-                type: 'message',
-                replyTo: state.replyingTo ? state.replyingTo.id : null
-            });
+            if (state.editingMessageId) {
+                state.socket!.emit('edit-message', {
+                    messageId: state.editingMessageId,
+                    newContent: encryptedContent
+                });
+                window.cancelEdit();
+            } else {
+                state.socket!.emit('send-message', {
+                    content: encryptedContent,
+                    type: state.isSelfDestructText ? 'self-destruct' : 'message',
+                    replyTo: state.replyingTo ? state.replyingTo.id : null
+                });
+            }
         }
 
         el.messageInput!.value = '';
@@ -481,3 +514,127 @@ window.openUserMenu = (e: MouseEvent, userId: string) => {
     menu.style.left = x + 'px';
     menu.style.top = y + 'px';
 };
+
+// ── Edit Message ──
+
+window.initiateEdit = (msgId: number | string, contentBase64: string) => {
+    state.editingMessageId = msgId;
+    let previewEl = document.getElementById('edit-preview-box');
+
+    if (!previewEl) {
+        previewEl = document.createElement('div');
+        previewEl.id = 'edit-preview-box';
+        previewEl.style.cssText = 'display:none; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.05); padding:8px 12px; border-left:3px solid #f59e0b; margin:0 16px 8px 16px; border-radius:var(--radius-sm); font-size:12px; color:var(--text-muted);';
+        const inputContainer = document.querySelector('.chat-input-container');
+        if (inputContainer && inputContainer.parentNode) {
+            inputContainer.parentNode.insertBefore(previewEl, inputContainer);
+        }
+    }
+
+    try {
+        const rawContent = decodeURIComponent(atob(contentBase64));
+        el.messageInput!.value = rawContent;
+        el.messageInput!.style.height = 'auto';
+        el.messageInput!.focus();
+        
+        previewEl.innerHTML = `
+            <div>
+                <strong style="color:#f59e0b; margin-right:6px;">Mesajı Düzenle</strong>
+                <span>(ID: ${msgId})</span>
+            </div>
+            <button onclick="window.cancelEdit()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;">✕</button>
+        `;
+        previewEl.style.display = 'flex';
+    } catch(e) {
+        console.error('Mesaj çözülemedi', e);
+    }
+};
+
+window.cancelEdit = () => {
+    state.editingMessageId = null;
+    const previewEl = document.getElementById('edit-preview-box');
+    if (previewEl) previewEl.style.display = 'none';
+    if (el.messageInput) {
+        el.messageInput.value = '';
+        el.messageInput.style.height = 'auto';
+    }
+};
+
+window.viewEditHistory = async (historyStr: string) => {
+    try {
+        const arr = JSON.parse(decodeURIComponent(atob(historyStr)));
+        let html = '<div style="max-height:300px; overflow-y:auto; text-align: left; padding: 0 10px;">';
+        const { decryptMessage } = await import('./e2ee');
+        const { linkify, escapeHtml } = await import('./utils');
+        
+        for (let i = arr.length - 1; i >= 0; i--) {
+            const item = arr[i];
+            const dateStr = new Date(item.edited_at).toLocaleString();
+            let rawContent = item.content;
+            try {
+                rawContent = await decryptMessage(item.content);
+            } catch (e) {
+                // Ignore if not encrypted or decryption fails
+            }
+            const safeContent = linkify(escapeHtml(rawContent)).replace(/\n/g, '<br>');
+
+            html += `<div style="padding:10px; border-bottom:1px solid #333; margin-bottom:5px;">
+                <div style="font-size:10px; color:#aaa; margin-bottom:4px;">${dateStr}</div>
+                <div style="font-size:13px; color:#ddd; word-wrap:break-word;">${safeContent}</div>
+            </div>`;
+        }
+        html += '</div>';
+        
+        window.showConfirmModal(html, () => {}, true, true);
+    } catch(e) {
+        console.error(e);
+        if (window.showToast) window.showToast('Geçmiş okunamadı', 'error');
+    }
+};
+
+// ── Self Destruct Message ──
+
+window.viewSelfDestruct = async (uniqueId: string, encryptedContent: string, messageId: number | string) => {
+    const box = document.getElementById(uniqueId);
+    if (!box || box.dataset.viewed === 'true') return;
+    
+    box.dataset.viewed = 'true';
+    box.style.cursor = 'default';
+    box.onclick = null;
+    const textSpan = box.querySelector('span:not(.sd-icon)');
+    const iconContainer = box.querySelector('.sd-icon');
+    
+    try {
+        const { decryptMessage } = await import('./e2ee');
+        const rawContent = await decryptMessage(encryptedContent);
+        if (textSpan) {
+            textSpan.innerHTML = linkify(escapeHtml(rawContent)).replace(/\n/g, '<br>');
+            (textSpan as HTMLElement).style.filter = 'none';
+            (textSpan as HTMLElement).style.userSelect = 'text';
+        }
+        if (iconContainer) iconContainer.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>';
+        box.style.background = 'rgba(245, 158, 11, 0.1)';
+        box.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+        box.style.color = '#f59e0b';
+    } catch (e) {
+        if (textSpan) textSpan.textContent = 'Şifre Çözülemedi';
+    }
+
+    let secondsLeft = 5;
+    const countdownEl = document.createElement('span');
+    countdownEl.style.cssText = 'font-size:11px; opacity:0.7; margin-left:4px; min-width:18px; text-align:center; font-weight:700;';
+    countdownEl.textContent = secondsLeft + 's';
+    box.appendChild(countdownEl);
+
+    const countdownInterval = setInterval(() => {
+        secondsLeft--;
+        countdownEl.textContent = secondsLeft + 's';
+        if (secondsLeft <= 0) {
+            clearInterval(countdownInterval);
+            if (state.socket) {
+                state.socket.emit('delete-message', { messageId });
+            }
+        }
+    }, 1000);
+};
+

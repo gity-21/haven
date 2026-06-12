@@ -1608,7 +1608,7 @@ a {
    ============================================ */
 .toast-container {
     position: fixed;
-    top: calc(var(--titlebar-height) + 16px);
+    bottom: 20px;
     right: 20px;
     z-index: 10000;
     display: flex;
@@ -2433,7 +2433,8 @@ html[data-theme="hacker"] .media-preview-help {
 
     /* Toast mobil */
     .toast-container {
-        top: calc(env(safe-area-inset-top, 8px) + 8px) !important;
+        top: auto !important;
+        bottom: calc(env(safe-area-inset-bottom, 8px) + 80px) !important;
         right: 8px !important;
         left: 8px !important;
     }
