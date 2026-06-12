@@ -332,6 +332,8 @@ export function connectSocket(): void {
                         newHtml += ` <span style="font-size:10px; color:var(--text-muted); opacity:0.7; font-style:italic; cursor:pointer;" onclick="window.viewEditHistory('${btoa(encodeURIComponent(data.editHistory))}')" title="Düzenleme Geçmişi">(düzenlendi)</span>`;
                     }
                     textDiv.innerHTML = newHtml;
+                    
+                    import('./ui/pinned').then(m => m.updatePinnedMessageContent(data.messageId, newHtml));
                 } catch (e) {
                     console.error('Mesaj güncellenirken hata:', e);
                 }

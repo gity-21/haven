@@ -94,3 +94,11 @@ export function deletePinnedMessage(messageId: number | string): void {
         renderPinnedMessages();
     }
 }
+
+export function updatePinnedMessageContent(messageId: number | string, newHtmlContent: string): void {
+    const existingIndex = pinnedMessages.findIndex(m => String(m.id) === String(messageId));
+    if (existingIndex !== -1) {
+        pinnedMessages[existingIndex].content = newHtmlContent;
+        renderPinnedMessages();
+    }
+}
