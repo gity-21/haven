@@ -440,7 +440,7 @@ export async function startServer(portArg: number | null = null): Promise<Server
             // Son 100 mesaj geçmişini gönder (LEFT JOIN ile yanıtlanan mesajı da getir)
             // GÜVENLİK (IDOR): user_secret'in istemciye sızmasını engellemek için SELECT ile sadece gereken kolonları alıyoruz
             const history = db.prepare(`
-                SELECT m.id, m.room_key, m.username, m.avatar_color, m.content, m.type, m.reply_to, m.profile_pic, m.reactions, m.user_id, m.is_edited, m.edit_history, m.created_at, r.username as reply_username, r.content as reply_content 
+                SELECT m.id, m.room_key, m.username, m.avatar_color, m.content, m.type, m.reply_to, m.profile_pic, m.reactions, m.user_id, m.is_edited, m.edit_history, m.is_pinned, m.created_at, r.username as reply_username, r.content as reply_content 
                 FROM messages m 
                 LEFT JOIN messages r ON m.reply_to = r.id 
                 WHERE m.room_key = ? 
@@ -576,6 +576,18 @@ export async function startServer(portArg: number | null = null): Promise<Server
                 username: socket.nickname,
                 isTyping: !!data.isTyping
             });
+        });
+
+        // Mesaj sabitleme işlemi
+        socket.on('pin-message', (data: { messageId: number, isPinned: boolean }) => {
+            const { messageId, isPinned } = data;
+            if (!socket.roomKey || !messageId) return;
+
+            const msg = db.prepare('SELECT id FROM messages WHERE id = ? AND room_key = ?').get(messageId, socket.roomKey);
+            if (msg) {
+                db.prepare('UPDATE messages SET is_pinned = ? WHERE id = ?').run(isPinned ? 1 : 0, messageId);
+                io.to(socket.roomKey).emit('message-pinned', { messageId, isPinned: !!isPinned });
+            }
         });
 
         // Mesaj silme işlemi

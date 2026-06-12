@@ -30,6 +30,7 @@ import '../antigravity';
 import './ui/media-preview';
 import './ui/voice-player';
 import './ui/modals';
+import { initPinnedMessages } from './ui/pinned';
 
 // ── initialize ──
 
@@ -58,6 +59,9 @@ async function initialize(): Promise<void> {
     // E2EE hazırlığı
     setPendingE2EEInit(true);
     createE2EEReadyPromise();
+
+    // Pinned messages init
+    initPinnedMessages();
 
     // UI'da Odayı yaz
     if (el.roomNameDisplay) el.roomNameDisplay.textContent = state.roomKey;

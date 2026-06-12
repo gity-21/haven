@@ -86,6 +86,20 @@ function createHoverToolbar(msg: ChatMessage, isMine: boolean): HTMLDivElement {
     };
     hoverToolbar.appendChild(replyBtn);
 
+    const pinBtn = document.createElement('button');
+    pinBtn.innerHTML = '📌';
+    pinBtn.title = msg.is_pinned ? 'Sabitlemeyi Kaldır' : 'Sabitle';
+    pinBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:14px;padding:1px 3px;';
+    pinBtn.onclick = (e) => {
+        e.stopPropagation();
+        import('./state').then(m => {
+            if (m.state.socket) {
+                m.state.socket.emit('pin-message', { messageId: msg.id, isPinned: !msg.is_pinned });
+            }
+        });
+    };
+    hoverToolbar.appendChild(pinBtn);
+
     ['👍', '❤️', '💀', '🔥'].forEach(em => {
         const eBtn = document.createElement('button');
         eBtn.textContent = em;
@@ -137,6 +151,7 @@ export interface ChatMessage {
     user_id?: string;
     is_edited?: boolean | number;
     edit_history?: string;
+    is_pinned?: boolean | number;
 }
 
 // ── appendMessage ──
@@ -263,6 +278,15 @@ export function appendMessage(msg: ChatMessage): void {
                 newTextDiv.className = 'message-text';
                 newTextDiv.dataset.messageId = String(msg.id);
                 newTextDiv.innerHTML = safeContent;
+
+                if (msg.is_pinned) {
+                    const pinBadge = document.createElement('div');
+                    pinBadge.innerHTML = '📌 <span data-lang-key="pinned_msg_badge" style="font-size:10px;">Sabitlendi</span>';
+                    pinBadge.className = 'pinned-badge';
+                    pinBadge.style.cssText = 'font-size:11px; color:var(--accent-warning); margin-bottom:4px; display:inline-flex; align-items:center; gap:4px; background:rgba(245,158,11,0.1); padding:2px 6px; border-radius:4px; font-weight:600;';
+                    rowDiv.appendChild(pinBadge);
+                }
+                
                 rowDiv.appendChild(newTextDiv);
 
                 const rowReactBar = document.createElement('div');
@@ -288,7 +312,9 @@ export function appendMessage(msg: ChatMessage): void {
         ? `background-image: url('${msg.profile_pic}'); background-size: cover; background-position: center; color: transparent;`
         : `background-color: ${msg.avatarColor || '#6366f1'}`;
 
-    messageEl.innerHTML = `<div class="message-avatar" style="${avatarStyle}">${msg.profile_pic ? '' : initial}</div><div class="message-content"><div class="message-header"><div><span class="message-username" style="color: ${msg.avatarColor || '#5865F2'}">${escapeHtml(msg.username)}</span><span class="message-timestamp" style="font-size:11px;color:var(--text-muted);margin-left:8px;">${timeStr}</span></div></div>${replyHtml}<div class="msg-row-wrapper" data-message-id="${msg.id}" style="position:relative;display:block;"><div class="message-text" data-message-id="${msg.id}">${safeContent}</div><div class="reaction-bar">${buildReactionsHtml(msg.id, msg.reactions || '{}')}</div></div></div>`;
+    const pinnedBadgeHtml = msg.is_pinned ? `<div class="pinned-badge" style="font-size:11px; color:var(--accent-warning); margin-bottom:4px; display:inline-flex; align-items:center; gap:4px; background:rgba(245,158,11,0.1); padding:2px 6px; border-radius:4px; font-weight:600;">📌 <span data-lang-key="pinned_msg_badge" style="font-size:10px;">Sabitlendi</span></div>` : '';
+
+    messageEl.innerHTML = `<div class="message-avatar" style="${avatarStyle}">${msg.profile_pic ? '' : initial}</div><div class="message-content"><div class="message-header"><div><span class="message-username" style="color: ${msg.avatarColor || '#5865F2'}">${escapeHtml(msg.username)}</span><span class="message-timestamp" style="font-size:11px;color:var(--text-muted);margin-left:8px;">${timeStr}</span></div></div>${replyHtml}<div class="msg-row-wrapper" data-message-id="${msg.id}" style="position:relative;display:block;">${pinnedBadgeHtml}<div class="message-text" data-message-id="${msg.id}">${safeContent}</div><div class="reaction-bar">${buildReactionsHtml(msg.id, msg.reactions || '{}')}</div></div></div>`;
 
     el.chatMessages.appendChild(messageEl);
 

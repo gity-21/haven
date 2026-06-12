@@ -170,6 +170,40 @@ export function connectSocket(): void {
         import('./ui/voice-ui').then(m => m.updateMicStatusUI(userId, isMicOn));
     });
 
+    state.socket.on('message-pinned', ({ messageId, isPinned }: { messageId: number, isPinned: boolean }) => {
+        // Find message element and update visual
+        const messageRow = document.querySelector(`.msg-row-wrapper[data-message-id='${messageId}']`);
+        if (messageRow) {
+            const badge = messageRow.querySelector('.pinned-badge');
+            if (isPinned && !badge) {
+                const pinBadge = document.createElement('div');
+                pinBadge.innerHTML = '📌 <span data-lang-key="pinned_msg_badge" style="font-size:10px;">Sabitlendi</span>';
+                pinBadge.className = 'pinned-badge';
+                pinBadge.style.cssText = 'font-size:11px; color:var(--accent-warning); margin-bottom:4px; display:inline-flex; align-items:center; gap:4px; background:rgba(245,158,11,0.1); padding:2px 6px; border-radius:4px; font-weight:600;';
+                messageRow.insertBefore(pinBadge, messageRow.querySelector('.message-text'));
+            } else if (!isPinned && badge) {
+                badge.remove();
+            }
+        }
+        
+        // Update pinned messages state
+        // We need the full message object for updatePinnedMessage. We can construct a partial one if needed, or re-fetch history.
+        // Or if we already have it rendered:
+        const msgEl = document.querySelector(`.message-text[data-message-id='${messageId}']`);
+        const usernameEl = msgEl?.closest('.message-content')?.querySelector('.message-username');
+        if (msgEl && usernameEl) {
+            import('./ui/pinned').then(m => {
+                m.updatePinnedMessage({
+                    id: messageId,
+                    content: msgEl.innerHTML,
+                    username: usernameEl.textContent || 'Bilinmeyen',
+                    is_pinned: isPinned,
+                    created_at: new Date().toISOString() // Fallback if not found
+                }, isPinned);
+            });
+        }
+    });
+
     // ── Messages ──
     state.socket.on('new-message', async (msg: any) => {
         if (el.emptyState) el.emptyState.style.display = 'none';
@@ -248,6 +282,8 @@ export function connectSocket(): void {
 
     // ── Message Delete ──
     state.socket.on('message-deleted', (messageId: string | number) => {
+        import('./ui/pinned').then(m => m.deletePinnedMessage(messageId));
+
         if (!el.chatMessages) return;
         const rowWrapper = document.querySelector(`.msg-row-wrapper[data-message-id="${messageId}"]`);
         if (rowWrapper) {
@@ -359,9 +395,37 @@ export function connectSocket(): void {
                 reply_to: msg.reply_to,
                 reply_username: msg.reply_username,
                 reply_content: msg.reply_content,
-                reactions: msg.reactions || '{}',
-                created_at: msg.created_at
+                reactions: msg.reactions,
+                created_at: msg.created_at,
+                user_id: msg.user_id,
+                is_edited: msg.is_edited,
+                edit_history: msg.edit_history,
+                is_pinned: msg.is_pinned
             }));
+
+            // Pass to pinned messages state
+            import('./ui/pinned').then(m => {
+                const parsedMsgs = messages.map(msg => ({
+                    id: msg.id,
+                    roomId: msg.room_key,
+                    username: msg.username,
+                    content: msg.content,
+                    avatarColor: msg.avatar_color,
+                    profile_pic: msg.profile_pic,
+                    type: msg.type,
+                    reply_to: msg.reply_to,
+                    reply_username: msg.reply_username,
+                    reply_content: msg.reply_content,
+                    reactions: msg.reactions,
+                    created_at: msg.created_at,
+                    user_id: msg.user_id,
+                    is_edited: msg.is_edited,
+                    edit_history: msg.edit_history,
+                    is_pinned: msg.is_pinned
+                }));
+                m.setPinnedMessages(parsedMsgs);
+            });
+            
             scrollToBottom();
         } else {
             if (el.emptyState) {

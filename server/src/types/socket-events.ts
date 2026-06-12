@@ -136,6 +136,7 @@ export interface NewMessageData {
     reply_content: string | null;
     reactions: string;
     created_at: string;
+    is_pinned?: boolean | number;
 }
 
 export interface RingingData {
