@@ -521,6 +521,19 @@ function setupSettingsModal(): void {
         });
     }
 
+    if (el.btnInviteLink) {
+        el.btnInviteLink.addEventListener('click', () => {
+            const cleanUrl = window.location.href.split('?')[0];
+            const inviteLink = `${cleanUrl}/?room=${encodeURIComponent(state.room)}`;
+            const inviteText = `Haven Gizli Oda Daveti!\n\n🚀 Oda bağlantısı:\n${inviteLink}\n\nOda Anahtarı: ${state.room}\n\n⚠️ Şifreyi bu mesajla birlikte göndermeyin.\nŞifreyi ayrı bir kanaldan (SMS vb.) paylaşın.`;
+            navigator.clipboard.writeText(inviteText).then(() => {
+                showToast('Davet linki panoya kopyalandı!', 'success');
+            }).catch(() => {
+                showToast('Kopyalama başarısız oldu.', 'error');
+            });
+        });
+    }
+
     el.btnChatSettings.addEventListener('click', () => {
         if (el.chatUsernameInput) el.chatUsernameInput.value = state.nickname || '';
         if (el.chatAvatarColorInput) el.chatAvatarColorInput.value = state.avatarColor || '#6366f1';
@@ -772,6 +785,7 @@ function setupSettingsModal(): void {
     mobileAction('mobile-btn-voice', () => el.btnJoinVoice?.click());
     mobileAction('mobile-btn-video', () => el.btnJoinVideo?.click());
     mobileAction('mobile-btn-settings', () => el.btnChatSettings?.click());
+    mobileAction('mobile-btn-invite', () => el.btnInviteLink?.click());
     mobileAction('mobile-btn-logout', () => el.btnLogout?.click());
 })();
 

@@ -48,6 +48,7 @@ export interface ChatElements {
 
     // Ayarlar / Tema
     btnChatSettings: HTMLElement | null;
+    btnInviteLink: HTMLElement | null;
     chatSettingsModal: HTMLElement | null;
     btnCloseChatSettings: HTMLElement | null;
     btnSaveChatSettings: HTMLElement | null;
@@ -110,6 +111,7 @@ export const el: ChatElements = {
 
     // Ayarlar
     btnChatSettings: document.getElementById('btn-chat-settings'),
+    btnInviteLink: document.getElementById('btn-invite-link'),
     chatSettingsModal: document.getElementById('chat-settings-modal'),
     btnCloseChatSettings: document.getElementById('btn-close-chat-settings'),
     btnSaveChatSettings: document.getElementById('btn-save-chat-settings'),
