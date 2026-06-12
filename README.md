@@ -6,13 +6,11 @@ Haven, tam gizlilik odaklı, sıfır kayıt mantığıyla çalışan premium bir
 
 ## 👥 Takım
 
-| GitHub / Geliştirici | Rol ve Katkı Özeti | Katkı Payı |
-|----------------------|--------------------|------------|
-| [@mehmetsolves](https://github.com/mehmetsolves) | **Kurucu & Bakım** - Temel proje iskeletinin oluşturulması, hata ayıklama ve testlerin yönetimi. | %50 |
-| [@emresosuke](https://github.com/emresosuke) (kakashiimadara) | **Çekirdek Sistem Geliştiricisi** - TypeScript migrasyonu, E2EE, WebRTC ve ana motorun inşası. | %45 |
-| [@Taruk21](https://github.com/Taruk21) (Maxen) | **Dokümantasyon** - README güncellemeleri ve proje bilgilendirmeleri. | %4 |
-
-> *Not: Kalan %1'lik pay GitHub Dependabot'a ait otomatik güncellemeleri temsil eder.*
+| GitHub | Rol |
+|--------|------|
+| [@mehmetsolves](https://github.com/mehmetsolves) | Geliştirici |
+| [@Taruk21](https://github.com/Taruk21) | Geliştirici |
+| [@emresosuke](https://github.com/emresosuke) | Geliştirici |
 
 ---
 
@@ -28,6 +26,10 @@ Haven, tam gizlilik odaklı, sıfır kayıt mantığıyla çalışan premium bir
 - **🌍 Çoklu Dil Desteği (i18n)**: Türkçe, İngilizce (English) ve Kürtçe (Kurdî) dillerini destekler. Dil anında değiştirilebilir.
 - **🌐 Dahili Cloudflare Tunnel**: Uygulama başlatıldığında `start.sh` veya `start_windows.bat` betikleri otomatik olarak Cloudflare Tunnel açar. Modemden port açmanıza gerek kalmadan uygulamanıza internet üzerinden güvenle erişilebilir.
 - **🎨 Kişiselleştirme**: Takma ad, avatar rengi ve profil fotoğrafı desteklenir.
+- **📊 Anket Oluşturma**: Odadaki kullanıcılar için canlı oylama/anketler (poll) düzenleyebilirsiniz.
+- **📌 Mesaj Sabitleme**: Önemli mesajları sohbetin üst kısmına tutturarak herkesin kolayca görmesini sağlayabilirsiniz.
+- **🏷️ Kişi Etiketleme (Mentions)**: Grubunuzda belirli kullanıcılara doğrudan `@isim` şeklinde seslenebilirsiniz.
+- **💾 Hatırlama Seçenekleri**: Bir sonraki girişiniz için takma ad gibi bilgilerinizi yerel olarak kaydedebilirsiniz.
 
 ## 🔧 Kurulum ve Çalıştırma
 
@@ -71,7 +73,7 @@ npm run build:win
 - SQLite sunucu tabanlı mesaj yedekleri uçtan uca şifreli halde tutulur.
 
 ## 🛠️ Teknolojiler
-- **İstemci (Desktop)**: Electron.js, Vanilla JS, HTML, CSS (Glassmorphism)
+- **İstemci (Desktop)**: Electron.js, TypeScript, HTML, CSS (Glassmorphism)
 - **Sunucu (Backend)**: Node.js, Express.js, Socket.IO
 - **Gerçek Zamanlı İletişim**: WebRTC (Ses, Video, Ekran Paylaşımı, Dosya Transferi)
 - **Ağ / Tünelleme**: Cloudflare Tunnel (TryCloudflare)
