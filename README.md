@@ -6,11 +6,13 @@ Haven, tam gizlilik odaklı, sıfır kayıt mantığıyla çalışan premium bir
 
 ## 👥 Takım
 
-| GitHub | Rol |
-|--------|------|
-| [@mehmetsolves](https://github.com/mehmetsolves) | Geliştirici |
-| [@Taruk21](https://github.com/Taruk21) | Geliştirici |
-| [@emresosuke](https://github.com/emresosuke) | Geliştirici |
+| GitHub / Geliştirici | Rol ve Katkı Özeti | Katkı Payı |
+|----------------------|--------------------|------------|
+| [@mehmetsolves](https://github.com/mehmetsolves) | **Kurucu & Bakım** - Temel proje iskeletinin oluşturulması, hata ayıklama ve testlerin yönetimi. | %50 |
+| [@emresosuke](https://github.com/emresosuke) (kakashiimadara) | **Çekirdek Sistem Geliştiricisi** - TypeScript migrasyonu, E2EE, WebRTC ve ana motorun inşası. | %45 |
+| [@Taruk21](https://github.com/Taruk21) (Maxen) | **Dokümantasyon** - README güncellemeleri ve proje bilgilendirmeleri. | %4 |
+
+> *Not: Kalan %1'lik pay GitHub Dependabot'a ait otomatik güncellemeleri temsil eder.*
 
 ---
 
