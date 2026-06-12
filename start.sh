@@ -31,7 +31,7 @@ MAX_WAIT=30
 while [ -z "$TUNNEL_URL" ] && [ $WAIT_COUNT -lt $MAX_WAIT ]; do
     sleep 1
     WAIT_COUNT=$((WAIT_COUNT + 1))
-    TUNNEL_URL=$(grep -oP 'https://[\w-]+.trycloudflare.com' tunnel.log 2>/dev/null | head -1)
+    TUNNEL_URL=$(grep -oP 'https://[\w-]+.trycloudflare.com' tunnel.log 2>/dev/null | grep -v 'api.trycloudflare.com' | head -1)
 done
 
 echo ""

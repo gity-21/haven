@@ -44,7 +44,7 @@ set retry=0
 :search_url
 timeout /t 2 /nobreak >nul
 set "TUNNEL_URL="
-for /f "tokens=*" %%a in ('powershell -Command "Select-String -Path 'data\tunnel.log' -Pattern 'https://[a-zA-Z0-9-]+\.trycloudflare\.com' | Select-Object -ExpandProperty Matches | Select-Object -ExpandProperty Value -First 1"') do set TUNNEL_URL=%%a
+for /f "tokens=*" %%a in ('powershell -Command "Select-String -Path 'data\tunnel.log' -Pattern 'https://[a-zA-Z0-9-]+\.trycloudflare\.com' | Select-Object -ExpandProperty Matches | Select-Object -ExpandProperty Value | Where-Object { $_ -notmatch 'api\.trycloudflare\.com' } | Select-Object -First 1"') do set TUNNEL_URL=%%a
 
 if not "%TUNNEL_URL%"=="" goto tunnel_success
 set /a retry+=1
