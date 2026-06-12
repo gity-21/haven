@@ -122,6 +122,11 @@ const corsOptions: cors.CorsOptions = {
         // Whitelist (localhost ve process.env.TUNNEL_ORIGIN)
         if (CORS_WHITELIST.has(origin)) return callback(null, true);
 
+        // TryCloudflare (Quick Tunnels)
+        if (origin.endsWith('.trycloudflare.com')) {
+            return callback(null, true);
+        }
+
         // Diğer tüm origin'ler reddedilir
         console.warn(`[CORS] Reddedilen origin: ${origin}`);
         callback(new Error(`CORS: İzin verilmeyen origin → ${origin}`));
@@ -163,7 +168,7 @@ app.use('/socket.io', socketLimiter);
 app.use('/api', apiLimiter);
 
 // Uploads ve Statik Dosyalar
-app.use(express.static(path.join(__dirname, '../../app/renderer')));
+app.use(express.static(path.join(__dirname, '../../app/renderer/dist')));
 const uploadsDir: string = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, 'uploads') : path.join(__dirname, '../../data/uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
@@ -292,7 +297,7 @@ app.delete('/api/admin/rooms', adminOnly, (_req: Request, res: Response) => {
     }
 });
 
-app.get('/', (_req: Request, res: Response) => res.sendFile(path.join(__dirname, '../../app/renderer/login.html')));
+app.get('/', (_req: Request, res: Response) => res.sendFile(path.join(__dirname, '../../app/renderer/dist/login.html')));
 
 // Aktif arama (ringing) durumları: roomKey -> { callerId, callerName, avatarColor, profilePic }
 const activeRinging = new Map<string, RingingData>();

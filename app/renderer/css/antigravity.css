@@ -429,3 +429,40 @@ html[data-theme="antigravity"] #invite-modal #btn-start-chat:hover {
     background: #174ea6 !important;
     box-shadow: 0 4px 8px rgba(26, 115, 232, 0.3) !important;
 }
+
+/* ── Mentions ── */
+.mention {
+    background-color: rgba(99, 102, 241, 0.2);
+    color: #818cf8;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.mention:hover {
+    background-color: rgba(99, 102, 241, 0.3);
+}
+
+.message-group.mentioned {
+    background-color: rgba(245, 158, 11, 0.1);
+    border-left: 3px solid #f59e0b;
+    border-radius: 0 8px 8px 0;
+    padding-left: 12px;
+}
+
+.mention-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    color: var(--text-primary);
+}
+
+.mention-item:hover, .mention-item.selected {
+    background-color: rgba(255, 255, 255, 0.1);
+}

@@ -189,6 +189,7 @@ export function appendMessage(msg: ChatMessage): void {
     const isMine = msg.username === state.nickname || (state.userId && msg.user_id === state.userId);
 
     // İçerik hazırlama
+    let isMentioned = false;
     let safeContent = '';
     if (msg.type === 'self-destruct') {
         const uniqueId = 'sd-' + msg.id;
@@ -198,6 +199,15 @@ export function appendMessage(msg: ChatMessage): void {
         safeContent = (msg.type === 'file' || msg.type === 'p2p-announce')
             ? escapeHtml(msg.content)
             : linkify(escapeHtml(msg.content)).replace(/\n/g, '<br>');
+
+        if (msg.type !== 'file' && msg.type !== 'p2p-announce') {
+            safeContent = safeContent.replace(/@([a-zA-Z0-9_]+)/g, (match, username) => {
+                if (username.toLowerCase() === state.nickname.toLowerCase()) {
+                    isMentioned = true;
+                }
+                return `<span class="mention">@${username}</span>`;
+            });
+        }
 
         if (msg.is_edited) {
             safeContent += ` <span style="font-size:10px; color:var(--text-muted); opacity:0.7; font-style:italic; cursor:pointer;" onclick="window.viewEditHistory('${btoa(encodeURIComponent(msg.edit_history || '[]'))}')" title="Düzenleme Geçmişi">(düzenlendi)</span>`;
@@ -270,7 +280,7 @@ export function appendMessage(msg: ChatMessage): void {
             const contentDiv = lastGroup.querySelector('.message-content');
             if (contentDiv) {
                 const rowDiv = document.createElement('div');
-                rowDiv.className = 'msg-row-wrapper';
+                rowDiv.className = 'msg-row-wrapper' + (isMentioned ? ' mentioned' : '');
                 rowDiv.dataset.messageId = String(msg.id);
                 rowDiv.style.cssText = 'position:relative; display:block;';
 
@@ -298,6 +308,10 @@ export function appendMessage(msg: ChatMessage): void {
                 rowDiv.appendChild(createHoverToolbar(msg, !!isMine));
                 contentDiv.appendChild(rowDiv);
                 scrollToBottom();
+                
+                if (isMentioned && !isMine) {
+                    new Audio('assets/notification.mp3').play().catch(() => {});
+                }
                 return;
             }
         }
@@ -314,14 +328,17 @@ export function appendMessage(msg: ChatMessage): void {
 
     const pinnedBadgeHtml = msg.is_pinned ? `<div class="pinned-badge" style="font-size:11px; color:var(--accent-warning); margin-bottom:4px; display:inline-flex; align-items:center; gap:4px; background:rgba(245,158,11,0.1); padding:2px 6px; border-radius:4px; font-weight:600;">📌 <span data-lang-key="pinned_msg_badge" style="font-size:10px;">Sabitlendi</span></div>` : '';
 
-    messageEl.innerHTML = `<div class="message-avatar" style="${avatarStyle}">${msg.profile_pic ? '' : initial}</div><div class="message-content"><div class="message-header"><div><span class="message-username" style="color: ${msg.avatarColor || '#5865F2'}">${escapeHtml(msg.username)}</span><span class="message-timestamp" style="font-size:11px;color:var(--text-muted);margin-left:8px;">${timeStr}</span></div></div>${replyHtml}<div class="msg-row-wrapper" data-message-id="${msg.id}" style="position:relative;display:block;">${pinnedBadgeHtml}<div class="message-text" data-message-id="${msg.id}">${safeContent}</div><div class="reaction-bar">${buildReactionsHtml(msg.id, msg.reactions || '{}')}</div></div></div>`;
+    messageEl.innerHTML = `<div class="message-avatar" style="${avatarStyle}">${msg.profile_pic ? '' : initial}</div><div class="message-content"><div class="message-header"><div><span class="message-username" style="color: ${msg.avatarColor || '#5865F2'}">${escapeHtml(msg.username)}</span><span class="message-timestamp" style="font-size:11px;color:var(--text-muted);margin-left:8px;">${timeStr}</span></div></div>${replyHtml}<div class="msg-row-wrapper${isMentioned ? ' mentioned' : ''}" data-message-id="${msg.id}" style="position:relative;display:block;">${pinnedBadgeHtml}<div class="message-text" data-message-id="${msg.id}">${safeContent}</div><div class="reaction-bar">${buildReactionsHtml(msg.id, msg.reactions || '{}')}</div></div></div>`;
 
     el.chatMessages.appendChild(messageEl);
 
-    // İlk satıra hover toolbar ekle
-    const firstRowWrapper = messageEl.querySelector('.msg-row-wrapper');
-    if (firstRowWrapper) {
-        firstRowWrapper.appendChild(createHoverToolbar(msg, !!isMine));
+    const msgRow = messageEl.querySelector('.msg-row-wrapper');
+    if (msgRow) {
+        msgRow.appendChild(createHoverToolbar(msg, !!isMine));
+    }
+
+    if (isMentioned && !isMine) {
+        new Audio('assets/notification.mp3').play().catch(() => {});
     }
 
     // Resim context menu

@@ -31,6 +31,7 @@ import './ui/media-preview';
 import './ui/voice-player';
 import './ui/modals';
 import { initPinnedMessages } from './ui/pinned';
+import { initMentions } from './ui/mentions';
 
 // ── initialize ──
 
@@ -62,6 +63,9 @@ async function initialize(): Promise<void> {
 
     // Pinned messages init
     initPinnedMessages();
+
+    // Mentions init
+    initMentions();
 
     // UI'da Odayı yaz
     if (el.roomNameDisplay) el.roomNameDisplay.textContent = state.roomKey;

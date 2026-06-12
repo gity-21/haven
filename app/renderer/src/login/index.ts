@@ -80,8 +80,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sihirli link parametreleri
     const urlParams = new URLSearchParams(window.location.search);
     const invitePass = '';
-    if (urlParams.has('room')) savedRoom = urlParams.get('room') || '';
-    if (urlParams.has('name')) savedUsername = urlParams.get('name') || '';
+    if (urlParams.has('room')) {
+        savedRoom = urlParams.get('room') || '';
+        localStorage.setItem('haven_room', savedRoom); // Hemen kaydet ki refresh'te kaybolmasın
+    }
+    if (urlParams.has('name')) {
+        savedUsername = urlParams.get('name') || '';
+        localStorage.setItem('haven_nickname', savedUsername);
+    }
 
     // Tema
     const savedTheme = localStorage.getItem('haven_login_theme') || 'space';
@@ -129,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
     inputColor.value = savedColor;
 
     if (urlParams.has('room') && tabJoin) {
-        window.history.replaceState({}, document.title, window.location.pathname);
         setTimeout(() => tabJoin.click(), 50);
     }
 
@@ -546,11 +551,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // SHA-256 ile hash
-        const encoder = new TextEncoder();
-        const data = encoder.encode(passwordMatch);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const authKey = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        let authKey = '';
+        try {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(passwordMatch);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            authKey = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch (err) {
+            showError("Güvenlik API'sine ulaşılamadı. Uçtan uca şifreleme için 'localhost' veya HTTPS (Güvenli Bağlantı) kullanmalısınız.");
+            return;
+        }
 
         // Host Mode
         if (tabCreate && tabCreate.classList.contains('active')) {
