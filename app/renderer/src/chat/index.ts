@@ -522,15 +522,22 @@ function setupSettingsModal(): void {
     }
 
     if (el.btnInviteLink) {
-        el.btnInviteLink.addEventListener('click', () => {
+        el.btnInviteLink.addEventListener('click', async () => {
             const cleanUrl = window.location.href.split('?')[0];
             const inviteLink = `${cleanUrl}/?room=${encodeURIComponent(state.room)}`;
             const inviteText = `Haven Gizli Oda Daveti!\n\n🚀 Oda bağlantısı:\n${inviteLink}\n\nOda Anahtarı: ${state.room}\n\n⚠️ Şifreyi bu mesajla birlikte göndermeyin.\nŞifreyi ayrı bir kanaldan (SMS vb.) paylaşın.`;
-            navigator.clipboard.writeText(inviteText).then(() => {
+            
+            try {
+                if (window.electronAPI?.writeToClipboard) {
+                    await window.electronAPI.writeToClipboard(inviteText);
+                } else {
+                    await navigator.clipboard.writeText(inviteText);
+                }
                 showToast('Davet linki panoya kopyalandı!', 'success');
-            }).catch(() => {
+            } catch (err) {
+                console.error('Clipboard error:', err);
                 showToast('Kopyalama başarısız oldu.', 'error');
-            });
+            }
         });
     }
 
