@@ -708,6 +708,55 @@ export async function startServer(portArg: number | null = null): Promise<Server
             });
         });
 
+        // Anket Oylaması
+        socket.on('vote-poll', (data: { messageId: number, optionIndex: number, multiple: boolean }) => {
+            if (!_rateCheck('vote-poll')) return;
+            const { messageId, optionIndex, multiple } = data;
+            if (!socket.roomKey || !messageId || optionIndex === undefined) return;
+
+            const msg = db.prepare('SELECT reactions FROM messages WHERE id = ? AND room_key = ?').get(messageId, socket.roomKey) as { reactions: string } | undefined;
+            if (!msg) return;
+
+            let reactionsObj: Record<string, string[]> = {};
+            try {
+                if (msg.reactions) reactionsObj = JSON.parse(msg.reactions);
+            } catch (_e) { }
+
+            const pollKey = `pollopt_${optionIndex}`;
+
+            if (!multiple) {
+                // Eğer çoklu seçim kapalıysa, diğer tüm pollopt_* anahtarlarından bu kullanıcıyı sil
+                Object.keys(reactionsObj).forEach(key => {
+                    if (key.startsWith('pollopt_') && key !== pollKey) {
+                        const idx = reactionsObj[key].indexOf(socket.nickname!);
+                        if (idx > -1) {
+                            reactionsObj[key].splice(idx, 1);
+                            if (reactionsObj[key].length === 0) delete reactionsObj[key];
+                        }
+                    }
+                });
+            }
+
+            if (!reactionsObj[pollKey]) reactionsObj[pollKey] = [];
+
+            const userIndex = reactionsObj[pollKey].indexOf(socket.nickname!);
+            if (userIndex > -1) {
+                reactionsObj[pollKey].splice(userIndex, 1); // Zaten oy vermişse kaldır (toggle)
+                if (reactionsObj[pollKey].length === 0) delete reactionsObj[pollKey];
+            } else {
+                reactionsObj[pollKey].push(socket.nickname!); // Yoksa ekle
+            }
+
+            const newReactionsStr = JSON.stringify(reactionsObj);
+            db.prepare('UPDATE messages SET reactions = ? WHERE id = ?').run(newReactionsStr, messageId);
+
+            // Değişikliği aynı reaksiyon eventi ile yayınla ki mevcut mimari güncellesin
+            io.to(socket.roomKey).emit('message-reaction-update', {
+                messageId,
+                reactions: newReactionsStr
+            });
+        });
+
         socket.on('disconnect', () => {
             if (socket.roomKey) {
                 socket.to(socket.roomKey).emit('user-left', { msg: `${socket.nickname} odadan ayrıldı.` });

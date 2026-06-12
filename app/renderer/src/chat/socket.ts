@@ -344,6 +344,54 @@ export function connectSocket(): void {
     // ── Reactions ──
     state.socket.on('message-reaction-update', ({ messageId, reactions }: { messageId: string | number; reactions: string }) => {
         if (!el.chatMessages) return;
+
+        // Anket güncelleyici mantığı:
+        const pollBox = document.getElementById(`poll-${messageId}`);
+        if (pollBox) {
+            try {
+                const pollData = JSON.parse(pollBox.getAttribute('data-poll-json') || '{}');
+                let reactionsObj: Record<string, string[]> = {};
+                try { reactionsObj = JSON.parse(reactions); } catch(e) {}
+                
+                let totalVotes = 0;
+                pollData.options.forEach((_opt: string, idx: number) => {
+                    totalVotes += (reactionsObj[`pollopt_${idx}`] || []).length;
+                });
+                
+                const listContainer = pollBox.querySelector('.poll-options-list');
+                if (listContainer) {
+                    Array.from(listContainer.children).forEach((btn: Element, idx: number) => {
+                        const optKey = `pollopt_${idx}`;
+                        const voters = reactionsObj[optKey] || [];
+                        const count = voters.length;
+                        const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+                        const isMyVote = voters.includes(state.nickname);
+                        
+                        const htmlBtn = btn as HTMLElement;
+                        htmlBtn.className = `poll-option-btn ${isMyVote ? 'voted' : ''}`;
+                        htmlBtn.style.border = `1px solid ${isMyVote ? 'var(--accent-primary)' : 'rgba(255,255,255,0.1)'}`;
+                        
+                        const bgDiv = htmlBtn.querySelector('.poll-bar-bg') as HTMLElement;
+                        if (bgDiv) {
+                            bgDiv.style.width = `${pct}%`;
+                            bgDiv.style.background = isMyVote ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.08)';
+                        }
+                        
+                        const countSpan = htmlBtn.querySelector('.poll-count-text') as HTMLElement;
+                        if (countSpan) {
+                            countSpan.textContent = count > 0 ? `${count} (${pct}%)` : '';
+                        }
+                    });
+                }
+                
+                const footer = pollBox.querySelector('.poll-footer');
+                if (footer) {
+                    footer.textContent = `${totalVotes} oy • ${pollData.multiple ? 'Çoklu seçim' : 'Tekli seçim'}`;
+                }
+            } catch(e) { console.error('Anket güncellenirken hata:', e); }
+            return; // Normal emoji reaksiyonu olarak çizmeyi atla
+        }
+
         const rowWrapper = el.chatMessages.querySelector(`.msg-row-wrapper[data-message-id="${messageId}"]`);
         if (rowWrapper) {
             let reactBar = rowWrapper.querySelector('.reaction-bar');

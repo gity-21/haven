@@ -21,7 +21,7 @@ export interface JoinRoomPayload {
 
 export interface SendMessagePayload {
     content: string;
-    type: 'message' | 'file' | 'p2p-announce';
+    type: 'message' | 'file' | 'p2p-announce' | 'poll';
     replyTo: number | null;
 }
 

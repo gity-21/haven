@@ -22,6 +22,7 @@ import { setupAdminEvents, loadAdminRooms } from './ui/admin';
 import { loadAudioDevices } from './ui/voice-ui';
 import { escapeHtml } from './utils';
 import { rtcConfig, initiateVoiceCall, joinVoiceRoom, leaveVoiceRoom, toggleMic, toggleVideo, toggleScreen, startScreenShareWithStream } from './voice';
+import { initPollUI } from './ui/poll';
 
 // ── UI modüllerini import et (side-effects: window globals set edilir) ──
 import '../i18n';
@@ -66,6 +67,7 @@ async function initialize(): Promise<void> {
 
     // Mentions init
     initMentions();
+    initPollUI();
 
     // UI'da Odayı yaz
     if (el.roomNameDisplay) el.roomNameDisplay.textContent = state.roomKey;

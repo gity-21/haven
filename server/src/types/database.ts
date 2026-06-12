@@ -20,7 +20,7 @@ export interface Message {
     username: string;
     avatar_color: string;
     content: string;
-    type: 'message' | 'file' | 'p2p-announce';
+    type: 'message' | 'file' | 'p2p-announce' | 'poll';
     reply_to: number | null;
     profile_pic: string | null;
     session_id: string | null;

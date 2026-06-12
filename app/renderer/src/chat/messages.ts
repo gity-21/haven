@@ -265,6 +265,52 @@ export function appendMessage(msg: ChatMessage): void {
                 safeContent = `📎 <a href="${serverPath}${safeUrl}" target="_blank" style="color:var(--accent-primary);">${escapeHtml(fileObj.filename)}</a>`;
             }
         } catch (_e) { /* ignore */ }
+    } else if (msg.type === 'poll') {
+        try {
+            const pollData = JSON.parse(msg.content);
+            const pollHtmlId = `poll-${msg.id}`;
+            let optionsHtml = '';
+            
+            let reactionsObj: Record<string, string[]> = {};
+            if ((msg as any).reactions) {
+                try { reactionsObj = JSON.parse((msg as any).reactions); } catch(e) {}
+            }
+            
+            let totalVotes = 0;
+            pollData.options.forEach((opt: string, idx: number) => {
+                const optKey = `pollopt_${idx}`;
+                totalVotes += (reactionsObj[optKey] || []).length;
+            });
+            
+            pollData.options.forEach((opt: string, idx: number) => {
+                const optKey = `pollopt_${idx}`;
+                const voters = reactionsObj[optKey] || [];
+                const count = voters.length;
+                const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+                const isMyVote = voters.includes(state.nickname);
+                
+                optionsHtml += `
+                    <button class="poll-option-btn ${isMyVote ? 'voted' : ''}" data-idx="${idx}" onclick="window.votePoll(${msg.id}, ${idx}, ${pollData.multiple})" style="position:relative; width:100%; text-align:left; padding:10px 14px; background:rgba(255,255,255,0.05); border:1px solid ${isMyVote ? 'var(--accent-primary)' : 'rgba(255,255,255,0.1)'}; border-radius:8px; cursor:pointer; color:var(--text-primary); font-size:14px; font-weight:500; overflow:hidden; display:flex; justify-content:space-between; align-items:center; transition:0.2s; margin-bottom:6px;">
+                        <div class="poll-bar-bg" style="position:absolute; top:0; left:0; height:100%; width:${pct}%; background:${isMyVote ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.08)'}; z-index:1; transition:width 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                        <span style="position:relative; z-index:2; flex:1;">${escapeHtml(opt)}</span>
+                        <span class="poll-count-text" style="position:relative; z-index:2; font-size:12px; color:var(--text-muted); font-weight:600; min-width:40px; text-align:right;">${count > 0 ? count + ' (' + pct + '%)' : ''}</span>
+                    </button>
+                `;
+            });
+            
+            safeContent = `
+                <div class="poll-box" id="${pollHtmlId}" data-poll-json="${escapeHtml(JSON.stringify(pollData))}" style="border:1px solid rgba(255,255,255,0.08); border-radius:12px; background:linear-gradient(135deg,rgba(0,0,0,0.2),rgba(99,102,241,0.05)); padding:16px; max-width:320px; width:100%; margin-top:4px;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                        <span style="font-size:20px;">📊</span>
+                        <div style="font-weight:700; font-size:15px; color:white; line-height:1.4;">${escapeHtml(pollData.question)}</div>
+                    </div>
+                    <div class="poll-options-list">
+                        ${optionsHtml}
+                    </div>
+                    <div class="poll-footer" style="font-size:11px; color:var(--text-muted); text-align:right; margin-top:8px;">${totalVotes} oy • ${pollData.multiple ? 'Çoklu seçim' : 'Tekli seçim'}</div>
+                </div>
+            `;
+        } catch (_e) { /* ignore */ }
     }
 
     // Yanıt gösterimi
@@ -454,6 +500,16 @@ export async function sendMessage(): Promise<void> {
     }
 }
 
+export async function sendDataMessage(content: string, type: string, replyTo: number | null = null): Promise<void> {
+    if (!state.socket) return;
+    const encryptedContent = await encryptMessage(content);
+    state.socket.emit('send-message', {
+        content: encryptedContent,
+        type,
+        replyTo
+    });
+}
+
 // ── Reply ──
 
 window.initiateReply = (msgId: number | string, username: string, content: string) => {
@@ -633,6 +689,11 @@ window.viewEditHistory = async (historyStr: string) => {
         console.error(e);
         if (window.showToast) window.showToast('Geçmiş okunamadı', 'error');
     }
+};
+
+window.votePoll = (messageId: number, optionIndex: number, multiple: boolean) => {
+    if (!state.socket) return;
+    state.socket.emit('vote-poll', { messageId, optionIndex, multiple });
 };
 
 // ── Self Destruct Message ──
