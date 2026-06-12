@@ -1,4 +1,4 @@
-﻿/**
+/**
  * database.ts - Veritabanı Yönetimi
  *
  * sql.js (WASM tabanlı SQLite) kullanılıyor.
