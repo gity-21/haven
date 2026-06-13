@@ -72,13 +72,10 @@
             "deleteAppDataOnUninstall": false
         },
         "linux": {
-            "target": [
-                "AppImage",
-                "deb"
-            ],
-            "icon": "assets/icon.png",
-            "category": "Network"
-        }
+    "target": ["tar.gz"],
+    "icon": "assets/icon.png",
+    "category": "Network"
+}
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",
