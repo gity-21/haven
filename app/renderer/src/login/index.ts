@@ -573,6 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     serverUrl = await window.electronAPI.getLocalServerUrl();
 
                     localStorage.setItem('haven_server_url', serverUrl);
+                    localStorage.setItem('haven_tunnel_url', tunnelUrl);
                     localStorage.setItem('haven_nickname', nickname);
                     localStorage.setItem('haven_room', room);
                     localStorage.setItem('haven_avatar', inputColor.value);
@@ -650,8 +651,19 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             if (window.electronAPI?.writeToClipboard) {
                 await window.electronAPI.writeToClipboard(text);
-            } else {
+            } else if (navigator.clipboard && navigator.clipboard.writeText) {
                 await navigator.clipboard.writeText(text);
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                } catch (err) {
+                    console.error('Fallback clipboard error:', err);
+                }
+                document.body.removeChild(textArea);
             }
 
             const hasLangKey = btn.hasAttribute('data-lang-key');

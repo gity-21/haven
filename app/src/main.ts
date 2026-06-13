@@ -240,7 +240,7 @@ function spawnTunnel(
 
     const handleOutput = (data: Buffer): void => {
         const output = data.toString();
-        const match = output.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
+        const match = output.match(/https:\/\/(?!api\.)[a-zA-Z0-9-]+\.trycloudflare\.com/);
         if (match && !resolved) {
             resolved = true;
             activeTunnelUrl = match[0];

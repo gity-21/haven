@@ -523,17 +523,34 @@ function setupSettingsModal(): void {
 
     if (el.btnInviteLink) {
         el.btnInviteLink.addEventListener('click', async () => {
-            const cleanUrl = state.serverUrl.endsWith('/') ? state.serverUrl.slice(0, -1) : state.serverUrl;
+            const tunnelUrl = localStorage.getItem('haven_tunnel_url');
+            const baseUrl = tunnelUrl ? tunnelUrl : state.serverUrl;
+            const cleanUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
             const inviteLink = `${cleanUrl}/?room=${encodeURIComponent(state.roomKey)}`;
             const inviteText = `Haven Gizli Oda Daveti!\n\n🚀 Oda bağlantısı:\n${inviteLink}\n\nOda Anahtarı: ${state.roomKey}\n\n⚠️ Şifreyi bu mesajla birlikte göndermeyin.\nŞifreyi ayrı bir kanaldan (SMS vb.) paylaşın.`;
             
             try {
                 if (window.electronAPI?.writeToClipboard) {
                     await window.electronAPI.writeToClipboard(inviteText);
-                } else {
+                    showToast('Davet linki panoya kopyalandı!', 'success');
+                } else if (navigator.clipboard && navigator.clipboard.writeText) {
                     await navigator.clipboard.writeText(inviteText);
+                    showToast('Davet linki panoya kopyalandı!', 'success');
+                } else {
+                    // Fallback for non-secure contexts
+                    const textArea = document.createElement("textarea");
+                    textArea.value = inviteText;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        showToast('Davet linki panoya kopyalandı!', 'success');
+                    } catch (err) {
+                        console.error('Fallback clipboard error:', err);
+                        showToast('Kopyalama başarısız oldu.', 'error');
+                    }
+                    document.body.removeChild(textArea);
                 }
-                showToast('Davet linki panoya kopyalandı!', 'success');
             } catch (err) {
                 console.error('Clipboard error:', err);
                 showToast('Kopyalama başarısız oldu.', 'error');
