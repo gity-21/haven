@@ -10,6 +10,7 @@ import { state, voiceState, activeNotifications, playRingtone, stopRingtone } fr
 import { el } from './elements';
 import { escapeHtml, clientSanitize, linkify } from './utils';
 import { decryptMessage, getE2EEReadyPromise, setE2EEKey, isPendingE2EEInit, setPendingE2EEInit, deriveE2EEKey, resolveE2EEReady } from './e2ee';
+import { playRoomJoinSound, playRoomLeaveSound, playVoiceJoinSound, playVoiceLeaveSound } from './sounds';
 import { showToast } from './ui/toast';
 import { renderUsersModal } from './ui/users';
 import { updateActiveCallBanner, createMediaElement, setupVolumeMeter, updateScreenShareBadge } from './ui/voice-ui';
@@ -102,8 +103,14 @@ export function connectSocket(): void {
     });
 
     // ── User events ──
-    state.socket.on('user-joined', (data: { msg: string }) => showToast(data.msg, 'success'));
-    state.socket.on('user-left', (data: { msg: string }) => showToast(data.msg, 'info'));
+    state.socket.on('user-joined', (data: { msg: string }) => {
+        showToast(data.msg, 'success');
+        playRoomJoinSound();
+    });
+    state.socket.on('user-left', (data: { msg: string }) => {
+        showToast(data.msg, 'info');
+        playRoomLeaveSound();
+    });
 
     state.socket.on('online-users', (users: any[]) => {
         state.users = users;
@@ -509,6 +516,7 @@ export function connectSocket(): void {
     state.socket.on('active-voice-users', (voiceUsers: any[]) => updateActiveCallBanner(voiceUsers));
 
     state.socket.on('voice-join', async (data: { userId: string; username: string; avatarColor: string; profilePic?: string; isMicOn?: boolean }) => {
+        playVoiceJoinSound();
         if (!voiceState.isInVoice) return;
         createMediaElement(data.userId, data.username, data.avatarColor, false, null, data.profilePic || null);
         import('./ui/voice-ui').then(m => m.updateMicStatusUI(data.userId, !!data.isMicOn));
@@ -516,6 +524,7 @@ export function connectSocket(): void {
     });
 
     state.socket.on('voice-leave', (data: { userId: string; username: string }) => {
+        playVoiceLeaveSound();
         removePeerConnection(data.userId);
     });
 
