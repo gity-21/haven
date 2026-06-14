@@ -53,7 +53,7 @@ async function initialize(): Promise<void> {
         if (window.electronAPI?.navigateToLogin) {
             window.electronAPI.navigateToLogin();
         } else {
-            window.location.href = 'login.html';
+            window.location.href = '/';
         }
         return;
     }
@@ -337,6 +337,16 @@ function setupEventListeners(): void {
     }
 
     document.getElementById('btn-close-image-preview')?.addEventListener('click', closeImagePreviewModal);
+    document.getElementById('btn-copy-invite')?.addEventListener('click', async () => {
+        const inviteText = `${state.socket.io.uri}/invite?room=${encodeURIComponent(state.roomKey)}`;
+        if (window.electronAPI?.writeToClipboard) {
+            await window.electronAPI.writeToClipboard(inviteText);
+        } else {
+            navigator.clipboard.writeText(inviteText).catch(() => {});
+        }
+        showToast(window.i18n ? window.i18n.t('invite_copied') : 'Davet linki kopyalandı!', 'success');
+    });
+
     document.getElementById('btn-toggle-view-once')?.addEventListener('click', () => {
         state.viewOnceEnabled = !state.viewOnceEnabled;
         document.getElementById('btn-toggle-view-once')?.classList.toggle('active', state.viewOnceEnabled);
@@ -444,8 +454,11 @@ function setupEventListeners(): void {
             localStorage.removeItem('haven_room');
             localStorage.removeItem('haven_auth_key');
             sessionStorage.removeItem('haven_session_password');
-            if (window.electronAPI?.navigateToLogin) window.electronAPI.navigateToLogin();
-            else window.location.href = 'login.html';
+            if (window.electronAPI?.navigateToLogin) {
+                window.electronAPI.navigateToLogin();
+            } else {
+                window.location.href = '/';
+            }
         });
     });
 

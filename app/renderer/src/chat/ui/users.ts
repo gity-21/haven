@@ -50,8 +50,7 @@ export function setupWindowControls(): void {
         document.getElementById('btn-close')?.addEventListener('click', () => window.electronAPI!.closeWindow());
     } else {
         const titlebar = document.querySelector('.titlebar') as HTMLElement | null;
-        if (titlebar) {
-            titlebar.style.display = 'none';
-        }
+        if (titlebar) titlebar.style.display = 'none';
+        document.body.style.paddingTop = 'env(safe-area-inset-top)';
     }
 }

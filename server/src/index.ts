@@ -299,6 +299,16 @@ app.delete('/api/admin/rooms', adminOnly, (_req: Request, res: Response) => {
 
 app.get('/', (_req: Request, res: Response) => res.sendFile(path.join(__dirname, '../../app/renderer/dist/login.html')));
 
+// Web üzerinden gelen davet linkleri için yönlendirme
+app.get('/invite', (req: Request, res: Response) => {
+    const room = req.query.room;
+    if (room) {
+        res.redirect(`/?room=${encodeURIComponent(room as string)}`);
+    } else {
+        res.redirect('/');
+    }
+});
+
 // Aktif arama (ringing) durumları: roomKey -> { callerId, callerName, avatarColor, profilePic }
 const activeRinging = new Map<string, RingingData>();
 

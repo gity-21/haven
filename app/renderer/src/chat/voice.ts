@@ -498,7 +498,15 @@ export async function toggleScreen(): Promise<void> {
                 openScreenShareModal();
                 return;
             } else {
-                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' } as any, audio: false });
+                const screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+                    video: { 
+                        cursor: 'always',
+                        width: { ideal: 1920, max: 1920 },
+                        height: { ideal: 1080, max: 1080 },
+                        frameRate: { max: 30 }
+                    } as any, 
+                    audio: false 
+                });
                 startScreenShareWithStream(screenStream);
             }
         } catch (err) {
@@ -526,7 +534,15 @@ async function openScreenShareModal(): Promise<void> {
                 document.getElementById('btn-screen-share-fallback')?.addEventListener('click', async () => {
                     el.modalScreenShare!.classList.remove('visible');
                     try {
-                        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' } as any, audio: false });
+                        const screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+                            video: { 
+                                cursor: 'always',
+                                width: { max: 1920 },
+                                height: { max: 1080 },
+                                frameRate: { max: 30 }
+                            } as any, 
+                            audio: false 
+                        });
                         startScreenShareWithStream(screenStream);
                         updateToggleButtonsUI();
                     } catch (_) {
@@ -547,14 +563,30 @@ async function openScreenShareModal(): Promise<void> {
                     el.modalScreenShare!.classList.remove('visible');
                     try {
                         const stream = await navigator.mediaDevices.getUserMedia({
-                            video: { mandatory: { chromeMediaSource: 'desktop', chromeMediaSourceId: source.id } } as any,
+                            video: { 
+                                mandatory: { 
+                                    chromeMediaSource: 'desktop', 
+                                    chromeMediaSourceId: source.id,
+                                    maxWidth: 1920,
+                                    maxHeight: 1080,
+                                    maxFrameRate: 30
+                                } 
+                            } as any,
                             audio: { mandatory: { chromeMediaSource: 'desktop' } } as any
                         });
                         startScreenShareWithStream(stream);
                     } catch (_) {
                         try {
                             const streamNoAudio = await navigator.mediaDevices.getUserMedia({
-                                video: { mandatory: { chromeMediaSource: 'desktop', chromeMediaSourceId: source.id } } as any
+                                video: { 
+                                    mandatory: { 
+                                        chromeMediaSource: 'desktop', 
+                                        chromeMediaSourceId: source.id,
+                                        maxWidth: 1920,
+                                        maxHeight: 1080,
+                                        maxFrameRate: 30
+                                    } 
+                                } as any
                             });
                             startScreenShareWithStream(streamNoAudio);
                         } catch (e2) {
