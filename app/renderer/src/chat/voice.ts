@@ -503,7 +503,7 @@ export async function toggleScreen(): Promise<void> {
                         cursor: 'always',
                         width: { ideal: 1920, max: 1920 },
                         height: { ideal: 1080, max: 1080 },
-                        frameRate: { max: 30 }
+                        frameRate: { max: 60 }
                     } as any, 
                     audio: false 
                 });
@@ -539,7 +539,7 @@ async function openScreenShareModal(): Promise<void> {
                                 cursor: 'always',
                                 width: { max: 1920 },
                                 height: { max: 1080 },
-                                frameRate: { max: 30 }
+                                frameRate: { max: 60 }
                             } as any, 
                             audio: false 
                         });
@@ -569,7 +569,7 @@ async function openScreenShareModal(): Promise<void> {
                                     chromeMediaSourceId: source.id,
                                     maxWidth: 1920,
                                     maxHeight: 1080,
-                                    maxFrameRate: 30
+                                    maxFrameRate: 60
                                 } 
                             } as any,
                             audio: { mandatory: { chromeMediaSource: 'desktop' } } as any
@@ -584,7 +584,7 @@ async function openScreenShareModal(): Promise<void> {
                                         chromeMediaSourceId: source.id,
                                         maxWidth: 1920,
                                         maxHeight: 1080,
-                                        maxFrameRate: 30
+                                        maxFrameRate: 60
                                     } 
                                 } as any
                             });
