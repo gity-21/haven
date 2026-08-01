@@ -12,9 +12,9 @@ import { escapeHtml, clientSanitize, linkify } from './utils';
 import { decryptMessage, getE2EEReadyPromise, setE2EEKey, isPendingE2EEInit, setPendingE2EEInit, deriveE2EEKey, resolveE2EEReady } from './e2ee';
 import { showToast } from './ui/toast';
 import { renderUsersModal } from './ui/users';
-import { updateActiveCallBanner, createMediaElement, setupVolumeMeter, updateScreenShareBadge } from './ui/voice-ui';
+import { updateActiveCallBanner, createMediaElement, setupVolumeMeter, updateScreenShareBadge, enterTheaterMode, exitTheaterMode, isTheaterActive, addCamBubble, removeCamBubble } from './ui/voice-ui';
 import { appendMessage, scrollToBottom, updateStatus, buildReactionsHtml } from './messages';
-import { createPeerConnection, removePeerConnection, joinVoiceRoom, leaveVoiceRoom, rtcConfig } from './voice';
+import { createPeerConnection, removePeerConnection, joinVoiceRoom, leaveVoiceRoom, rtcConfig, screenSharingPeers } from './voice';
 
 /**
  * Socket.IO bağlantısını başlatır ve tüm olayları dinler.
@@ -513,6 +513,11 @@ export function connectSocket(): void {
         createMediaElement(data.userId, data.username, data.avatarColor, false, null, data.profilePic || null);
         import('./ui/voice-ui').then(m => m.updateMicStatusUI(data.userId, !!data.isMicOn));
         await createPeerConnection(data.userId, true);
+
+        // Theater Mode: Aktifse bu katılımcı için kamera balonu oluştur
+        if (isTheaterActive()) {
+            addCamBubble(data.userId, data.username, null, data.profilePic || null);
+        }
     });
 
     state.socket.on('voice-leave', (data: { userId: string; username: string }) => {
@@ -556,6 +561,21 @@ export function connectSocket(): void {
 
     state.socket.on('screen-share-state', ({ userId, username, isSharing }: { userId: string; username: string; isSharing: boolean }) => {
         updateScreenShareBadge(userId, username, isSharing);
+
+        if (isSharing) {
+            // Bu peer ekran paylaşıyor olarak işaretle
+            screenSharingPeers.add(userId);
+
+            // Eğer bu peer'dan zaten video geliyorsa hemen theater moduna geç
+            const videoEl = document.getElementById(`video-${userId}`) as HTMLVideoElement | null;
+            if (videoEl && videoEl.srcObject) {
+                enterTheaterMode(videoEl.srcObject as MediaStream);
+            }
+        } else {
+            // Ekran paylaşımı bitti
+            screenSharingPeers.delete(userId);
+            exitTheaterMode();
+        }
     });
 
     // ── P2P File Signals ──

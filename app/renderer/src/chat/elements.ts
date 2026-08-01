@@ -66,6 +66,16 @@ export interface ChatElements {
     activeCallBanner: HTMLElement | null;
     activeCallParticipants: HTMLElement | null;
     activeCallJoinBtn: HTMLElement | null;
+
+    // Theater Mode (Film İzleme)
+    theaterMode: HTMLElement | null;
+    theaterScreen: HTMLVideoElement | null;
+    theaterBubbles: HTMLElement | null;
+    theaterFullscreenHint: HTMLElement | null;
+    theaterBtnMic: HTMLElement | null;
+    theaterBtnCam: HTMLElement | null;
+    theaterBtnFullscreen: HTMLElement | null;
+    theaterBtnExit: HTMLElement | null;
 }
 
 export const el: ChatElements = {
@@ -129,4 +139,14 @@ export const el: ChatElements = {
     activeCallBanner: document.getElementById('active-call-banner'),
     activeCallParticipants: document.getElementById('active-call-participants'),
     activeCallJoinBtn: document.getElementById('active-call-join-btn'),
+
+    // Theater Mode (Film İzleme)
+    theaterMode: document.getElementById('theater-mode'),
+    theaterScreen: document.getElementById('theater-screen') as HTMLVideoElement | null,
+    theaterBubbles: document.getElementById('theater-bubbles'),
+    theaterFullscreenHint: document.getElementById('theater-fullscreen-hint'),
+    theaterBtnMic: document.getElementById('theater-btn-mic'),
+    theaterBtnCam: document.getElementById('theater-btn-cam'),
+    theaterBtnFullscreen: document.getElementById('theater-btn-fullscreen'),
+    theaterBtnExit: document.getElementById('theater-btn-exit'),
 };

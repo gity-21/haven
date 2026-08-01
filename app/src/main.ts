@@ -53,6 +53,13 @@ app.commandLine.appendSwitch('enable-speech-dispatcher');
 app.commandLine.appendSwitch('enable-usermedia-screen-capturing');
 app.commandLine.appendSwitch('allow-http-screen-capture');
 
+// FIX: Ekran paylaşımında sistem sesinin (oyun, müzik, video) yakalanmasını sağla
+app.commandLine.appendSwitch('enable-loopback-audio');
+
+// FIX: Windows Graphics Capture (WGC) API, kamera + ekran paylaşımı aynı anda
+// açıkken çakışıyor (ProcessFrame failed hatası). DXGI tabanlı yakalamaya zorla.
+app.commandLine.appendSwitch('disable-features', 'DesktopCaptureChangeDetection,WebRtcAllowWgcScreenCapturer,WebRtcAllowWgcWindowCapturer');
+
 // FIX: Uygulama arka plana atıldığında veya simge durumunda (minimized) iken
 // mikrofonun ve WebRTC yayınlarının donmasını engellemek için Chromium'un tasarruf modlarını tamamen kapatıyoruz.
 app.commandLine.appendSwitch('disable-background-timer-throttling');
@@ -89,6 +96,7 @@ interface ServerInstance {
 let activeTunnel: ChildProcess | null = null;
 let activeTunnelUrl: string | null = null;
 let serverInstance: ServerInstance | null = null;
+let selectedScreenSourceId: string | null = null; // Ekran paylaşımı için seçilen kaynak ID
 
 // ── Ana pencere oluşturma ──
 
@@ -133,16 +141,16 @@ function createWindow(): void {
     });
 
     // F12, Ctrl+Shift+I (DevTools) ve Ctrl+Plus/Minus/0 (Zoom) kısayollarını engelle
-    mainWindow.webContents.on('before-input-event', (event, input) => {
-        // DevTools'u engelle
-        if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
-            event.preventDefault();
-        }
-        // Ctrl+Plus, Ctrl+Minus, Ctrl+0 ile zoom'u engelle
-        if (input.control && (input.key === '+' || input.key === '-' || input.key === '=' || input.key === '0')) {
-            event.preventDefault();
-        }
-    });
+    // mainWindow.webContents.on('before-input-event', (event, input) => {
+    //     // DevTools'u engelle
+    //     if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
+    //         event.preventDefault();
+    //     }
+    //     // Ctrl+Plus, Ctrl+Minus, Ctrl+0 ile zoom'u engelle
+    //     if (input.control && (input.key === '+' || input.key === '-' || input.key === '=' || input.key === '0')) {
+    //         event.preventDefault();
+    //     }
+    // });
 
     // FIX: Kullanıcılar uygulamanın kapandığını düşünüp mikrofonlarının açık kalmasından şikayetçi.
     // X tuşuna basıldığında uygulama doğrudan kapatılacak.
@@ -411,6 +419,12 @@ autoUpdater.on('error', (err: Error) => {
 // Uygulama Yaşam Döngüsü
 // ============================================
 
+// Renderer'dan seçilen ekran kaynağı ID'sini al
+ipcMain.handle('set-screen-share-source', (_event: IpcMainInvokeEvent, sourceId: string) => {
+    selectedScreenSourceId = sourceId;
+    return true;
+});
+
 ipcMain.handle('desktop-capturer-get-sources', async (_event: IpcMainInvokeEvent, opts: Electron.SourcesOptions) => {
     try {
         // Linux'ta PipeWire/Portal başarısız olabilir ve getSources asılabilir.
@@ -445,6 +459,41 @@ app.whenReady().then(async () => {
 
     session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
         return ALLOWED_PERMISSIONS.has(permission);
+    });
+
+    // Discord tarzı ekran paylaşımı ses yakalama
+    // Renderer getDisplayMedia() çağırdığında bu handler devreye girer
+    session.defaultSession.setDisplayMediaRequestHandler(async (_request, callback) => {
+        try {
+            const sources = await desktopCapturer.getSources({
+                types: ['screen', 'window'],
+                thumbnailSize: { width: 0, height: 0 }
+            });
+
+            let selectedSource = null;
+
+            if (selectedScreenSourceId) {
+                // Renderer'dan seçilen kaynak ID'si varsa onu kullan
+                selectedSource = sources.find(s => s.id === selectedScreenSourceId);
+                selectedScreenSourceId = null; // Kullanıldı, sıfırla
+            }
+
+            if (!selectedSource && sources.length > 0) {
+                selectedSource = sources[0]; // Fallback: ilk ekran
+            }
+
+            if (selectedSource) {
+                callback({
+                    video: selectedSource,
+                    audio: 'loopback' // Sistem sesini yakala (Discord'un kullandığı yöntem)
+                });
+            } else {
+                callback({});
+            }
+        } catch (err) {
+            console.error('setDisplayMediaRequestHandler hatası:', err);
+            callback({});
+        }
     });
 
     // Arayüzün yüklenmesini engellememek için pencereyi hemen oluştur

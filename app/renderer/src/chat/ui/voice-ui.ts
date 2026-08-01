@@ -225,4 +225,345 @@ export function updateMicStatusUI(userId: string, isMicOn: boolean): void {
     if (micStatusEl) {
         micStatusEl.style.display = isMicOn ? 'none' : 'block';
     }
+    // Theater mode balon mic durumunu da güncelle
+    const bubbleMute = document.getElementById(`bubble-mute-${userId}`);
+    if (bubbleMute) {
+        bubbleMute.style.display = isMicOn ? 'none' : 'flex';
+    }
+}
+
+// ══════════════════════════════════════════════════════
+//  THEATER MODE (Kosmi-style Film İzleme)
+// ══════════════════════════════════════════════════════
+
+let theaterToolbarTimeout: ReturnType<typeof setTimeout> | null = null;
+let theaterActive = false;
+
+/**
+ * Theater moduna girer — ekran paylaşımı alan taraf için.
+ * Paylaşılan ekran videosu tam ekran gösterilir, kameralar yuvarlak balonlar olur.
+ */
+export function enterTheaterMode(screenStream: MediaStream): void {
+    if (!el.theaterMode || !el.theaterScreen) return;
+
+    theaterActive = true;
+
+    // Ekran videosunu bağla
+    el.theaterScreen.srcObject = screenStream;
+    el.theaterScreen.play().catch(e => console.warn('[Theater] Video play hatası:', e));
+
+    // Overlay'i göster
+    el.theaterMode.classList.add('active');
+
+    // Çift tıkla tam ekran ipucu göster
+    if (el.theaterFullscreenHint) {
+        el.theaterFullscreenHint.classList.add('visible');
+        setTimeout(() => {
+            el.theaterFullscreenHint?.classList.remove('visible');
+        }, 3000);
+    }
+
+    // Çift tıkla tam ekran
+    el.theaterScreen.addEventListener('dblclick', toggleTheaterFullscreen);
+
+    // Toolbar otomatik gizle
+    startToolbarAutoHide();
+
+    // Toolbar butonlarını bağla
+    initTheaterToolbar();
+}
+
+/**
+ * Theater modundan çıkar — normal görünüme döner.
+ */
+export function exitTheaterMode(): void {
+    if (!el.theaterMode || !el.theaterScreen) return;
+
+    theaterActive = false;
+
+    // Overlay'i gizle
+    el.theaterMode.classList.remove('active');
+
+    // Video kaynağını temizle
+    el.theaterScreen.srcObject = null;
+
+    // Balonları temizle
+    if (el.theaterBubbles) {
+        el.theaterBubbles.innerHTML = '';
+    }
+
+    // Tam ekrandan çık
+    if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+    }
+
+    // Toolbar timer temizle
+    if (theaterToolbarTimeout) {
+        clearTimeout(theaterToolbarTimeout);
+        theaterToolbarTimeout = null;
+    }
+
+    // Event listener temizle
+    el.theaterScreen.removeEventListener('dblclick', toggleTheaterFullscreen);
+}
+
+/**
+ * Theater modu aktif mi?
+ */
+export function isTheaterActive(): boolean {
+    return theaterActive;
+}
+
+/**
+ * Kamera balonu ekler (her katılımcı için).
+ */
+export function addCamBubble(userId: string, username: string, stream: MediaStream | null, profilePic?: string | null): void {
+    if (!el.theaterBubbles || !theaterActive) return;
+    if (document.getElementById(`cam-bubble-${userId}`)) return;
+
+    const bubble = document.createElement('div');
+    bubble.id = `cam-bubble-${userId}`;
+    bubble.className = 'cam-bubble';
+
+    // Varsayılan pozisyon: sol alt köşe, her balonı biraz kaydır
+    const existingBubbles = el.theaterBubbles.querySelectorAll('.cam-bubble');
+    const offset = existingBubbles.length * 110;
+    bubble.style.left = `${20 + offset}px`;
+    bubble.style.bottom = '90px';
+
+    // Video veya avatar
+    const video = document.createElement('video');
+    video.id = `bubble-video-${userId}`;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = true; // Balon videosu sessiz (ana audio'dan duyulur)
+    if (stream) {
+        // Sadece video track'leri al
+        const videoTracks = stream.getVideoTracks();
+        if (videoTracks.length > 0) {
+            video.srcObject = new MediaStream(videoTracks);
+        }
+    }
+    bubble.appendChild(video);
+
+    // İsim etiketi
+    const nameEl = document.createElement('span');
+    nameEl.className = 'cam-bubble-name';
+    nameEl.textContent = username;
+    bubble.appendChild(nameEl);
+
+    // Mikrofon kapalı ikonu
+    const muteEl = document.createElement('div');
+    muteEl.id = `bubble-mute-${userId}`;
+    muteEl.className = 'cam-bubble-mute';
+    muteEl.style.display = 'none';
+    muteEl.textContent = '🔇';
+    bubble.appendChild(muteEl);
+
+    el.theaterBubbles.appendChild(bubble);
+
+    // Sürüklenebilir yap
+    makeDraggable(bubble);
+}
+
+/**
+ * Kamera balonunu kaldırır.
+ */
+export function removeCamBubble(userId: string): void {
+    const bubble = document.getElementById(`cam-bubble-${userId}`);
+    if (bubble) bubble.remove();
+}
+
+/**
+ * Kamera balonunun video stream'ini günceller.
+ */
+export function updateCamBubbleStream(userId: string, stream: MediaStream): void {
+    const video = document.getElementById(`bubble-video-${userId}`) as HTMLVideoElement | null;
+    if (video) {
+        const videoTracks = stream.getVideoTracks();
+        if (videoTracks.length > 0) {
+            video.srcObject = new MediaStream(videoTracks);
+        }
+    }
+}
+
+/**
+ * Bir DOM elementini sürüklenebilir yapar (mouse + touch).
+ * iPad/tablet uyumlu.
+ */
+function makeDraggable(element: HTMLElement): void {
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let initialLeft = 0;
+    let initialBottom = 0;
+
+    function onStart(clientX: number, clientY: number): void {
+        isDragging = true;
+        startX = clientX;
+        startY = clientY;
+        initialLeft = element.offsetLeft;
+        // Bottom'dan top'a çevir (sürükleme sırasında top kullanacağız)
+        initialBottom = element.offsetTop;
+        element.style.bottom = 'auto';
+        element.style.top = `${initialBottom}px`;
+        element.style.transition = 'none';
+    }
+
+    function onMove(clientX: number, clientY: number): void {
+        if (!isDragging) return;
+
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        let newLeft = initialLeft + dx;
+        let newTop = initialBottom + dy;
+
+        // Viewport sınırlarını kontrol et
+        const parentRect = element.parentElement?.getBoundingClientRect();
+        if (parentRect) {
+            const maxLeft = parentRect.width - element.offsetWidth;
+            const maxTop = parentRect.height - element.offsetHeight;
+            newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+            newTop = Math.max(0, Math.min(newTop, maxTop));
+        }
+
+        element.style.left = `${newLeft}px`;
+        element.style.top = `${newTop}px`;
+    }
+
+    function onEnd(): void {
+        isDragging = false;
+        element.style.transition = '';
+    }
+
+    // Mouse events
+    element.addEventListener('mousedown', (e: MouseEvent) => {
+        e.preventDefault();
+        onStart(e.clientX, e.clientY);
+    });
+
+    document.addEventListener('mousemove', (e: MouseEvent) => {
+        onMove(e.clientX, e.clientY);
+    });
+
+    document.addEventListener('mouseup', () => {
+        onEnd();
+    });
+
+    // Touch events (iPad/tablet)
+    element.addEventListener('touchstart', (e: TouchEvent) => {
+        if (e.touches.length === 1) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            onStart(touch.clientX, touch.clientY);
+        }
+    }, { passive: false });
+
+    element.addEventListener('touchmove', (e: TouchEvent) => {
+        if (e.touches.length === 1) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            onMove(touch.clientX, touch.clientY);
+        }
+    }, { passive: false });
+
+    element.addEventListener('touchend', () => {
+        onEnd();
+    });
+}
+
+/**
+ * Theater toolbar buton event'lerini bağlar.
+ */
+function initTheaterToolbar(): void {
+    // Mikrofon toggle
+    if (el.theaterBtnMic) {
+        el.theaterBtnMic.onclick = () => {
+            import('../voice').then(m => {
+                m.toggleMic();
+                if (el.theaterBtnMic) {
+                    el.theaterBtnMic.classList.toggle('active', voiceState.isMicOn);
+                }
+            });
+        };
+    }
+
+    // Kamera toggle
+    if (el.theaterBtnCam) {
+        el.theaterBtnCam.onclick = () => {
+            import('../voice').then(m => {
+                m.toggleVideo();
+                setTimeout(() => {
+                    if (el.theaterBtnCam) {
+                        el.theaterBtnCam.classList.toggle('active', voiceState.isVideoOn);
+                    }
+                }, 200);
+            });
+        };
+    }
+
+    // Tam ekran toggle
+    if (el.theaterBtnFullscreen) {
+        el.theaterBtnFullscreen.onclick = () => {
+            toggleTheaterFullscreen();
+        };
+    }
+
+    // Theater modundan çık
+    if (el.theaterBtnExit) {
+        el.theaterBtnExit.onclick = () => {
+            exitTheaterMode();
+        };
+    }
+
+    // Mouse hareketiyle toolbar'ı göster
+    if (el.theaterMode) {
+        el.theaterMode.addEventListener('mousemove', () => {
+            resetToolbarAutoHide();
+        });
+        el.theaterMode.addEventListener('touchstart', () => {
+            resetToolbarAutoHide();
+        }, { passive: true });
+    }
+}
+
+/**
+ * Tarayıcı tam ekran modunu toggle eder.
+ */
+function toggleTheaterFullscreen(): void {
+    if (!el.theaterMode) return;
+
+    if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+    } else {
+        el.theaterMode.requestFullscreen().catch(() => {
+            // iOS Safari: webkitRequestFullscreen
+            if ((el.theaterMode as any).webkitRequestFullscreen) {
+                (el.theaterMode as any).webkitRequestFullscreen();
+            }
+        });
+    }
+}
+
+/**
+ * Toolbar otomatik gizleme zamanlayıcısını başlatır.
+ */
+function startToolbarAutoHide(): void {
+    if (theaterToolbarTimeout) clearTimeout(theaterToolbarTimeout);
+    theaterToolbarTimeout = setTimeout(() => {
+        if (el.theaterMode) {
+            el.theaterMode.classList.add('toolbar-hidden');
+        }
+    }, 4000);
+}
+
+/**
+ * Toolbar otomatik gizlemeyi sıfırlar (mouse hareketi vs.).
+ */
+function resetToolbarAutoHide(): void {
+    if (el.theaterMode) {
+        el.theaterMode.classList.remove('toolbar-hidden');
+    }
+    startToolbarAutoHide();
 }

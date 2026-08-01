@@ -9,7 +9,7 @@ import { state, voiceState, volumeMeters, playRingtone, stopRingtone } from './s
 import { el } from './elements';
 import { escapeHtml } from './utils';
 import { showToast } from './ui/toast';
-import { createMediaElement, setupVolumeMeter, updateScreenShareBadge, updateActiveCallBanner, updateMicStatusUI } from './ui/voice-ui';
+import { createMediaElement, setupVolumeMeter, updateScreenShareBadge, updateActiveCallBanner, updateMicStatusUI, enterTheaterMode, exitTheaterMode, isTheaterActive, addCamBubble, removeCamBubble, updateCamBubbleStream } from './ui/voice-ui';
 
 // ── RTC Config ──
 
@@ -32,6 +32,9 @@ interface NoiseGateRefs {
     gainNode: GainNode;
     destination: MediaStreamAudioDestinationNode;
 }
+
+// ── Ekran paylaşan peer'ları takip et ──
+export const screenSharingPeers = new Set<string>();
 
 // ── Peer Connection ──
 
@@ -57,6 +60,11 @@ export async function createPeerConnection(targetId: string, isInitiator: boolea
             videoSender.replaceTrack(voiceState.screenStream.getVideoTracks()[0]);
         } else {
             pc.addTrack(voiceState.screenStream.getVideoTracks()[0], voiceState.screenStream);
+        }
+        // Ekran sesini de ekle (varsa)
+        const screenAudioTrack = voiceState.screenStream.getAudioTracks()[0];
+        if (screenAudioTrack) {
+            pc.addTrack(screenAudioTrack, voiceState.screenStream);
         }
     }
 
@@ -85,36 +93,69 @@ export async function createPeerConnection(targetId: string, isInitiator: boolea
         const videoEl = document.getElementById(`video-${targetId}`) as HTMLVideoElement | null;
 
         if (event.track.kind === 'audio') {
-            if (audioEl) {
-                if (!audioEl.srcObject) {
-                    audioEl.srcObject = new MediaStream([event.track]);
-                    setupVolumeMeter(audioEl.srcObject as MediaStream, targetId);
-                } else {
-                    (audioEl.srcObject as MediaStream).addTrack(event.track);
-                    setupVolumeMeter(audioEl.srcObject as MediaStream, targetId);
-                }
+            // Mevcut ana audio elementi varsa ve boşsa → ilk ses track'i (mikrofon)
+            if (audioEl && !audioEl.srcObject) {
+                audioEl.srcObject = new MediaStream([event.track]);
+                setupVolumeMeter(audioEl.srcObject as MediaStream, targetId);
+                
                 audioEl.play().catch(e => console.warn('[Ses] Audio play hatası:', e));
 
                 const savedSpeaker = localStorage.getItem('haven_speaker_device');
                 if (savedSpeaker && typeof (audioEl as any).setSinkId === 'function') {
                     (audioEl as any).setSinkId(savedSpeaker).catch((e: Error) => console.warn('Hoparlör değiştirilemedi:', e));
                 }
+            } else {
+                // İkinci (veya sonraki) ses track'i → ekran paylaşım sesi veya audio element henüz yoksa
+                // Her ek audio track için bağımsız bir <audio> elementi oluştur
+                const extraAudioId = `extra-audio-${targetId}-${event.track.id}`;
+                let extraAudioEl = document.getElementById(extraAudioId) as HTMLAudioElement;
+                if (!extraAudioEl) {
+                    extraAudioEl = document.createElement('audio');
+                    extraAudioEl.id = extraAudioId;
+                    extraAudioEl.autoplay = true;
+                    extraAudioEl.style.display = 'none';
+                    document.body.appendChild(extraAudioEl);
+                }
+                extraAudioEl.srcObject = new MediaStream([event.track]);
+                extraAudioEl.play().catch(e => console.warn('[Ses] Extra audio play hatası:', e));
+                
+                const savedSpeaker = localStorage.getItem('haven_speaker_device');
+                if (savedSpeaker && typeof (extraAudioEl as any).setSinkId === 'function') {
+                    (extraAudioEl as any).setSinkId(savedSpeaker).catch((e: Error) => console.warn('Hoparlör değiştirilemedi:', e));
+                }
+
+                // Track bittiğinde ekstra audio elementini temizle
+                event.track.addEventListener('ended', () => {
+                    const el = document.getElementById(extraAudioId);
+                    if (el) el.remove();
+                });
             }
+            // Audio track'ler için buradan dön, aşağıdaki video event handler'larını ezmeyelim
+            return;
         }
 
-        if (stream && event.track.kind === 'video') {
+        if (event.track.kind === 'video') {
             if (videoEl) {
+                const videoStream = stream || new MediaStream([event.track]);
                 setTimeout(() => {
                     videoEl.srcObject = null;
-                    videoEl.srcObject = stream;
+                    videoEl.srcObject = videoStream;
                     videoEl.style.display = 'block';
                 }, 50);
+
+                // Theater Mode: Bu peer ekran paylaşıyorsa → sinema moduna geç
+                if (screenSharingPeers.has(targetId)) {
+                    enterTheaterMode(videoStream);
+                } else if (isTheaterActive()) {
+                    // Ekran paylaşmayan peer → kamera balonunu güncelle
+                    updateCamBubbleStream(targetId, videoStream);
+                }
             }
         }
 
         event.track.onended = () => {
             if (event.track.kind === 'video' && videoEl) {
-                if (!stream.getVideoTracks().length || stream.getVideoTracks().every(t => t.readyState === 'ended')) {
+                if (!stream || !stream.getVideoTracks().length || stream.getVideoTracks().every(t => t.readyState === 'ended')) {
                     videoEl.style.display = 'none';
                 }
             }
@@ -153,6 +194,15 @@ export function removePeerConnection(targetId: string): void {
 
     const circle = document.getElementById(`voice-card-${targetId}`);
     if (circle) circle.remove();
+
+    // Theater Mode: Ekran paylaşan peer ayrıldıysa sinema modundan çık
+    if (screenSharingPeers.has(targetId)) {
+        screenSharingPeers.delete(targetId);
+        exitTheaterMode();
+    }
+
+    // Kamera balonunu kaldır
+    removeCamBubble(targetId);
 }
 
 // ── Toggle Butonları UI ──
@@ -307,6 +357,12 @@ export async function initiateVoiceCall(withVideo = false): Promise<void> {
 export function leaveVoiceRoom(): void {
     voiceState.isInVoice = false;
 
+    // Theater modundan çık
+    if (isTheaterActive()) {
+        exitTheaterMode();
+    }
+    screenSharingPeers.clear();
+
     if (voiceState.localStream) {
         voiceState.localStream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
         voiceState.localStream = null;
@@ -430,12 +486,9 @@ export function startScreenShareWithStream(screenStream: MediaStream): void {
         }
 
         if (screenAudioTrack) {
-            const audioSender = senders.find((s: RTCRtpSender) => s.track && s.track.kind === 'audio' && s.track.id !== voiceState.localStream?.getAudioTracks()[0]?.id);
-            if (audioSender) {
-                audioSender.replaceTrack(screenAudioTrack);
-            } else {
-                pc.addTrack(screenAudioTrack, voiceState.screenStream!);
-            }
+            // Ekran sesini her zaman yeni bir track olarak ekle (mikrofon sender'ını değiştirme!)
+            // Böylece alıcı tarafta ayrı bir ontrack event'i tetiklenir
+            pc.addTrack(screenAudioTrack, voiceState.screenStream!);
         }
     });
 
@@ -465,6 +518,10 @@ export async function toggleScreen(): Promise<void> {
                     pc.removeTrack(sender);
                 }
             }
+            const audioSender = senders.find((s: RTCRtpSender) => s.track && s.track.kind === 'audio' && s.track.id !== voiceState.localStream?.getAudioTracks()[0]?.id);
+            if (audioSender) {
+                pc.removeTrack(audioSender);
+            }
         });
 
         const videoEl = document.getElementById('video-local') as HTMLVideoElement | null;
@@ -482,7 +539,19 @@ export async function toggleScreen(): Promise<void> {
                 openScreenShareModal();
                 return;
             } else {
-                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' } as any, audio: false });
+                const screenStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: {
+                        cursor: 'always',
+                        width: { ideal: 1920, max: 3840 },
+                        height: { ideal: 1080, max: 2160 },
+                        frameRate: { ideal: 60, max: 60 }
+                    } as any,
+                    audio: {
+                        autoGainControl: false,
+                        echoCancellation: false,
+                        noiseSuppression: false
+                    } as any
+                });
                 startScreenShareWithStream(screenStream);
             }
         } catch (err) {
@@ -510,7 +579,19 @@ async function openScreenShareModal(): Promise<void> {
                 document.getElementById('btn-screen-share-fallback')?.addEventListener('click', async () => {
                     el.modalScreenShare!.classList.remove('visible');
                     try {
-                        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' } as any, audio: false });
+                        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+                            video: {
+                                cursor: 'always',
+                                width: { ideal: 1920, max: 3840 },
+                                height: { ideal: 1080, max: 2160 },
+                                frameRate: { ideal: 60, max: 60 }
+                            } as any,
+                            audio: {
+                                autoGainControl: false,
+                                echoCancellation: false,
+                                noiseSuppression: false
+                            } as any
+                        });
                         startScreenShareWithStream(screenStream);
                         updateToggleButtonsUI();
                     } catch (_) {
@@ -530,20 +611,30 @@ async function openScreenShareModal(): Promise<void> {
                 item.onclick = async () => {
                     el.modalScreenShare!.classList.remove('visible');
                     try {
-                        const stream = await navigator.mediaDevices.getUserMedia({
-                            video: { mandatory: { chromeMediaSource: 'desktop', chromeMediaSourceId: source.id } } as any,
-                            audio: { mandatory: { chromeMediaSource: 'desktop' } } as any
+                        // Adım 1: Main process'e hangi kaynağın seçildiğini bildir (ses loopback için)
+                        await window.electronAPI!.setScreenShareSource(source.id);
+
+                        // Adım 2: Modern getDisplayMedia API'sini çağır
+                        // (main.ts'deki setDisplayMediaRequestHandler bunu yakalayıp sesi loopback olarak ekler)
+                        const stream = await navigator.mediaDevices.getDisplayMedia({
+                            video: true,
+                            audio: true
                         });
-                        startScreenShareWithStream(stream);
-                    } catch (_) {
-                        try {
-                            const streamNoAudio = await navigator.mediaDevices.getUserMedia({
-                                video: { mandatory: { chromeMediaSource: 'desktop', chromeMediaSourceId: source.id } } as any
-                            });
-                            startScreenShareWithStream(streamNoAudio);
-                        } catch (e2) {
-                            showToast(window.i18n ? window.i18n.t('source_share_failed') : 'Bu kaynak paylaşılamadı.', 'error');
+                        
+                        const audioTracks = stream.getAudioTracks();
+                        console.log(`[Ekran Paylaşımı] getDisplayMedia başarılı. Ses track sayısı: ${audioTracks.length}`);
+                        
+                        if (audioTracks.length === 0) {
+                            console.warn('[Ekran Paylaşımı] Uyarı: Ses kanalı alınamadı (sadece görüntü paylaşılıyor).');
+                            showToast(window.i18n ? window.i18n.t('screen_audio_failed') : 'Ekran sesi yakalanamadı. Sadece görüntü paylaşılıyor.', 'warning');
+                        } else {
+                            console.log('[Ekran Paylaşımı] Sistem sesi (loopback) başarıyla yakalandı!');
                         }
+
+                        startScreenShareWithStream(stream);
+                    } catch (err) {
+                        console.error('[Ekran Paylaşımı] getDisplayMedia hatası:', err);
+                        showToast(window.i18n ? window.i18n.t('source_share_failed') : 'Bu kaynak paylaşılamadı.', 'error');
                     }
                 };
 

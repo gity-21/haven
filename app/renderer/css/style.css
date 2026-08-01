@@ -3561,3 +3561,240 @@ html[data-theme="hacker"] .room-sidebar-item.active {
     margin-top: 6px;
     animation: pulse-badge 2s infinite;
 }
+
+/* ══════════════════════════════════════════════════════
+   THEATER MODE (Kosmi-style Film İzleme)
+   ══════════════════════════════════════════════════════ */
+
+/* Ana Overlay */
+.theater-mode {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.theater-mode.active {
+    display: flex;
+}
+
+/* Paylaşılan Ekran (Film) */
+.theater-screen {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+}
+
+/* Kamera Balonları Container */
+.theater-bubbles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Tekil Kamera Balonu */
+.cam-bubble {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    cursor: grab;
+    pointer-events: auto;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.15s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    z-index: 11;
+}
+
+.cam-bubble:active {
+    cursor: grabbing;
+    transform: scale(1.08);
+}
+
+.cam-bubble video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Konuşma Glow Animasyonu */
+.cam-bubble.speaking {
+    border-color: var(--accent-success, #22c55e);
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.4),
+                0 0 20px rgba(34, 197, 94, 0.3),
+                0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* İsim Etiketi */
+.cam-bubble-name {
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+/* Mikrofon Kapalı İkonu (Balon üstünde) */
+.cam-bubble-mute {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(239, 68, 68, 0.85);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    pointer-events: none;
+}
+
+/* Floating Toolbar */
+.theater-toolbar {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    background: rgba(20, 20, 30, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    z-index: 20;
+    opacity: 1;
+    transition: opacity 0.4s ease;
+}
+
+/* Toolbar otomatik gizleme (mouse hareket etmezse) */
+.theater-mode.toolbar-hidden .theater-toolbar {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.theater-mode.toolbar-hidden:hover .theater-toolbar,
+.theater-mode.toolbar-hidden:active .theater-toolbar {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Toolbar Butonları */
+.theater-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.theater-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.theater-btn:active {
+    transform: scale(0.95);
+}
+
+.theater-btn.danger {
+    background: rgba(239, 68, 68, 0.6);
+}
+
+.theater-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.85);
+}
+
+.theater-btn.active {
+    background: rgba(99, 102, 241, 0.6);
+}
+
+.theater-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Tam Ekran İçin Çift Tıkla ipucu */
+.theater-fullscreen-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px 24px;
+    border-radius: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 15;
+}
+
+.theater-fullscreen-hint.visible {
+    opacity: 1;
+}
+
+/* Responsive — Tablet / Telefon */
+@media (max-width: 768px) {
+    .cam-bubble {
+        width: 80px;
+        height: 80px;
+    }
+
+    .cam-bubble-name {
+        font-size: 9px;
+        padding: 1px 6px;
+    }
+
+    .theater-toolbar {
+        bottom: 16px;
+        padding: 8px 14px;
+        gap: 8px;
+    }
+
+    .theater-btn {
+        width: 38px;
+        height: 38px;
+    }
+
+    .theater-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+}

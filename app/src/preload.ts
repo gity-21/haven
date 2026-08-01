@@ -1,4 +1,4 @@
-﻿/**
+/**
  * preload.ts - Güvenli IPC Köprüsü (Context Bridge)
  * 
  * Neler Var:
@@ -53,6 +53,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Ekran Paylaşımı (Ekran/Pencere Listesi Alma)
     getDesktopSources: (opts: { types: string[] }): Promise<Electron.DesktopCapturerSource[]> =>
         ipcRenderer.invoke('desktop-capturer-get-sources', opts),
+
+    // Ekran Paylaşımı Kaynak Seçimi (ses yakalama için main process'e bildir)
+    setScreenShareSource: (sourceId: string): Promise<boolean> =>
+        ipcRenderer.invoke('set-screen-share-source', sourceId),
 
     // Admin token'ını al (sunucu sahibi için otomatik yetkilendirme)
     getAdminToken: (): Promise<string | null> => ipcRenderer.invoke('get-admin-token')
