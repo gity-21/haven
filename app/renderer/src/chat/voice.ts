@@ -19,7 +19,7 @@ export const rtcConfig: RTCConfiguration = {
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun.cloudflare.com:3478' },
-        
+
         // TURN Sunucuları (Mobil Veri / 4G / CGNAT / Sıkı Güvenlikli Ağlar için Ses Köprüsü)
         {
             urls: 'turn:openrelay.metered.ca:80',
@@ -113,7 +113,7 @@ export async function createPeerConnection(targetId: string, isInitiator: boolea
             if (audioEl && !audioEl.srcObject) {
                 audioEl.srcObject = new MediaStream([event.track]);
                 setupVolumeMeter(audioEl.srcObject as MediaStream, targetId);
-                
+
                 audioEl.play().catch(e => console.warn('[Ses] Audio play hatası:', e));
 
                 const savedSpeaker = localStorage.getItem('haven_speaker_device');
@@ -134,7 +134,7 @@ export async function createPeerConnection(targetId: string, isInitiator: boolea
                 }
                 extraAudioEl.srcObject = new MediaStream([event.track]);
                 extraAudioEl.play().catch(e => console.warn('[Ses] Extra audio play hatası:', e));
-                
+
                 const savedSpeaker = localStorage.getItem('haven_speaker_device');
                 if (savedSpeaker && typeof (extraAudioEl as any).setSinkId === 'function') {
                     (extraAudioEl as any).setSinkId(savedSpeaker).catch((e: Error) => console.warn('Hoparlör değiştirilemedi:', e));
@@ -555,7 +555,6 @@ export async function toggleScreen(): Promise<void> {
                 openScreenShareModal();
                 return;
             } else {
-<<<<<<< HEAD
                 const screenStream = await navigator.mediaDevices.getDisplayMedia({
                     video: {
                         cursor: 'always',
@@ -568,16 +567,6 @@ export async function toggleScreen(): Promise<void> {
                         echoCancellation: false,
                         noiseSuppression: false
                     } as any
-=======
-                const screenStream = await navigator.mediaDevices.getDisplayMedia({ 
-                    video: { 
-                        cursor: 'always',
-                        width: { ideal: 1920, max: 1920 },
-                        height: { ideal: 1080, max: 1080 },
-                        frameRate: { max: 60 }
-                    } as any, 
-                    audio: false 
->>>>>>> a84b38a2a8df471c81168eea44942b538cad48d9
                 });
                 startScreenShareWithStream(screenStream);
             }
@@ -638,7 +627,6 @@ async function openScreenShareModal(): Promise<void> {
                 item.onclick = async () => {
                     el.modalScreenShare!.classList.remove('visible');
                     try {
-<<<<<<< HEAD
                         // Adım 1: Main process'e hangi kaynağın seçildiğini bildir (ses loopback için)
                         await window.electronAPI!.setScreenShareSource(source.id);
 
@@ -648,46 +636,15 @@ async function openScreenShareModal(): Promise<void> {
                             video: true,
                             audio: true
                         });
-                        
+
                         const audioTracks = stream.getAudioTracks();
                         console.log(`[Ekran Paylaşımı] getDisplayMedia başarılı. Ses track sayısı: ${audioTracks.length}`);
-                        
+
                         if (audioTracks.length === 0) {
                             console.warn('[Ekran Paylaşımı] Uyarı: Ses kanalı alınamadı (sadece görüntü paylaşılıyor).');
                             showToast(window.i18n ? window.i18n.t('screen_audio_failed') : 'Ekran sesi yakalanamadı. Sadece görüntü paylaşılıyor.', 'warning');
                         } else {
                             console.log('[Ekran Paylaşımı] Sistem sesi (loopback) başarıyla yakalandı!');
-=======
-                        const stream = await navigator.mediaDevices.getUserMedia({
-                            video: { 
-                                mandatory: { 
-                                    chromeMediaSource: 'desktop', 
-                                    chromeMediaSourceId: source.id,
-                                    maxWidth: 1920,
-                                    maxHeight: 1080,
-                                    maxFrameRate: 60
-                                } 
-                            } as any,
-                            audio: { mandatory: { chromeMediaSource: 'desktop' } } as any
-                        });
-                        startScreenShareWithStream(stream);
-                    } catch (_) {
-                        try {
-                            const streamNoAudio = await navigator.mediaDevices.getUserMedia({
-                                video: { 
-                                    mandatory: { 
-                                        chromeMediaSource: 'desktop', 
-                                        chromeMediaSourceId: source.id,
-                                        maxWidth: 1920,
-                                        maxHeight: 1080,
-                                        maxFrameRate: 60
-                                    } 
-                                } as any
-                            });
-                            startScreenShareWithStream(streamNoAudio);
-                        } catch (e2) {
-                            showToast(window.i18n ? window.i18n.t('source_share_failed') : 'Bu kaynak paylaşılamadı.', 'error');
->>>>>>> a84b38a2a8df471c81168eea44942b538cad48d9
                         }
 
                         startScreenShareWithStream(stream);
