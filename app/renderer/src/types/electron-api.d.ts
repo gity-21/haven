@@ -24,6 +24,7 @@ export interface ElectronAPI {
     openExternal: (url: string) => Promise<void>;
     writeToClipboard: (text: string) => Promise<boolean>;
     getDesktopSources: (opts: { types: string[] }) => Promise<DesktopSource[]>;
+    setScreenShareSource: (sourceId: string) => Promise<boolean>;
     getAdminToken: () => Promise<string | null>;
 }
 
