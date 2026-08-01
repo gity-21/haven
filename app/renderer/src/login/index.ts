@@ -138,6 +138,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => tabJoin.click(), 50);
     }
 
+    if (!window.electronAPI) {
+        if (tabCreate) tabCreate.style.display = 'none';
+        if (tabJoin) setTimeout(() => tabJoin.click(), 10);
+    }
+
     if (savedProfilePic && avatarPreviewImg && avatarUploadIcon) {
         avatarPreviewImg.src = savedProfilePic;
         avatarPreviewImg.style.display = 'block';
@@ -607,8 +612,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (submitBtn) submitBtn.textContent = 'Oda Kur';
 
-                    if (window.electronAPI?.navigateToChat) window.electronAPI.navigateToChat();
-                    else window.location.href = 'chat.html';
+                    if (window.electronAPI?.navigateToChat) {
+                        window.electronAPI.navigateToChat();
+                    } else {
+                        window.location.href = 'chat.html';
+                    }
                     return;
                 } catch (err) {
                     const error = err as Error;
@@ -641,8 +649,11 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.textContent = window.i18n ? window.i18n.t('loading') : 'Yükleniyor...';
         }
 
-        if (window.electronAPI?.navigateToChat) window.electronAPI.navigateToChat();
-        else window.location.href = 'chat.html';
+        if (window.electronAPI?.navigateToChat) {
+            window.electronAPI.navigateToChat();
+        } else {
+            window.location.href = 'chat.html';
+        }
     });
 
     // ── Clipboard Copy ──

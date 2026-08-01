@@ -1,10 +1,8 @@
-# Haven: Private P2P Voice & Text Chat
+# Haven — Gizlilik Odaklı P2P Sesli & Yazılı Sohbet
 
-Haven, tam gizlilik odaklı, sıfır kayıt mantığıyla çalışan premium bir masaüstü sohbet uygulamasıdır. Klasik mesajlaşma uygulamalarından farklı olarak hesap açmanız, telefon numaranızı veya e-postanızı paylaşmanız gerekmez. Sadece oda adınızı yazın, kilit şifresini belirleyin ve güvenli izolasyon odanızda sohbete başlayın.
+Haven, kayıt tutmayan, hesap gerektirmeyen bir masaüstü sohbet uygulaması. Klasik mesajlaşma uygulamalarının aksine telefon numarası ya da e-posta istemiyoruz: bir oda adı seçip şifresini belirliyorsunuz, o kadar.
 
----
-
-## 👥 Takım
+## Takım
 
 | GitHub | Rol |
 |--------|------|
@@ -12,78 +10,81 @@ Haven, tam gizlilik odaklı, sıfır kayıt mantığıyla çalışan premium bir
 | [@Taruk21](https://github.com/Taruk21) | Geliştirici |
 | [@emresosuke](https://github.com/emresosuke) | Geliştirici |
 
----
+## Özellikler
 
-## 🚀 Öne Çıkan Özellikler
+**Oda tabanlı anonimlik ve uçtan uca şifreleme.** Hesap yok. Mesajlar, görseller ve P2P transfer bildirimleri odanın şifresiyle istemci tarafında AES-GCM ile şifrelenir; sunucu hiçbir zaman açık metni görmez.
 
-- **🔐 Oda Tabanlı Anonimlik & Uçtan Uca Şifreleme (E2EE)**: Hesap açma yoktur. Kullanıcıların mesajları, görselleri ve P2P transfer anonsları AES-GCM ile odanın şifresi kullanılarak cihazda (istemcide) şifrelenir. Sunucu hiçbir zaman mesajların açık halini göremez veya okuyamaz.
-- **🎙️ P2P Sesli ve Görüntülü İletişim**: WebRTC protokolü ile sunucuyu yormayan, gecikmesiz ve yüksek kaliteli P2P görüşmeler yapın. (Ses kalitesi **384 kbps Stereo** müzik stüdyosu kalitesine çıkartılmış ve agresif **Noise Gate / Gürültü Engelleme** eklenmiştir).
-- **🖥️ P2P Ekran Paylaşımı**: Toplantılarınızı veya kod incelemelerinizi WebRTC tabanlı düşük gecikmeli ekran paylaşımı (pencere veya tüm ekran seçimi) ile gerçekleştirin.
-- **⚡ Şifreli P2P Büyük Dosya Transferi**: Dosyalarınız sunucuya yüklenmeden, doğrudan gönderici ile alıcı arasında (P2P), WebRTC veri kanalları (DataChannels) kullanılarak şifreli ve limitsiz boyutta aktarılır.
-- **🔊 Sesli Mesajlar ve Görseller**: Normal mesajların yanı sıra ses kayıtları, görseller ve diğer dokümanları paylaşabilirsiniz.
-- **🔄 Otomatik Güncelleme (Auto-Updater)**: Uygulama açıldığında arka planda sessizce GitHub Releases üzerinden yeni sürüm kontrolü yapar. Yeni sürüm varsa indirip size onay penceresiyle bildirir.
-- **🌙 Premium & Dinamik Arayüz**: Klasik "Space", yeşil terminal "Hacker" veya modern "Antigravity" (Beyaz) temalarından birini seçebilirsiniz. Gelişmiş CSS ile akıcı animasyonlar barındırır.
-- **🌍 Çoklu Dil Desteği (i18n)**: Türkçe, İngilizce (English) ve Kürtçe (Kurdî) dillerini destekler. Dil anında değiştirilebilir.
-- **🌐 Dahili Cloudflare Tunnel**: Uygulama başlatıldığında `start.sh` veya `start_windows.bat` betikleri otomatik olarak Cloudflare Tunnel açar. Modemden port açmanıza gerek kalmadan uygulamanıza internet üzerinden güvenle erişilebilir.
-- **🎨 Kişiselleştirme**: Takma ad, avatar rengi ve profil fotoğrafı desteklenir.
-- **📊 Anket Oluşturma**: Odadaki kullanıcılar için canlı oylama/anketler (poll) düzenleyebilirsiniz.
-- **📌 Mesaj Sabitleme**: Önemli mesajları sohbetin üst kısmına tutturarak herkesin kolayca görmesini sağlayabilirsiniz.
-- **🏷️ Kişi Etiketleme (Mentions)**: Grubunuzda belirli kullanıcılara doğrudan `@isim` şeklinde seslenebilirsiniz.
-- **💾 Hatırlama Seçenekleri**: Bir sonraki girişiniz için takma ad gibi bilgilerinizi yerel olarak kaydedebilirsiniz.
+**P2P sesli/görüntülü görüşme.** WebRTC üzerinden, sunucuyu yormadan düşük gecikmeli görüşme. Ses tarafı 384 kbps stereo'ya çıkarıldı ve gürültü engelleme (noise gate) eklendi.
 
-## 🔧 Kurulum ve Çalıştırma
+**P2P ekran paylaşımı.** Pencere veya tüm ekran seçimiyle, WebRTC tabanlı düşük gecikmeli paylaşım — kod incelemesi ya da toplantı için kullanışlı.
+
+**Şifreli P2P dosya transferi.** Dosyalar sunucuya hiç uğramadan, WebRTC veri kanalları üzerinden doğrudan gönderenden alıcıya, boyut sınırı olmadan aktarılır.
+
+**Sesli mesaj ve görsel paylaşımı**, normal metin mesajlarına ek olarak.
+
+**Otomatik güncelleme.** Uygulama açılışta arka planda GitHub Releases üzerinden yeni sürüm kontrolü yapar, varsa indirir ve onay ister.
+
+**Tema desteği:** Space, yeşil terminal görünümlü Hacker, ve Antigravity (beyaz).
+
+**Çoklu dil:** Türkçe, İngilizce, Kürtçe — anında değiştirilebilir.
+
+**Dahili Cloudflare Tunnel.** `start.sh` / `start_windows.bat` çalıştırıldığında tünel otomatik açılır; modemde port yönlendirmesi yapmadan internetten erişim sağlanır.
+
+Ayrıca: takma ad/avatar rengi/profil fotoğrafı ile kişiselleştirme, anket oluşturma, mesaj sabitleme, `@isim` ile etiketleme, ve bir sonraki giriş için takma adı yerelde hatırlama.
+
+## Kurulum ve Çalıştırma
 
 ### Gereksinimler
-- **Node.js**: [https://nodejs.org](https://nodejs.org) (v18+)
-- Proje klasörüne gidin ve şu komutu çalıştırarak bağımlılıkları kurun:
-  ```bash
-  npm install
-  ```
+- Node.js v18+ ([nodejs.org](https://nodejs.org))
 
-### Geliştirici Modunda (Local) Çalıştırma
+Proje klasöründe:
+```bash
+npm install
+```
+
+### Geliştirici modu (local)
 ```bash
 npm run dev
 ```
 
-### Normal Çalıştırma (Tünel ile Birlikte)
-Birlikte gelen betikler (scriptler), Node.js sunucusunu çalıştırır, Cloudflare Tunnel ile internete çıkartır ve ardından Electron uygulamasını tünel adresiyle başlatır.
+### Normal çalıştırma (tünelle birlikte)
+Bu betikler Node.js sunucusunu başlatır, Cloudflare Tunnel açar, ardından Electron uygulamasını tünel adresiyle başlatır.
 
-**Windows için:**
-Projeyi klasöründe bulunan `start_windows.bat` dosyasına çift tıklayın.
+**Windows:** `start_windows.bat` dosyasına çift tıklayın.
 
-**Linux / macOS için:**
+**Linux / macOS:**
 ```bash
 bash start.sh
 ```
 
-### 📦 Bağımsız Kurulum Dosyası (Exe) Oluşturma
-Projeyi arkadaşlarınızla paylaşmak için tek tıklamayla kurulabilen (NSIS Builder) `.exe` veya Linux paketlerini derleyebilirsiniz.
-
-Windows için (.exe) çıktı almak:
+### Kurulum dosyası (exe) oluşturma
+Tek tıkla kurulabilir paket için (NSIS Builder):
 ```bash
 npm run build:win
 ```
-*(Sonuç dosyası `dist/` klasörü içerisinde `Haven Setup 1.0.0.exe` olarak belirecektir.)*
+Çıktı `dist/` klasöründe `Haven Setup 1.0.0.exe` olarak oluşur.
 
-## 🔒 Güvenlik Notu
+## Güvenlik Notları
 
-- Tüm mesajlar AES-GCM ile şifrelendiğinden, veritabanını (SQLite) biri ele geçirse bile odaya ait Private Key (Oda Şifresi) olmadan mesajları çözemez.
-- Odaya ilk giren kişi odanın yöneticisi sayılır ve odaya bir şifre atar. Sonradan gelenler şifreyi bilmeden odaya bağlanamaz ve anahtarları olmadığı için gönderilen mesajları okuyamaz.
-- Tüm `Electron` istemci tarafı kodları Release alındığında (Build) `ASAR` arşivi içine gizlenir.
-- SQLite sunucu tabanlı mesaj yedekleri uçtan uca şifreli halde tutulur.
+- Mesajlar AES-GCM ile şifrelendiği için, SQLite veritabanı ele geçirilse bile odanın şifresi olmadan içerik okunamaz.
+- Odaya ilk giren kişi oda yöneticisi sayılır ve şifreyi belirler. Şifreyi bilmeyen bağlanamaz, anahtarı olmayan gönderilen mesajları çözemez.
+- Electron istemci kodu build alındığında ASAR arşivine paketlenir.
+- Sunucu tarafındaki SQLite mesaj yedekleri de uçtan uca şifreli halde tutulur.
 
-## 🛠️ Teknolojiler
-- **İstemci (Desktop)**: Electron.js, TypeScript, HTML, CSS (Glassmorphism)
-- **Sunucu (Backend)**: Node.js, Express.js, Socket.IO
-- **Gerçek Zamanlı İletişim**: WebRTC (Ses, Video, Ekran Paylaşımı, Dosya Transferi)
-- **Ağ / Tünelleme**: Cloudflare Tunnel (TryCloudflare)
-- **Kriptografi**: İstemci tarafında Web Crypto API (AES-GCM), Sunucuda Bcrypt
+## Teknolojiler
 
-## 🗺️ Yol Haritası (Gelecek Planları)
-- **Gelişmiş Sohbet Deneyimi:** Mesaj yanıtlama, emoji tepkileri (reactions) ve Markdown desteği.
-- **Sürükle & Bırak:** Dosyaları doğrudan sohbet penceresine sürükleyerek P2P transferi başlatma.
-- **Güvenlik Artırımı:** Görüldükten sonra kendini imha eden mesajlar ve MITM saldırılarına karşı anahtar (fingerprint) doğrulama.
-- **Kişiselleştirme:** Arama ekranlarında mikrofon/kamera cihaz seçimi ve arka plan bulanıklaştırma.
+- **İstemci:** Electron.js, TypeScript, HTML/CSS (Glassmorphism)
+- **Sunucu:** Node.js, Express.js, Socket.IO
+- **Gerçek zamanlı iletişim:** WebRTC (ses, video, ekran paylaşımı, dosya transferi)
+- **Tünelleme:** Cloudflare Tunnel (TryCloudflare)
+- **Kriptografi:** İstemcide Web Crypto API (AES-GCM), sunucuda Bcrypt
+
+## Yol Haritası
+
+- Mesaj yanıtlama, emoji tepkileri, Markdown desteği
+- Sürükle-bırak ile dosya transferi başlatma
+- Görüldükten sonra silinen mesajlar, MITM'e karşı anahtar (fingerprint) doğrulama
+- Arama ekranında mikrofon/kamera seçimi, arka plan bulanıklaştırma
 
 ---
-**GITY Team** tarafından <3 ile geliştirilmiştir.
+GITY Team tarafından geliştirilmiştir.

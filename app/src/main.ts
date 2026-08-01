@@ -65,6 +65,8 @@ app.commandLine.appendSwitch('disable-features', 'DesktopCaptureChangeDetection,
 app.commandLine.appendSwitch('disable-background-timer-throttling');
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+// Windows özelinde pencerelerin üstü kapandığında (Alt-Tab vs.) uykuyu önler:
+app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion,IntensiveWakeUpThrottling');
 
 // FIX: Electron DNS çözümleme sorunu — STUN sunucuları çözülemeyebilir.
 // Chromium'un async DNS çözücüsünü etkinleştir (sistem DNS'ini daha güvenilir kullanır)
