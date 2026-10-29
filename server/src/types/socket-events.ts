@@ -1,3 +1,5 @@
+import type { Socket } from 'socket.io';
+
 /**
  * server/src/types/socket-events.ts — Socket.IO Event Payload Tipleri
  *
@@ -17,6 +19,7 @@ export interface JoinRoomPayload {
     profilePic: string | null;
     authKey: string;
     mode: 'create' | 'join';
+    expiresIn?: number | null; // Otomatik imha süresi (dakika)
 }
 
 export interface SendMessagePayload {
@@ -231,4 +234,16 @@ export interface SocketUserData {
     profilePic: string | null;
     userId: string;
     userSecret: string;
+}
+
+/** Haven özel soket arayüzü */
+export interface HavenSocket extends Socket {
+    userId?: string | null;
+    userSecret?: string | null;
+    nickname?: string;
+    roomKey?: string;
+    avatarColor?: string;
+    profilePic?: string | null;
+    sessionId?: string;
+    uploadToken?: string;
 }

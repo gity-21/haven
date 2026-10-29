@@ -24,9 +24,10 @@ export function renderUsersModal(): void {
         const isMe = state.socket && user.id === state.socket.id;
         const initial = user.username[0].toUpperCase();
 
+        const pic = user.profilePic || (isMe ? state.profilePic : null);
         let avatarHtml: string;
-        if (user.profilePic) {
-            avatarHtml = `<div style="width:32px; height:32px; border-radius:50%; background-image:url('${user.profilePic}'); background-size:cover; background-position:center; flex-shrink:0;"></div>`;
+        if (pic) {
+            avatarHtml = `<div style="width:32px; height:32px; border-radius:50%; background-image:url('${pic}'); background-size:cover; background-position:center; flex-shrink:0;"></div>`;
         } else {
             avatarHtml = `<div style="width:32px; height:32px; border-radius:50%; background-color:${user.avatarColor}; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; flex-shrink:0;">${initial}</div>`;
         }

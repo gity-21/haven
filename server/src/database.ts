@@ -185,9 +185,14 @@ export async function initializeDatabase(): Promise<DatabaseWrapper> {
             room_key      TEXT PRIMARY KEY,
             password_hash TEXT NOT NULL,
             e2ee_salt     TEXT,
+            expires_at    DATETIME,
             created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
+
+    try {
+        sqliteDb.run('ALTER TABLE rooms ADD COLUMN expires_at DATETIME');
+    } catch (_) { /* ignore if column already exists */ }
 
     sqliteDb.run(`
         CREATE TABLE IF NOT EXISTS messages (

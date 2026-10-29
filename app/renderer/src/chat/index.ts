@@ -9,6 +9,9 @@
 import '../../css/style.css';
 import '../../css/soft-login.css';
 import '../../css/antigravity.css';
+import '../../css/corona.css';
+import '../../css/sky.css';
+import '../../css/xp.css';
 
 import { state, voiceState, stopRingtone } from './state';
 import { el } from './elements';
@@ -28,6 +31,9 @@ import { initPollUI } from './ui/poll';
 import '../i18n';
 import '../matrix';
 import '../antigravity';
+import '../kinetic-grid';
+import '../corona';
+import '../sky';
 import './ui/media-preview';
 import './ui/voice-player';
 import './ui/modals';
@@ -79,6 +85,24 @@ async function initialize(): Promise<void> {
     if ('Notification' in window && Notification.permission !== 'denied' && Notification.permission !== 'granted') {
         Notification.requestPermission();
     }
+}
+
+// ── Typing Durumu ──
+
+let typingTimeout: ReturnType<typeof setTimeout> | null = null;
+let isCurrentlyTyping = false;
+
+function handleTyping(): void {
+    if (!state.socket) return;
+    if (!isCurrentlyTyping) {
+        isCurrentlyTyping = true;
+        state.socket.emit('typing', { isTyping: true });
+    }
+    if (typingTimeout) clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+        isCurrentlyTyping = false;
+        state.socket?.emit('typing', { isTyping: false });
+    }, 2500);
 }
 
 // ── setupEventListeners ──
@@ -136,12 +160,35 @@ function setupEventListeners(): void {
     el.fileInput?.addEventListener('change', async (e: Event) => {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (file) {
-            if (file.type.startsWith('image/')) {
+            const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)$/i.test(file.name);
+            if (isImage) {
                 window.addPendingImage(file);
             } else {
                 await window.sendP2PFile(file);
             }
             (e.target as HTMLInputElement).value = '';
+        }
+    });
+
+    // Sürükle ve Bırak (Drag & Drop) ile Görsel / Dosya Ekleme
+    window.addEventListener('dragover', (e: DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+    window.addEventListener('drop', async (e: DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)$/i.test(file.name);
+                if (isImage) {
+                    window.addPendingImage(file);
+                } else {
+                    await window.sendP2PFile(file);
+                }
+            }
         }
     });
 
@@ -188,7 +235,7 @@ function setupEventListeners(): void {
         if (pauseBtn) {
             pauseBtn.onclick = () => {
                 isPaused = !isPaused;
-                pauseBtn.textContent = isPaused ? '▶ Devam' : '⏸ Duraklat';
+                pauseBtn.textContent = isPaused ? (window.i18n ? window.i18n.t('resume') : 'Devam') : (window.i18n ? window.i18n.t('pause') : 'Duraklat');
             };
         }
         if (cancelBtn) {
@@ -196,7 +243,7 @@ function setupEventListeners(): void {
                 isCancelled = true;
                 dc.close();
                 pc.close();
-                if (progressDiv) progressDiv.innerHTML = '<div style="color:var(--accent-danger);font-size:12px;text-align:center;padding:4px 0;">❌ İndirme iptal edildi</div>';
+                if (progressDiv) progressDiv.innerHTML = '<div style="color:var(--accent-danger);font-size:12px;text-align:center;padding:4px 0;display:flex;align-items:center;justify-content:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>İndirme iptal edildi</div>';
             };
         }
 
@@ -210,6 +257,7 @@ function setupEventListeners(): void {
                 try {
                     const msg = JSON.parse(e.data);
                     if (msg.type === 'EOF') {
+                        clearTimeout(timeoutTimer);
                         const blob = new Blob(receivedBuffers);
                         receivedBuffers = [];
                         const blobUrl = URL.createObjectURL(blob);
@@ -218,7 +266,7 @@ function setupEventListeners(): void {
                             if (imgBox) imgBox.innerHTML = `<img src="${blobUrl}" style="max-width:300px; width:100%; border-radius:8px; display:block; cursor:zoom-in;" onclick="window.previewMedia(this.src, 'image')" alt="${escapeHtml(filename)}">`;
                         } else {
                             const textEl = document.getElementById(`p2p-text-receiver-${fileId}`);
-                            if (textEl) textEl.textContent = '✅ Tamamlandı!';
+                            if (textEl) textEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent-success)" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>${window.i18n ? window.i18n.t('download_complete') : 'Tamamlandı!'}`;
                             if (pauseBtn) pauseBtn.style.display = 'none';
                             if (cancelBtn) cancelBtn.style.display = 'none';
                             const a = document.createElement('a');
@@ -246,6 +294,32 @@ function setupEventListeners(): void {
 
         pc.onicecandidate = e => {
             if (e.candidate) state.socket!.emit('p2p-file-candidate', { targetId, candidate: e.candidate, fileId });
+        };
+
+        const timeoutTimer = setTimeout(() => {
+            if (pc.iceConnectionState !== 'connected' && pc.iceConnectionState !== 'completed' && receivedSize === 0) {
+                if (isAuto) {
+                    const imgBox = document.getElementById(`p2p-img-box-${fileId}`);
+                    if (imgBox) {
+                        imgBox.innerHTML = `<div style="color:var(--text-muted);font-size:11px;">⚠️ Görsel aktarımı zaman aşımına uğradı.<br><button onclick="window.startP2PDownload('${fileId}', '${targetId}', '${escapeHtml(filename)}', ${size}, true)" style="margin-top:6px;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.1);border:none;color:var(--text-primary);cursor:pointer;font-size:11px;">Tekrar Dene</button></div>`;
+                    }
+                } else if (progressDiv) {
+                    progressDiv.innerHTML = '<div style="color:var(--accent-warning);font-size:11px;text-align:center;">P2P bağlantısı kurulamadı. Gönderici çevrimdışı veya güvenlik duvarı engelliyor.</div>';
+                    if (btn) btn.style.display = 'flex';
+                }
+            }
+        }, 15000);
+
+        pc.oniceconnectionstatechange = () => {
+            if (pc.iceConnectionState === 'failed') {
+                clearTimeout(timeoutTimer);
+                if (isAuto) {
+                    const imgBox = document.getElementById(`p2p-img-box-${fileId}`);
+                    if (imgBox) {
+                        imgBox.innerHTML = `<div style="color:var(--text-muted);font-size:11px;">P2P aktarımı kurulamadı.<br><button onclick="window.startP2PDownload('${fileId}', '${targetId}', '${escapeHtml(filename)}', ${size}, true)" style="margin-top:6px;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.1);border:none;color:var(--text-primary);cursor:pointer;font-size:11px;">Tekrar Dene</button></div>`;
+                    }
+                }
+            }
         };
 
         window.p2pConnections = window.p2pConnections || {};
@@ -338,7 +412,7 @@ function setupEventListeners(): void {
 
     document.getElementById('btn-close-image-preview')?.addEventListener('click', closeImagePreviewModal);
     document.getElementById('btn-copy-invite')?.addEventListener('click', async () => {
-        const inviteText = `${state.socket.io.uri}/invite?room=${encodeURIComponent(state.roomKey)}`;
+        const inviteText = `${state.serverUrl}/invite?room=${encodeURIComponent(state.roomKey)}`;
         if (window.electronAPI?.writeToClipboard) {
             await window.electronAPI.writeToClipboard(inviteText);
         } else {
@@ -534,44 +608,57 @@ function setupSettingsModal(): void {
         });
     }
 
-    if (el.btnInviteLink) {
-        el.btnInviteLink.addEventListener('click', async () => {
-            const tunnelUrl = localStorage.getItem('haven_tunnel_url');
-            const baseUrl = tunnelUrl ? tunnelUrl : state.serverUrl;
-            const cleanUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-            const inviteLink = `${cleanUrl}/?room=${encodeURIComponent(state.roomKey)}`;
-            const inviteText = `Haven Gizli Oda Daveti!\n\n🚀 Oda bağlantısı:\n${inviteLink}\n\nOda Anahtarı: ${state.roomKey}\n\n⚠️ Şifreyi bu mesajla birlikte göndermeyin.\nŞifreyi ayrı bir kanaldan (SMS vb.) paylaşın.`;
-            
-            try {
-                if (window.electronAPI?.writeToClipboard) {
-                    await window.electronAPI.writeToClipboard(inviteText);
+    const generateInviteLink = (): string => {
+        const tunnelUrl = localStorage.getItem('haven_tunnel_url');
+        const baseUrl = tunnelUrl ? tunnelUrl : state.serverUrl;
+        const cleanUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+        const room = state.roomKey || '';
+        const pass = state.roomPassword || '';
+        return `${cleanUrl}/invite.html#server=${encodeURIComponent(cleanUrl)}&room=${encodeURIComponent(room)}&pass=${encodeURIComponent(pass)}`;
+    };
+
+    const copyInviteLink = async (): Promise<void> => {
+        const link = generateInviteLink();
+        try {
+            if (window.electronAPI?.writeToClipboard) {
+                await window.electronAPI.writeToClipboard(link);
+                showToast('Davet linki panoya kopyalandı!', 'success');
+            } else if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(link);
+                showToast('Davet linki panoya kopyalandı!', 'success');
+            } else {
+                const textArea = document.createElement('textarea');
+                textArea.value = link;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
                     showToast('Davet linki panoya kopyalandı!', 'success');
-                } else if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(inviteText);
-                    showToast('Davet linki panoya kopyalandı!', 'success');
-                } else {
-                    // Fallback for non-secure contexts
-                    const textArea = document.createElement("textarea");
-                    textArea.value = inviteText;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    try {
-                        document.execCommand('copy');
-                        showToast('Davet linki panoya kopyalandı!', 'success');
-                    } catch (err) {
-                        console.error('Fallback clipboard error:', err);
-                        showToast('Kopyalama başarısız oldu.', 'error');
-                    }
-                    document.body.removeChild(textArea);
+                } catch {
+                    showToast('Kopyalama başarısız oldu.', 'error');
                 }
-            } catch (err) {
-                console.error('Clipboard error:', err);
-                showToast('Kopyalama başarısız oldu.', 'error');
+                document.body.removeChild(textArea);
             }
-        });
+        } catch (err) {
+            console.error('Clipboard error:', err);
+            showToast('Kopyalama başarısız oldu.', 'error');
+        }
+    };
+
+    if (el.btnInviteLink) {
+        el.btnInviteLink.addEventListener('click', copyInviteLink);
+    }
+
+    const btnSettingsCopyInvite = document.getElementById('btn-settings-copy-invite');
+    if (btnSettingsCopyInvite) {
+        btnSettingsCopyInvite.addEventListener('click', copyInviteLink);
     }
 
     el.btnChatSettings.addEventListener('click', () => {
+        const roomKeyDisplay = document.getElementById('settings-room-key-display');
+        if (roomKeyDisplay) {
+            roomKeyDisplay.textContent = state.roomKey || '-';
+        }
         if (el.chatUsernameInput) el.chatUsernameInput.value = state.nickname || '';
         if (el.chatAvatarColorInput) el.chatAvatarColorInput.value = state.avatarColor || '#6366f1';
         if (el.chatColorPreviewText) {
@@ -637,6 +724,14 @@ function setupSettingsModal(): void {
         showToast(window.i18n ? window.i18n.t('settings_saved') : 'Ayarları kaydettiniz!', 'success');
     });
 
+    // Tema canlı önizleme
+    if (el.chatThemeSelector) {
+        el.chatThemeSelector.addEventListener('change', (e: Event) => {
+            const newTheme = (e.target as HTMLSelectElement).value;
+            document.documentElement.setAttribute('data-theme', newTheme);
+        });
+    }
+
     // Eski listener, aşağıda clone edilerek değiştirildi
 
     el.chatAvatarUpload?.addEventListener('change', (e: Event) => {
@@ -686,7 +781,7 @@ function setupSettingsModal(): void {
         if (container) container.style.display = 'none';
         if (bar) (bar as HTMLElement).style.width = '0%';
         const btn = document.getElementById('btn-test-mic');
-        if (btn) btn.textContent = '🎙️ Mikrofonu Test Et';
+        if (btn) btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path></svg> <span>${window.i18n ? window.i18n.t('btn_test_mic') : 'Mikrofonu Test Et'}</span>`;
     }
 
     const btnTestMic = document.getElementById('btn-test-mic');
@@ -701,7 +796,7 @@ function setupSettingsModal(): void {
                 const constraints: MediaStreamConstraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
                 chatMicTestStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-                btnTestMic.textContent = '⏹️ Testi Durdur';
+                btnTestMic.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> <span>${window.i18n ? window.i18n.t('btn_stop_test') : 'Testi Durdur'}</span>`;
                 const container = document.getElementById('mic-level-container');
                 const bar = document.getElementById('mic-level-bar') as HTMLElement | null;
                 if (container) container.style.display = 'block';

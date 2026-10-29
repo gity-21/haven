@@ -1,6 +1,6 @@
 {
     "name": "haven",
-    "version": "2.2.0",
+    "version": "2.2.1",
     "description": "Private desktop chat application - Premium Discord-like invite-only rooms",
     "homepage": "https://github.com/haven-chat/haven",
     "main": "app/dist/main.js",
@@ -58,7 +58,7 @@
             "target": [
                 "nsis"
             ],
-            "icon": "assets/icon.png"
+            "icon": "assets/icon.ico"
         },
         "nsis": {
             "oneClick": false,
@@ -72,10 +72,12 @@
             "deleteAppDataOnUninstall": false
         },
         "linux": {
-    "target": ["tar.gz"],
-    "icon": "assets/icon.png",
-    "category": "Network"
-}
+            "target": [
+                "tar.gz"
+            ],
+            "icon": "assets/icon.png",
+            "category": "Network"
+        }
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",
@@ -101,8 +103,8 @@
         "@types/node": "^22.10.0",
         "@types/uuid": "^10.0.0",
         "concurrently": "^9.1.2",
-        "electron": "^34.5.8",
-        "electron-builder": "^25.1.8",
+        "electron": "^45.0.0",
+        "electron-builder": "^26.15.3",
         "jest": "^30.4.2",
         "supertest": "^7.2.2",
         "ts-jest": "^29.4.11",

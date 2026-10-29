@@ -1,0 +1,471 @@
+/* =========================================
+   SKY THEME (GÖKYÜZÜ) - AZURE SKY & FLUFFY CLOUDS
+   Aceternity UI Cloud Shader Ambient Theme
+   ========================================= */
+
+/* GLOBAL & DESIGN TOKENS */
+html[data-theme="sky"] {
+    --accent-primary: #0284c7 !important;
+    --accent-secondary: #38bdf8 !important;
+    --accent-glow: rgba(2, 132, 199, 0.35) !important;
+    --accent-hover: #0369a1 !important;
+    --text-primary: #0f172a !important;
+    --text-secondary: #1e293b !important;
+    --text-muted: #64748b !important;
+    --bg-dark: #f0f9ff !important;
+    --bg-light: #ffffff !important;
+    --border-light: rgba(2, 132, 199, 0.18) !important;
+    --bg-hover: rgba(2, 132, 199, 0.08) !important;
+    --primary-color: #0284c7 !important;
+    --color-primary: #0284c7 !important;
+    --focus-ring: 0 0 0 2px rgba(2, 132, 199, 0.35) !important;
+}
+
+html[data-theme="sky"],
+html[data-theme="sky"] body {
+    background: #8cbfe8 !important;
+    color: var(--text-primary) !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+/* Hide legacy glowing orbs so the WebGL cloud shader shines through */
+html[data-theme="sky"] .login-bg-effects,
+html[data-theme="sky"] .soft-bg-lines {
+    display: none !important;
+}
+
+/* TITLEBAR */
+html[data-theme="sky"] .titlebar {
+    background: rgba(255, 255, 255, 0.6) !important;
+    border-bottom: 1px solid rgba(2, 132, 199, 0.15) !important;
+    color: #0f172a !important;
+    backdrop-filter: blur(12px) !important;
+}
+
+html[data-theme="sky"] .titlebar .logo-icon svg {
+    stroke: #0284c7 !important;
+    filter: drop-shadow(0 0 6px rgba(2, 132, 199, 0.4)) !important;
+}
+
+html[data-theme="sky"] .titlebar-title span {
+    color: #0f172a !important;
+    font-weight: 600;
+}
+
+html[data-theme="sky"] .titlebar-btn:hover {
+    background: rgba(2, 132, 199, 0.12) !important;
+    color: #0284c7 !important;
+}
+
+html[data-theme="sky"] .titlebar-btn.close:hover {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+}
+
+/* APP CONTAINER */
+html[data-theme="sky"] .app-container {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="sky"] .app-container::before {
+    display: none !important;
+}
+
+/* CHAT AREA & HEADER */
+html[data-theme="sky"] .chat-area {
+    background: rgba(255, 255, 255, 0.45) !important;
+    border: 1px solid rgba(255, 255, 255, 0.6) !important;
+    backdrop-filter: blur(16px) !important;
+    box-shadow: 0 8px 32px rgba(14, 165, 233, 0.12) !important;
+}
+
+html[data-theme="sky"] .chat-header {
+    background: rgba(255, 255, 255, 0.75) !important;
+    border-bottom: 1px solid rgba(2, 132, 199, 0.15) !important;
+    backdrop-filter: blur(12px) !important;
+}
+
+html[data-theme="sky"] .chat-header-info span,
+html[data-theme="sky"] #room-name-display {
+    color: #0f172a !important;
+    font-weight: 700;
+}
+
+html[data-theme="sky"] .chat-header-actions button {
+    color: #475569 !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="sky"] .chat-header-actions button:hover {
+    color: #0284c7 !important;
+    background: rgba(2, 132, 199, 0.1) !important;
+}
+
+html[data-theme="sky"] .header-user-count {
+    background: rgba(2, 132, 199, 0.1) !important;
+    border: 1px solid rgba(2, 132, 199, 0.2) !important;
+    color: #0284c7 !important;
+    font-weight: 600;
+}
+
+/* SIDEBAR ROOMS */
+html[data-theme="sky"] .sidebar-rooms {
+    background: rgba(255, 255, 255, 0.55) !important;
+    border-right: 1px solid rgba(2, 132, 199, 0.15) !important;
+    backdrop-filter: blur(14px) !important;
+}
+
+html[data-theme="sky"] .sidebar-rooms-header {
+    border-bottom: 1px solid rgba(2, 132, 199, 0.15) !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="sky"] .room-sidebar-item {
+    background: rgba(255, 255, 255, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.7) !important;
+    color: #334155 !important;
+    border-radius: 10px !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="sky"] .room-sidebar-item:hover {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border-color: rgba(2, 132, 199, 0.3) !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="sky"] .room-sidebar-item.active {
+    background: rgba(2, 132, 199, 0.15) !important;
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+    font-weight: 600;
+    box-shadow: 0 2px 10px rgba(2, 132, 199, 0.2) !important;
+}
+
+html[data-theme="sky"] #btn-add-room-sidebar {
+    background: rgba(2, 132, 199, 0.1) !important;
+    border: 1px solid rgba(2, 132, 199, 0.25) !important;
+    color: #0284c7 !important;
+    border-radius: 8px !important;
+}
+
+html[data-theme="sky"] #btn-add-room-sidebar:hover {
+    background: rgba(2, 132, 199, 0.2) !important;
+    border-color: #0284c7 !important;
+}
+
+html[data-theme="sky"] .sidebar-rooms-footer {
+    background: rgba(255, 255, 255, 0.6) !important;
+    border-top: 1px solid rgba(2, 132, 199, 0.15) !important;
+}
+
+/* CHAT MESSAGES */
+html[data-theme="sky"] .chat-messages {
+    background: transparent !important;
+}
+
+html[data-theme="sky"] .message-group {
+    background: rgba(255, 255, 255, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.75) !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04) !important;
+    border-radius: 12px !important;
+    transition: background 0.2s ease, border-color 0.2s ease !important;
+}
+
+html[data-theme="sky"] .message-group:hover {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border-color: rgba(2, 132, 199, 0.25) !important;
+    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.1) !important;
+}
+
+html[data-theme="sky"] .message-group.continuation {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="sky"] .message-group.continuation:hover {
+    background: rgba(255, 255, 255, 0.4) !important;
+}
+
+html[data-theme="sky"] .message-avatar {
+    background-color: #e0f2fe !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2) !important;
+}
+
+html[data-theme="sky"] .message-username {
+    color: #0369a1 !important;
+    font-weight: 700;
+}
+
+html[data-theme="sky"] .message-text {
+    color: #0f172a !important;
+    text-shadow: none !important;
+}
+
+html[data-theme="sky"] .message-timestamp {
+    color: #64748b !important;
+}
+
+html[data-theme="sky"] .chat-link {
+    color: #0284c7 !important;
+    text-decoration: underline !important;
+}
+
+/* DATE SEPARATOR */
+html[data-theme="sky"] .date-separator span {
+    background: rgba(255, 255, 255, 0.85) !important;
+    color: #0369a1 !important;
+    border: 1px solid rgba(2, 132, 199, 0.2) !important;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.08) !important;
+    font-weight: 600;
+}
+
+html[data-theme="sky"] .date-separator::before,
+html[data-theme="sky"] .date-separator::after {
+    background: rgba(2, 132, 199, 0.2) !important;
+}
+
+/* REACTION BUTTONS */
+html[data-theme="sky"] .reaction-btn {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(2, 132, 199, 0.2) !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="sky"] .reaction-btn:hover {
+    background: rgba(2, 132, 199, 0.15) !important;
+    border-color: #0284c7 !important;
+}
+
+/* CHAT INPUT AREA */
+html[data-theme="sky"] .chat-input-container {
+    background: transparent !important;
+}
+
+html[data-theme="sky"] .chat-input-wrapper {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(2, 132, 199, 0.22) !important;
+    box-shadow: 0 4px 20px rgba(2, 132, 199, 0.1) !important;
+    backdrop-filter: blur(14px) !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="sky"] .chat-input-wrapper:focus-within {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 16px rgba(2, 132, 199, 0.25) !important;
+}
+
+html[data-theme="sky"] .chat-input {
+    color: #0f172a !important;
+}
+
+html[data-theme="sky"] .chat-input::placeholder {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="sky"] #btn-send {
+    background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: none !important;
+    box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35) !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="sky"] #btn-send:hover {
+    background: linear-gradient(135deg, #0369a1, #0284c7) !important;
+    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.5) !important;
+    transform: scale(1.02);
+}
+
+/* SOFT LOGIN SCREEN OVERRIDES */
+html[data-theme="sky"] .soft-wrapper {
+    background: transparent !important;
+}
+
+html[data-theme="sky"] .soft-glass-panel {
+    background: rgba(255, 255, 255, 0.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 24px 60px rgba(2, 132, 199, 0.18), inset 0 0 3px rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+html[data-theme="sky"] .soft-header h1 {
+    color: #0f172a !important;
+}
+
+html[data-theme="sky"] .soft-header p {
+    color: #475569 !important;
+}
+
+html[data-theme="sky"] .soft-logo svg {
+    stroke: #0284c7 !important;
+    filter: drop-shadow(0 0 8px rgba(2, 132, 199, 0.4)) !important;
+}
+
+html[data-theme="sky"] .soft-tabs {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border: 1px solid rgba(2, 132, 199, 0.15) !important;
+}
+
+html[data-theme="sky"] .soft-tab {
+    color: #64748b !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="sky"] .soft-tab:hover {
+    color: #0f172a !important;
+}
+
+html[data-theme="sky"] .soft-tab.active {
+    background: #ffffff !important;
+    color: #0284c7 !important;
+    border: 1px solid rgba(2, 132, 199, 0.25) !important;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.15) !important;
+    font-weight: 600;
+}
+
+html[data-theme="sky"] .soft-label {
+    color: #334155 !important;
+    font-weight: 500;
+}
+
+html[data-theme="sky"] .soft-input {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(2, 132, 199, 0.2) !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="sky"] .soft-input:focus {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 10px rgba(2, 132, 199, 0.25) !important;
+}
+
+html[data-theme="sky"] .soft-input::placeholder {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="sky"] .soft-btn-submit {
+    background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: none !important;
+    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.35) !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="sky"] .soft-btn-submit:hover {
+    background: linear-gradient(135deg, #0369a1, #0284c7) !important;
+    box-shadow: 0 6px 20px rgba(2, 132, 199, 0.5) !important;
+    transform: translateY(-1px);
+}
+
+/* SETTINGS & MODALS */
+html[data-theme="sky"] #settings-modal>div,
+html[data-theme="sky"] #chat-settings-modal>div,
+html[data-theme="sky"] #invite-modal>div,
+html[data-theme="sky"] #custom-alert-modal .modal,
+html[data-theme="sky"] #custom-confirm-modal .modal,
+html[data-theme="sky"] #modal-incoming-call .modal,
+html[data-theme="sky"] #modal-users .modal,
+html[data-theme="sky"] .modal {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(2, 132, 199, 0.22) !important;
+    box-shadow: 0 20px 60px rgba(2, 132, 199, 0.2) !important;
+    backdrop-filter: blur(20px) !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="sky"] #chat-settings-modal>div>div:first-child,
+html[data-theme="sky"] #settings-modal>div>div:first-child {
+    background: rgba(240, 249, 255, 0.9) !important;
+    border-right: 1px solid rgba(2, 132, 199, 0.15) !important;
+}
+
+html[data-theme="sky"] #chat-settings-modal .settings-tab,
+html[data-theme="sky"] #settings-modal .login-settings-tab {
+    color: #64748b !important;
+    background: transparent !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="sky"] #chat-settings-modal .settings-tab:hover:not(.active),
+html[data-theme="sky"] #settings-modal .login-settings-tab:hover:not(.active) {
+    background: rgba(2, 132, 199, 0.08) !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="sky"] #chat-settings-modal .settings-tab.active,
+html[data-theme="sky"] #settings-modal .login-settings-tab.active {
+    background: rgba(2, 132, 199, 0.15) !important;
+    color: #0284c7 !important;
+    font-weight: 600;
+}
+
+html[data-theme="sky"] #settings-modal h2,
+html[data-theme="sky"] #chat-settings-modal h2,
+html[data-theme="sky"] #invite-modal h2,
+html[data-theme="sky"] .modal h2,
+html[data-theme="sky"] .modal h3 {
+    color: #0f172a !important;
+}
+
+html[data-theme="sky"] #settings-modal p,
+html[data-theme="sky"] #settings-modal label,
+html[data-theme="sky"] #settings-modal span,
+html[data-theme="sky"] #chat-settings-modal p,
+html[data-theme="sky"] #chat-settings-modal label,
+html[data-theme="sky"] .modal p {
+    color: #475569 !important;
+}
+
+html[data-theme="sky"] #settings-modal input,
+html[data-theme="sky"] #settings-modal select,
+html[data-theme="sky"] #chat-settings-modal input,
+html[data-theme="sky"] #chat-settings-modal select,
+html[data-theme="sky"] #invite-modal input {
+    background: #ffffff !important;
+    border: 1px solid rgba(2, 132, 199, 0.25) !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="sky"] select option {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="sky"] #settings-modal .form-submit,
+html[data-theme="sky"] #chat-settings-modal .form-submit,
+html[data-theme="sky"] #invite-modal .form-submit,
+html[data-theme="sky"] #invite-modal #btn-copy-all,
+html[data-theme="sky"] #invite-modal #btn-start-chat,
+html[data-theme="sky"] .modal .btn-confirm,
+html[data-theme="sky"] #btn-custom-alert-ok,
+html[data-theme="sky"] #btn-custom-confirm-ok,
+html[data-theme="sky"] #btn-accept-call {
+    background: linear-gradient(135deg, #0284c7, #38bdf8) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: none !important;
+    box-shadow: 0 3px 12px rgba(2, 132, 199, 0.35) !important;
+}
+
+html[data-theme="sky"] #btn-settings {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(2, 132, 199, 0.25) !important;
+    color: #0284c7 !important;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2) !important;
+}
+
+html[data-theme="sky"] #btn-settings+span {
+    color: #0f172a !important;
+    font-weight: 600;
+}
+

@@ -591,7 +591,7 @@ async function openScreenShareModal(): Promise<void> {
             el.screenShareGrid!.innerHTML = '';
 
             if (!sources || sources.length === 0) {
-                el.screenShareGrid!.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding: 24px;"><p style="color:var(--accent-warning); margin-bottom:12px;">⚠️ Ekran kaynakları alınamadı.</p><button id="btn-screen-share-fallback" style="padding:10px 24px; background:var(--accent-primary); color:var(--text-on-accent); border:none; border-radius:8px; cursor:pointer; font-weight:600;">Tarayıcı Ekran Seçicisini Kullan</button></div>`;
+                el.screenShareGrid!.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding: 24px;"><p style="color:var(--accent-warning); margin-bottom:12px; display:flex; align-items:center; justify-content:center; gap:6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>Ekran kaynakları alınamadı.</p><button id="btn-screen-share-fallback" style="padding:10px 24px; background:var(--accent-primary); color:var(--text-on-accent); border:none; border-radius:8px; cursor:pointer; font-weight:600;">Tarayıcı Ekran Seçicisini Kullan</button></div>`;
                 document.getElementById('btn-screen-share-fallback')?.addEventListener('click', async () => {
                     el.modalScreenShare!.classList.remove('visible');
                     try {

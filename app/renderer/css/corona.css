@@ -1,0 +1,672 @@
+/* =========================================
+   CORONA THEME - SOLAR ECLIPSE DARK MODE
+   Golden Corona, Cosmic Obsidian & Amber Glow
+   ========================================= */
+
+/* GLOBAL VARIABLES */
+html[data-theme="corona"] {
+    --accent-primary: #f59e0b !important;
+    --accent-secondary: #fbbf24 !important;
+    --accent-glow: rgba(245, 158, 11, 0.4) !important;
+    --accent-hover: #d97706 !important;
+    --text-primary: #fffbeb !important;
+    --text-secondary: #fde68a !important;
+    --text-muted: #a3998b !important;
+    --bg-dark: #080604 !important;
+    --bg-light: #151009 !important;
+    --border-light: rgba(245, 158, 11, 0.2) !important;
+    --bg-hover: rgba(245, 158, 11, 0.08) !important;
+    --primary-color: #f59e0b !important;
+    --color-primary: #f59e0b !important;
+    --color-primary-glow: rgba(245, 158, 11, 0.5) !important;
+    --focus-ring: 0 0 0 2px rgba(245, 158, 11, 0.4) !important;
+}
+
+/* BASE & BODY */
+html[data-theme="corona"],
+html[data-theme="corona"] body {
+    background: #080604 !important;
+    color: var(--text-primary) !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+/* Hide legacy glowing orbs so the WebGL eclipse shines through */
+html[data-theme="corona"] .login-bg-effects,
+html[data-theme="corona"] .soft-bg-lines {
+    display: none !important;
+}
+
+/* Custom Titlebar */
+html[data-theme="corona"] .titlebar {
+    background: rgba(8, 6, 4, 0.9) !important;
+    border-bottom: 1px solid rgba(245, 158, 11, 0.15) !important;
+    color: #fde68a !important;
+    backdrop-filter: blur(12px) !important;
+}
+
+html[data-theme="corona"] .titlebar .logo-icon svg {
+    stroke: #f59e0b !important;
+    filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6)) !important;
+}
+
+html[data-theme="corona"] .titlebar-title span {
+    color: #fffbeb !important;
+    text-shadow: 0 0 10px rgba(245, 158, 11, 0.4) !important;
+}
+
+html[data-theme="corona"] .titlebar-btn:hover {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #fbbf24 !important;
+}
+
+html[data-theme="corona"] .titlebar-btn.close:hover {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+}
+
+/* APP CONTAINER */
+html[data-theme="corona"] .app-container {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="corona"] .app-container::before {
+    display: none !important;
+}
+
+/* CHAT AREA & HEADER */
+html[data-theme="corona"] .chat-area {
+    background: transparent !important;
+    border: 1px solid rgba(245, 158, 11, 0.08) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="corona"] .chat-header {
+    background: rgba(10, 7, 4, 0.72) !important;
+    border-bottom: 1px solid rgba(245, 158, 11, 0.18) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+
+html[data-theme="corona"] .chat-header-info span,
+html[data-theme="corona"] #room-name-display {
+    color: #fffbeb !important;
+    text-shadow: 0 0 14px rgba(245, 158, 11, 0.45) !important;
+    font-weight: 600;
+}
+
+html[data-theme="corona"] .chat-header-actions button {
+    color: #d8cebf !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="corona"] .chat-header-actions button:hover {
+    color: #fbbf24 !important;
+    background: rgba(245, 158, 11, 0.14) !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.25) !important;
+}
+
+html[data-theme="corona"] .header-user-count {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+    color: #fde68a !important;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.15) !important;
+}
+
+/* SIDEBAR ROOMS */
+html[data-theme="corona"] .sidebar-rooms {
+    background: rgba(14, 10, 6, 0.8) !important;
+    border-right: 1px solid rgba(245, 158, 11, 0.18) !important;
+    backdrop-filter: blur(14px) !important;
+}
+
+html[data-theme="corona"] .sidebar-rooms-header {
+    border-bottom: 1px solid rgba(245, 158, 11, 0.15) !important;
+    color: #fde68a !important;
+}
+
+html[data-theme="corona"] .room-sidebar-item {
+    background: rgba(245, 158, 11, 0.04) !important;
+    border: 1px solid rgba(245, 158, 11, 0.1) !important;
+    color: #dcd4c7 !important;
+    border-radius: 10px !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="corona"] .room-sidebar-item:hover {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.35) !important;
+    color: #fffbeb !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.18) !important;
+}
+
+html[data-theme="corona"] .room-sidebar-item.active {
+    background: rgba(245, 158, 11, 0.2) !important;
+    border-color: #f59e0b !important;
+    color: #fbbf24 !important;
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.35) !important;
+}
+
+html[data-theme="corona"] #btn-add-room-sidebar {
+    background: rgba(245, 158, 11, 0.1) !important;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+    color: #fbbf24 !important;
+    border-radius: 8px !important;
+}
+
+html[data-theme="corona"] #btn-add-room-sidebar:hover {
+    background: rgba(245, 158, 11, 0.2) !important;
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.3) !important;
+}
+
+html[data-theme="corona"] .sidebar-rooms-footer {
+    background: rgba(14, 10, 6, 0.9) !important;
+    border-top: 1px solid rgba(245, 158, 11, 0.15) !important;
+}
+
+/* CHAT MESSAGES */
+html[data-theme="corona"] .chat-messages {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Her mesaj grubu: tamamen saydam, arkadaki corona animasyonu net görünsün */
+html[data-theme="corona"] .message-group {
+    background: transparent !important;
+    border: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    border-radius: 12px !important;
+    transition: background 0.2s ease !important;
+}
+
+html[data-theme="corona"] .message-group:hover {
+    background: rgba(245, 158, 11, 0.03) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Mesaj metni: tam yazının arkasında ufak bir blur ve hafif karartma */
+html[data-theme="corona"] .message-content {
+    position: relative !important;
+}
+
+html[data-theme="corona"] .message-header {
+    margin-bottom: 2px !important;
+}
+
+html[data-theme="corona"] .message-username {
+    display: inline-block !important;
+    background: rgba(8, 6, 4, 0.5) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    padding: 1px 8px !important;
+    border-radius: 4px !important;
+    color: #fbbf24 !important;
+    text-shadow: 0 0 8px rgba(245, 158, 11, 0.4) !important;
+    font-weight: 700;
+}
+
+html[data-theme="corona"] .message-text {
+    color: #fffbeb !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8) !important;
+    position: relative !important;
+    display: inline-block !important;
+    background: rgba(8, 6, 4, 0.55) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+    border: 1px solid rgba(245, 158, 11, 0.15) !important;
+    border-radius: 8px !important;
+    padding: 6px 12px !important;
+    margin-top: 2px !important;
+    max-width: 100% !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+}
+
+html[data-theme="corona"] .message-group.continuation {
+    background: transparent !important;
+    border: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="corona"] .message-group.continuation:hover {
+    background: rgba(245, 158, 11, 0.03) !important;
+}
+
+html[data-theme="corona"] .message-avatar {
+    background-color: #1a130a !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.2) !important;
+}
+
+html[data-theme="corona"] .message-username {
+    color: #fbbf24 !important;
+    text-shadow: 0 0 8px rgba(245, 158, 11, 0.4) !important;
+    font-weight: 700;
+}
+
+html[data-theme="corona"] .message-text {
+    color: #fffbeb !important;
+    text-shadow: none !important;
+}
+
+html[data-theme="corona"] .message-timestamp {
+    color: #9c9183 !important;
+}
+
+html[data-theme="corona"] .chat-link {
+    color: #fbbf24 !important;
+    text-decoration: underline !important;
+}
+
+html[data-theme="corona"] .chat-link:hover {
+    color: #fef08a !important;
+    text-shadow: 0 0 8px rgba(245, 158, 11, 0.6) !important;
+}
+
+/* DATE SEPARATOR */
+html[data-theme="corona"] .date-separator span {
+    background: rgba(24, 18, 11, 0.95) !important;
+    color: #fde68a !important;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.15) !important;
+}
+
+html[data-theme="corona"] .date-separator::before,
+html[data-theme="corona"] .date-separator::after {
+    background: rgba(245, 158, 11, 0.2) !important;
+}
+
+/* REACTION BUTTONS */
+html[data-theme="corona"] .reaction-btn {
+    background: rgba(245, 158, 11, 0.08) !important;
+    border: 1px solid rgba(245, 158, 11, 0.2) !important;
+    color: #fde68a !important;
+}
+
+html[data-theme="corona"] .reaction-btn:hover {
+    background: rgba(245, 158, 11, 0.18) !important;
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
+}
+
+/* MESSAGE ACTIONS MENU */
+html[data-theme="corona"] .msg-actions-menu {
+    background: rgba(20, 15, 10, 0.95) !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(245, 158, 11, 0.2) !important;
+    backdrop-filter: blur(12px) !important;
+}
+
+html[data-theme="corona"] .msg-actions-trigger {
+    color: #dcd4c7 !important;
+}
+
+html[data-theme="corona"] .msg-actions-trigger:hover {
+    color: #fbbf24 !important;
+    background: rgba(245, 158, 11, 0.15) !important;
+}
+
+/* CHAT INPUT AREA */
+html[data-theme="corona"] .chat-input-container {
+    background: transparent !important;
+}
+
+html[data-theme="corona"] .chat-input-wrapper {
+    background: rgba(18, 13, 8, 0.85) !important;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(245, 158, 11, 0.04) !important;
+    backdrop-filter: blur(14px) !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="corona"] .chat-input-wrapper:focus-within {
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.35), inset 0 0 25px rgba(245, 158, 11, 0.08) !important;
+}
+
+html[data-theme="corona"] .chat-input {
+    color: #fffbeb !important;
+}
+
+html[data-theme="corona"] .chat-input::placeholder {
+    color: #8c8273 !important;
+}
+
+html[data-theme="corona"] #btn-send {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #120902 !important;
+    font-weight: 700 !important;
+    border: none !important;
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.45) !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="corona"] #btn-send:hover {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+    box-shadow: 0 0 24px rgba(245, 158, 11, 0.7) !important;
+    transform: scale(1.03);
+}
+
+/* VOICE RECORDING & PLAYER */
+html[data-theme="corona"] .voice-record-ui {
+    background: rgba(22, 16, 10, 0.95) !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.2) !important;
+}
+
+html[data-theme="corona"] .voice-record-dot {
+    background: #f59e0b !important;
+    box-shadow: 0 0 10px #f59e0b !important;
+}
+
+html[data-theme="corona"] .voice-record-timer {
+    color: #fde68a !important;
+}
+
+html[data-theme="corona"] .voice-record-send {
+    background: #f59e0b !important;
+    color: #120902 !important;
+}
+
+html[data-theme="corona"] .voice-message-player {
+    background: rgba(26, 19, 12, 0.7) !important;
+    border: 1px solid rgba(245, 158, 11, 0.2) !important;
+}
+
+html[data-theme="corona"] .voice-msg-play-btn {
+    background: #f59e0b !important;
+    color: #120902 !important;
+}
+
+/* CONTEXT MENU & TOASTS */
+html[data-theme="corona"] .context-menu,
+html[data-theme="corona"] #message-context-menu {
+    background: rgba(20, 15, 9, 0.96) !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(245, 158, 11, 0.2) !important;
+    color: #fffbeb !important;
+    backdrop-filter: blur(16px) !important;
+}
+
+html[data-theme="corona"] .context-menu-item:hover {
+    background: rgba(245, 158, 11, 0.16) !important;
+    color: #fbbf24 !important;
+}
+
+html[data-theme="corona"] .toast {
+    background: rgba(22, 16, 10, 0.96) !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+    color: #fffbeb !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 24px rgba(245, 158, 11, 0.25) !important;
+}
+
+html[data-theme="corona"] .toast-progress {
+    background: #f59e0b !important;
+}
+
+/* SOFT LOGIN SCREEN OVERRIDES */
+html[data-theme="corona"] .soft-wrapper {
+    background: transparent !important;
+}
+
+html[data-theme="corona"] .soft-glass-panel {
+    background: rgba(18, 13, 8, 0.8) !important;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 45px rgba(245, 158, 11, 0.18), inset 0 0 3px rgba(254, 243, 199, 0.15) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+html[data-theme="corona"] .soft-header h1 {
+    color: #fffbeb !important;
+    text-shadow: 0 0 24px rgba(245, 158, 11, 0.6) !important;
+}
+
+html[data-theme="corona"] .soft-header p {
+    color: #d4cbbe !important;
+}
+
+html[data-theme="corona"] .soft-logo svg {
+    stroke: #f59e0b !important;
+    filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.7)) !important;
+}
+
+html[data-theme="corona"] .soft-tabs {
+    background: rgba(0, 0, 0, 0.45) !important;
+    border: 1px solid rgba(245, 158, 11, 0.15) !important;
+}
+
+html[data-theme="corona"] .soft-tab {
+    color: #9c9183 !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="corona"] .soft-tab:hover {
+    color: #fffbeb !important;
+}
+
+html[data-theme="corona"] .soft-tab.active {
+    background: rgba(245, 158, 11, 0.2) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(245, 158, 11, 0.4) !important;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.25) !important;
+}
+
+html[data-theme="corona"] .soft-label {
+    color: #fde68a !important;
+}
+
+html[data-theme="corona"] .soft-input {
+    background: rgba(10, 8, 5, 0.75) !important;
+    border: 1px solid rgba(245, 158, 11, 0.22) !important;
+    color: #fffbeb !important;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+html[data-theme="corona"] .soft-input:focus {
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.35) !important;
+}
+
+html[data-theme="corona"] .soft-input::placeholder {
+    color: #786f62 !important;
+}
+
+html[data-theme="corona"] .soft-btn-submit {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #120902 !important;
+    font-weight: 700 !important;
+    border: none !important;
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.45) !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="corona"] .soft-btn-submit:hover {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+    box-shadow: 0 6px 28px rgba(245, 158, 11, 0.7) !important;
+    transform: translateY(-1px);
+}
+
+/* SETTINGS & MODALS */
+html[data-theme="corona"] #settings-modal>div,
+html[data-theme="corona"] #chat-settings-modal>div,
+html[data-theme="corona"] #invite-modal>div,
+html[data-theme="corona"] #custom-alert-modal .modal,
+html[data-theme="corona"] #custom-confirm-modal .modal,
+html[data-theme="corona"] #modal-incoming-call .modal,
+html[data-theme="corona"] #modal-users .modal,
+html[data-theme="corona"] .modal {
+    background: rgba(18, 13, 8, 0.95) !important;
+    border: 1px solid rgba(245, 158, 11, 0.28) !important;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8), 0 0 35px rgba(245, 158, 11, 0.18) !important;
+    backdrop-filter: blur(20px) !important;
+    color: #fffbeb !important;
+}
+
+/* Settings modal left sidebar */
+html[data-theme="corona"] #chat-settings-modal>div>div:first-child,
+html[data-theme="corona"] #settings-modal>div>div:first-child {
+    background: rgba(12, 9, 5, 0.9) !important;
+    border-right: 1px solid rgba(245, 158, 11, 0.15) !important;
+}
+
+html[data-theme="corona"] #chat-settings-modal .settings-tab,
+html[data-theme="corona"] #settings-modal .login-settings-tab {
+    color: #a89f91 !important;
+    background: transparent !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+html[data-theme="corona"] #chat-settings-modal .settings-tab:hover:not(.active),
+html[data-theme="corona"] #settings-modal .login-settings-tab:hover:not(.active) {
+    background: rgba(245, 158, 11, 0.1) !important;
+    color: #fffbeb !important;
+}
+
+html[data-theme="corona"] #chat-settings-modal .settings-tab.active,
+html[data-theme="corona"] #settings-modal .login-settings-tab.active {
+    background: rgba(245, 158, 11, 0.2) !important;
+    color: #fbbf24 !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.25) !important;
+}
+
+html[data-theme="corona"] #settings-modal h2,
+html[data-theme="corona"] #chat-settings-modal h2,
+html[data-theme="corona"] #invite-modal h2,
+html[data-theme="corona"] .modal h2,
+html[data-theme="corona"] .modal h3 {
+    color: #fffbeb !important;
+    text-shadow: 0 0 14px rgba(245, 158, 11, 0.5) !important;
+}
+
+html[data-theme="corona"] #settings-modal p,
+html[data-theme="corona"] #settings-modal label,
+html[data-theme="corona"] #settings-modal span,
+html[data-theme="corona"] #chat-settings-modal p,
+html[data-theme="corona"] #chat-settings-modal label,
+html[data-theme="corona"] .modal p {
+    color: #d1c7bd !important;
+}
+
+html[data-theme="corona"] #settings-modal input,
+html[data-theme="corona"] #settings-modal select,
+html[data-theme="corona"] #chat-settings-modal input,
+html[data-theme="corona"] #chat-settings-modal select,
+html[data-theme="corona"] #invite-modal input {
+    background: rgba(12, 9, 5, 0.85) !important;
+    border: 1px solid rgba(245, 158, 11, 0.22) !important;
+    color: #fffbeb !important;
+}
+
+html[data-theme="corona"] select option {
+    background-color: #140f09 !important;
+    color: #fffbeb !important;
+}
+
+html[data-theme="corona"] #settings-modal .form-submit,
+html[data-theme="corona"] #chat-settings-modal .form-submit,
+html[data-theme="corona"] #invite-modal .form-submit,
+html[data-theme="corona"] #invite-modal #btn-copy-all,
+html[data-theme="corona"] #invite-modal #btn-start-chat,
+html[data-theme="corona"] .modal .btn-confirm,
+html[data-theme="corona"] #btn-custom-alert-ok,
+html[data-theme="corona"] #btn-custom-confirm-ok,
+html[data-theme="corona"] #btn-accept-call {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #120902 !important;
+    font-weight: 700 !important;
+    border: none !important;
+    box-shadow: 0 4px 18px rgba(245, 158, 11, 0.45) !important;
+}
+
+html[data-theme="corona"] #settings-modal .form-submit:hover,
+html[data-theme="corona"] #chat-settings-modal .form-submit:hover,
+html[data-theme="corona"] #invite-modal .form-submit:hover,
+html[data-theme="corona"] #invite-modal #btn-copy-all:hover,
+html[data-theme="corona"] #invite-modal #btn-start-chat:hover,
+html[data-theme="corona"] .modal .btn-confirm:hover,
+html[data-theme="corona"] #btn-custom-alert-ok:hover,
+html[data-theme="corona"] #btn-custom-confirm-ok:hover,
+html[data-theme="corona"] #btn-accept-call:hover {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+    box-shadow: 0 6px 24px rgba(245, 158, 11, 0.7) !important;
+}
+
+html[data-theme="corona"] #btn-settings {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    color: #fbbf24 !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.25) !important;
+}
+
+html[data-theme="corona"] #btn-settings:hover {
+    background: rgba(245, 158, 11, 0.25) !important;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5) !important;
+}
+
+html[data-theme="corona"] #btn-settings+span {
+    color: #fffbeb !important;
+    text-shadow: 0 0 10px rgba(245, 158, 11, 0.4) !important;
+}
+
+/* AVATAR UPLOAD PREVIEW IN SETTINGS */
+html[data-theme="corona"] label[for="chat-avatar-upload"],
+html[data-theme="corona"] label[for="avatar-upload"] {
+    background: rgba(14, 10, 6, 0.7) !important;
+    border: 2px dashed rgba(245, 158, 11, 0.3) !important;
+}
+
+html[data-theme="corona"] label[for="chat-avatar-upload"]:hover,
+html[data-theme="corona"] label[for="avatar-upload"]:hover {
+    border-color: #f59e0b !important;
+    background: rgba(245, 158, 11, 0.1) !important;
+}
+
+/* MENTIONS */
+html[data-theme="corona"] .mention {
+    background-color: rgba(245, 158, 11, 0.22) !important;
+    color: #fde68a !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.15) !important;
+}
+
+html[data-theme="corona"] .mention:hover {
+    background-color: rgba(245, 158, 11, 0.35) !important;
+    color: #ffffff !important;
+}
+
+html[data-theme="corona"] .message-group.mentioned {
+    background-color: rgba(245, 158, 11, 0.14) !important;
+    border-left: 3px solid #f59e0b !important;
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.15) !important;
+}
+
+/* SCROLLBAR */
+html[data-theme="corona"] ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+html[data-theme="corona"] ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme="corona"] ::-webkit-scrollbar-thumb {
+    background: rgba(245, 158, 11, 0.35);
+    border-radius: 4px;
+}
+
+html[data-theme="corona"] ::-webkit-scrollbar-thumb:hover {
+    background: rgba(245, 158, 11, 0.65);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+

@@ -1,0 +1,358 @@
+/* =========================================
+   WINDOWS XP THEME (LUNA BLUE & BLISS)
+   Nostalgic Windows XP Luna Style with Bliss Wallpaper
+   ========================================= */
+
+/* GLOBAL & DESIGN TOKENS */
+html[data-theme="xp"] {
+    --accent-primary: #0055ea !important;
+    --accent-secondary: #3b8526 !important;
+    --accent-glow: rgba(0, 85, 234, 0.35) !important;
+    --accent-hover: #003dd7 !important;
+    --accent-success: #388e3c !important;
+    --accent-danger: #c1272d !important;
+    --text-primary: #0c1a30 !important;
+    --text-secondary: #24334a !important;
+    --text-muted: #53647e !important;
+    --bg-dark: #ece9d8 !important;
+    --bg-light: #ffffff !important;
+    --border-light: #7f9db9 !important;
+    --bg-hover: rgba(0, 85, 234, 0.08) !important;
+    --primary-color: #0055ea !important;
+    --color-primary: #0055ea !important;
+    --focus-ring: 0 0 0 2px rgba(0, 85, 234, 0.4) !important;
+}
+
+html[data-theme="xp"],
+html[data-theme="xp"] body {
+    background: url('xp-bliss.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    color: var(--text-primary) !important;
+    font-family: 'Tahoma', 'Segoe UI', -apple-system, sans-serif !important;
+}
+
+/* Arka plan efektlerini Bliss görseli için gizle */
+html[data-theme="xp"] .login-bg-effects,
+html[data-theme="xp"] .soft-bg-lines {
+    display: none !important;
+}
+
+/* TITLEBAR (Classic Windows XP Luna Blue Caption) */
+html[data-theme="xp"] .titlebar {
+    background: linear-gradient(to bottom, #0058ee 0%, #3593ff 4%, #288eff 6%, #127dff 8%, #036ffc 10%, #0262ee 14%, #0057e5 20%, #0054e3 90%, #003dd7 100%) !important;
+    border-bottom: 2px solid #002d96 !important;
+    color: #ffffff !important;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.6);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+
+html[data-theme="xp"] .titlebar .logo-icon svg {
+    stroke: #ffffff !important;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5)) !important;
+}
+
+html[data-theme="xp"] .titlebar-title span {
+    color: #ffffff !important;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+html[data-theme="xp"] .titlebar-btn {
+    border-radius: 3px !important;
+    margin: 3px 2px !important;
+    height: 22px !important;
+    width: 22px !important;
+    background: linear-gradient(to bottom, #3884ff 0%, #0055ea 50%, #0036b5 100%) !important;
+    border: 1px solid #ffffff !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+html[data-theme="xp"] .titlebar-btn:hover {
+    background: linear-gradient(to bottom, #5ba0ff 0%, #1a6dff 50%, #0045d6 100%) !important;
+}
+
+html[data-theme="xp"] .titlebar-btn.close {
+    background: linear-gradient(to bottom, #f27261 0%, #e04343 45%, #c1272d 100%) !important;
+    border: 1px solid #ffffff !important;
+}
+
+html[data-theme="xp"] .titlebar-btn.close:hover {
+    background: linear-gradient(to bottom, #ff8c7d 0%, #ff5252 45%, #d91c24 100%) !important;
+}
+
+/* APP CONTAINER */
+html[data-theme="xp"] .app-container {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="xp"] .app-container::before {
+    display: none !important;
+}
+
+/* CHAT AREA & HEADER */
+html[data-theme="xp"] .chat-area {
+    background: rgba(236, 233, 216, 0.88) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 2px solid #0055ea !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 35px rgba(0, 45, 150, 0.25) !important;
+    margin: 8px !important;
+}
+
+html[data-theme="xp"] .chat-header {
+    background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%) !important;
+    border-bottom: 2px solid #7f9db9 !important;
+    box-shadow: inset 0 1px 0 #ffffff !important;
+}
+
+html[data-theme="xp"] .chat-header-info span,
+html[data-theme="xp"] #room-name-display {
+    color: #0a246a !important;
+    font-weight: 700;
+}
+
+html[data-theme="xp"] .chat-header-actions button {
+    background: #ece9d8 !important;
+    border: 1px solid #7f9db9 !important;
+    color: #0c1a30 !important;
+    border-radius: 4px !important;
+    font-size: 12px !important;
+    box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #d4d0c8 !important;
+}
+
+html[data-theme="xp"] .chat-header-actions button:hover {
+    background: #f5f4ea !important;
+    border-color: #0055ea !important;
+    color: #0055ea !important;
+}
+
+html[data-theme="xp"] .header-user-count {
+    background: #ffffff !important;
+    border: 1px solid #7f9db9 !important;
+    color: #0a246a !important;
+    font-weight: 700 !important;
+    border-radius: 4px !important;
+}
+
+/* CHAT MESSAGES */
+html[data-theme="xp"] .chat-messages {
+    background: rgba(255, 255, 255, 0.6) !important;
+}
+
+html[data-theme="xp"] .message-group {
+    background: #ffffff !important;
+    border: 1px solid #d4d0c8 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+    border-radius: 6px !important;
+}
+
+html[data-theme="xp"] .message-group:hover {
+    background: #fdfdfd !important;
+    border-color: #7f9db9 !important;
+}
+
+html[data-theme="xp"] .message-username {
+    color: #0055ea !important;
+    font-weight: 700;
+}
+
+html[data-theme="xp"] .message-text {
+    color: #0c1a30 !important;
+}
+
+html[data-theme="xp"] .message-timestamp {
+    color: #718096 !important;
+}
+
+html[data-theme="xp"] .chat-link {
+    color: #0055ea !important;
+    text-decoration: underline !important;
+}
+
+/* CHAT INPUT AREA */
+html[data-theme="xp"] .chat-input-wrapper {
+    background: #ffffff !important;
+    border: 1.5px solid #7f9db9 !important;
+    border-radius: 6px !important;
+    box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+html[data-theme="xp"] .chat-input-wrapper:focus-within {
+    border-color: #0055ea !important;
+    box-shadow: 0 0 6px rgba(0, 85, 234, 0.35), inset 1px 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+html[data-theme="xp"] .chat-input {
+    color: #0c1a30 !important;
+}
+
+html[data-theme="xp"] .chat-input::placeholder {
+    color: #8c9ba5 !important;
+}
+
+/* XP START-GREEN SEND BUTTON */
+html[data-theme="xp"] #btn-send {
+    background: linear-gradient(to bottom, #43a047 0%, #2e7d32 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: 1px solid #1b5e20 !important;
+    border-radius: 4px !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+}
+
+html[data-theme="xp"] #btn-send:hover {
+    background: linear-gradient(to bottom, #4caf50 0%, #388e3c 100%) !important;
+}
+
+/* LOGIN SCREEN (Classic Windows XP Dialog Window) */
+html[data-theme="xp"] .soft-glass-panel {
+    background: #ece9d8 !important;
+    border: 2px solid #0055ea !important;
+    border-radius: 8px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35), inset 0 1px 0 #ffffff !important;
+    backdrop-filter: none !important;
+}
+
+html[data-theme="xp"] .soft-header h1 {
+    color: #0a246a !important;
+    font-weight: 700;
+}
+
+html[data-theme="xp"] .soft-header p {
+    color: #53647e !important;
+}
+
+html[data-theme="xp"] .soft-tabs {
+    background: #d4d0c8 !important;
+    border: 1px solid #999 !important;
+    border-radius: 4px !important;
+}
+
+html[data-theme="xp"] .soft-tab {
+    color: #444 !important;
+    font-weight: 600;
+    border-radius: 3px !important;
+}
+
+html[data-theme="xp"] .soft-tab.active {
+    background: #ffffff !important;
+    color: #0055ea !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+}
+
+html[data-theme="xp"] .soft-label {
+    color: #0a246a !important;
+    font-weight: 600;
+}
+
+html[data-theme="xp"] .soft-input {
+    background: #ffffff !important;
+    border: 1px solid #7f9db9 !important;
+    color: #0c1a30 !important;
+    border-radius: 3px !important;
+    box-shadow: inset 1px 1px 1px rgba(0, 0, 0, 0.08) !important;
+}
+
+html[data-theme="xp"] .soft-input:focus {
+    border-color: #0055ea !important;
+    box-shadow: 0 0 5px rgba(0, 85, 234, 0.4) !important;
+}
+
+/* XP Primary Connect/Submit Button */
+html[data-theme="xp"] .soft-btn-submit {
+    background: linear-gradient(to bottom, #0058ee 0%, #0055ea 50%, #003dd7 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: 1px solid #002d96 !important;
+    border-radius: 4px !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+}
+
+html[data-theme="xp"] .soft-btn-submit:hover {
+    background: linear-gradient(to bottom, #1a6dff 0%, #0055ea 50%, #0045d6 100%) !important;
+}
+
+/* SETTINGS & MODALS */
+html[data-theme="xp"] #settings-modal>div,
+html[data-theme="xp"] #chat-settings-modal>div,
+html[data-theme="xp"] #invite-modal>div,
+html[data-theme="xp"] #custom-alert-modal .modal,
+html[data-theme="xp"] #custom-confirm-modal .modal,
+html[data-theme="xp"] #modal-incoming-call .modal,
+html[data-theme="xp"] #modal-users .modal,
+html[data-theme="xp"] .modal {
+    background: #ece9d8 !important;
+    border: 2px solid #0055ea !important;
+    border-radius: 8px !important;
+    color: #0c1a30 !important;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4) !important;
+}
+
+html[data-theme="xp"] #chat-settings-modal>div>div:first-child,
+html[data-theme="xp"] #settings-modal>div>div:first-child {
+    background: #d4d0c8 !important;
+    border-right: 1px solid #7f9db9 !important;
+}
+
+html[data-theme="xp"] #chat-settings-modal .settings-tab,
+html[data-theme="xp"] #settings-modal .login-settings-tab {
+    color: #333333 !important;
+    border-radius: 4px !important;
+}
+
+html[data-theme="xp"] #chat-settings-modal .settings-tab.active,
+html[data-theme="xp"] #settings-modal .login-settings-tab.active {
+    background: #0055ea !important;
+    color: #ffffff !important;
+    font-weight: 700;
+}
+
+html[data-theme="xp"] #settings-modal input,
+html[data-theme="xp"] #settings-modal select,
+html[data-theme="xp"] #chat-settings-modal input,
+html[data-theme="xp"] #chat-settings-modal select,
+html[data-theme="xp"] #invite-modal input {
+    background: #ffffff !important;
+    border: 1px solid #7f9db9 !important;
+    color: #0c1a30 !important;
+    border-radius: 3px !important;
+}
+
+html[data-theme="xp"] select option {
+    background-color: #ffffff !important;
+    color: #0c1a30 !important;
+}
+
+html[data-theme="xp"] #settings-modal .form-submit,
+html[data-theme="xp"] #chat-settings-modal .form-submit,
+html[data-theme="xp"] #invite-modal .form-submit,
+html[data-theme="xp"] #invite-modal #btn-copy-all,
+html[data-theme="xp"] #invite-modal #btn-start-chat,
+html[data-theme="xp"] .modal .btn-confirm,
+html[data-theme="xp"] #btn-custom-alert-ok,
+html[data-theme="xp"] #btn-custom-confirm-ok,
+html[data-theme="xp"] #btn-accept-call {
+    background: linear-gradient(to bottom, #0058ee 0%, #0055ea 50%, #003dd7 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: 1px solid #002d96 !important;
+    border-radius: 4px !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+
+html[data-theme="xp"] #btn-settings {
+    background: #ece9d8 !important;
+    border: 1px solid #7f9db9 !important;
+    color: #0055ea !important;
+    box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #d4d0c8, 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+}
+
+html[data-theme="xp"] #btn-settings+span {
+    color: #0a246a !important;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+

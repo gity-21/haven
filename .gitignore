@@ -3,12 +3,18 @@ dist/
 data/
 *.db
 .env
-.env.local
+.env.*
+!.env.example
 *.log
 *.mp4
 .DS_Store
 Thumbs.db
 tunnel.log
+coverage/
+
+# IDEs
+.vscode/
+.idea/
 
 # TypeScript Migration — Legacy JS (artık kullanılmıyor)
 **/_legacy/

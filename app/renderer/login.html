@@ -5,9 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Haven - Gizli Oda</title>
+    <link rel="icon" type="image/png" href="assets/icon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/soft-login.css">
     <link rel="stylesheet" href="css/antigravity.css">
+    <link rel="stylesheet" href="css/corona.css">
+    <link rel="stylesheet" href="css/sky.css">
+    <link rel="stylesheet" href="css/xp.css">
     <script>
         // Tema ayarlarını sayfa render olmadan önce yükle (FOUC Engelleme)
         const savedTheme = localStorage.getItem('haven_login_theme') || 'space';
@@ -25,10 +29,7 @@
         <a href="https://example.com" target="_blank" class="titlebar-title" style="text-decoration: none;">
             <div class="logo-icon"
                 style="background: transparent; display: flex; align-items: center; justify-content: center;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
+                <img src="assets/icon.png" width="18" height="18" style="object-fit: contain; border-radius: 4px;" alt="Haven">
             </div>
             <span>Haven</span>
         </a>
@@ -83,21 +84,9 @@
 
         <div class="soft-glass-panel">
 
-            <div class="soft-logo" style="display: flex; align-items: center; justify-content: center;">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)"
-                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
-            </div>
-
-            <div class="soft-header">
-                <h1 data-lang-key="app_title">Haven</h1>
-                <p data-lang-key="app_subtitle">Güvenli ve Anonim İletişim Ağı</p>
-            </div>
-
             <div class="soft-tabs">
-                <button type="button" class="soft-tab" id="tab-create" data-lang-key="tab_create">Ağ Kur</button>
-                <button type="button" class="soft-tab active" id="tab-join" data-lang-key="tab_join">Ağa Katıl</button>
+                <button type="button" class="soft-tab" id="tab-create" data-lang-key="tab_create">Oda Oluştur</button>
+                <button type="button" class="soft-tab active" id="tab-join" data-lang-key="tab_join">Odaya Katıl</button>
             </div>
 
             <form id="form-login">
@@ -125,7 +114,20 @@
                     </div>
                 </div>
 
-                <button class="soft-btn-submit" type="submit" id="login-submit" data-lang-key="btn_connect">Bağlan</button>
+                <div class="soft-group" id="expires-group" style="display: none;">
+                    <label class="soft-label" for="login-expires">Oda İmha Süresi (Burn-After-Reading)</label>
+                    <div class="soft-input-box">
+                        <select class="soft-input" id="login-expires" style="cursor: pointer; appearance: auto; background: rgba(255,255,255,0.05); color: #fff;">
+                            <option value="0" style="background: #18181b; color: #fff;">Süresiz (Kalıcı Oda)</option>
+                            <option value="60" style="background: #18181b; color: #fff;">1 Saat Sonra İmha Et</option>
+                            <option value="360" style="background: #18181b; color: #fff;">6 Saat Sonra İmha Et</option>
+                            <option value="1440" style="background: #18181b; color: #fff;">24 Saat Sonra İmha Et</option>
+                            <option value="10080" style="background: #18181b; color: #fff;">7 Gün Sonra İmha Et</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="soft-btn-submit" type="submit" id="login-submit" data-lang-key="btn_connect">Odaya Katıl</button>
                 <div class="form-error" id="login-error"></div>
             </form>
 
@@ -193,7 +195,9 @@
                         <label for="login-avatar-upload"
                             style="cursor: pointer; position: relative; width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; overflow: hidden; transition: 0.2s;">
                             <span id="avatar-upload-icon"
-                                style="font-size: 28px; color: var(--text-muted); opacity: 0.5;">📷</span>
+                                style="color: var(--text-muted); opacity: 0.6; display: flex; align-items: center; justify-content: center;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                            </span>
                             <img id="avatar-preview-img"
                                 style="display: none; width: 100%; height: 100%; object-fit: cover;">
                         </label>
@@ -246,7 +250,8 @@
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <button type="button" id="login-btn-test-mic"
                                 style="padding: 8px 16px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-medium); border-radius: 6px; color: var(--text-primary); cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.15s; display: flex; align-items: center; gap: 6px;">
-                                <span data-lang-key="btn_test_mic">🎙️ Mikrofonu Test Et</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path></svg>
+                                <span data-lang-key="btn_test_mic">Mikrofonu Test Et</span>
                             </button>
                             <div id="login-mic-level-container"
                                 style="flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; display: none;">
@@ -273,7 +278,8 @@
                         </select>
                         <button type="button" id="login-btn-test-speaker"
                             style="padding: 8px 16px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-medium); border-radius: 6px; color: var(--text-primary); cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.15s; display: flex; align-items: center; gap: 6px;">
-                            <span data-lang-key="btn_test_speaker">🔊 Hoparlörü Test Et</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                            <span data-lang-key="btn_test_speaker">Hoparlörü Test Et</span>
                         </button>
                     </div>
 
@@ -316,6 +322,9 @@
                             <option value="space" data-lang-key="theme_classic">Klasik</option>
                             <option value="hacker" data-lang-key="theme_hacker">Hacker</option>
                             <option value="antigravity" data-lang-key="theme_white">Beyaz</option>
+                            <option value="corona" data-lang-key="theme_corona">Corona</option>
+                            <option value="sky" data-lang-key="theme_sky">Gökyüzü</option>
+                            <option value="xp" data-lang-key="theme_xp">Windows XP</option>
                         </select>
                     </div>
 

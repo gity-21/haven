@@ -13,7 +13,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #000000 url('../../assets/space.svg') no-repeat center center / cover;
+    background: transparent !important;
     position: relative;
     overflow: hidden;
 }
@@ -98,8 +98,9 @@ body {
 }
 
 .soft-glass-panel {
+    position: relative;
     width: 400px;
-    padding: 50px 48px;
+    padding: 38px 44px;
     border-radius: 28px;
     background: rgba(22, 22, 28, 0.65);
     backdrop-filter: blur(14px);
@@ -642,3 +643,15 @@ html[data-theme="matrix"] .soft-bg-lines { display: none !important; }
 /* Hacker Override for Matrix Animation */
 html[data-theme="hacker"] .login-bg-effects,
 html[data-theme="hacker"] .soft-bg-lines { display: none !important; }
+
+/* Space & Canvas Themes Animation Override */
+html[data-theme="space"] .login-bg-effects,
+html[data-theme="space"] .soft-bg-lines,
+html[data-theme="xp"] .login-bg-effects,
+html[data-theme="xp"] .soft-bg-lines,
+html[data-theme="sky"] .login-bg-effects,
+html[data-theme="sky"] .soft-bg-lines,
+html[data-theme="corona"] .login-bg-effects,
+html[data-theme="corona"] .soft-bg-lines,
+html[data-theme="antigravity"] .login-bg-effects,
+html[data-theme="antigravity"] .soft-bg-lines { display: none !important; }

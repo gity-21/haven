@@ -77,9 +77,9 @@ function createHoverToolbar(msg: ChatMessage, isMine: boolean): HTMLDivElement {
     const cleanContent = msg.content.replace(/<[^>]*>/g, '').slice(0, 100);
 
     const replyBtn = document.createElement('button');
-    replyBtn.innerHTML = '↩️';
+    replyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"></polyline><path d="M20 18v-2a4 4 0 0 0-4-4H4"></path></svg>';
     replyBtn.title = 'Yanıtla';
-    replyBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:14px;padding:1px 3px;';
+    replyBtn.style.cssText = 'background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text-muted);display:flex;align-items:center;';
     replyBtn.onclick = (e) => {
         e.stopPropagation();
         window.initiateReply(msg.id, msg.username, cleanContent);
@@ -87,16 +87,14 @@ function createHoverToolbar(msg: ChatMessage, isMine: boolean): HTMLDivElement {
     hoverToolbar.appendChild(replyBtn);
 
     const pinBtn = document.createElement('button');
-    pinBtn.innerHTML = '📌';
+    pinBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>';
     pinBtn.title = msg.is_pinned ? 'Sabitlemeyi Kaldır' : 'Sabitle';
-    pinBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:14px;padding:1px 3px;';
+    pinBtn.style.cssText = 'background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text-muted);display:flex;align-items:center;';
     pinBtn.onclick = (e) => {
         e.stopPropagation();
-        import('./state').then(m => {
-            if (m.state.socket) {
-                m.state.socket.emit('pin-message', { messageId: msg.id, isPinned: !msg.is_pinned });
-            }
-        });
+        if (state.socket) {
+            state.socket.emit('pin-message', { messageId: msg.id, isPinned: !msg.is_pinned });
+        }
     };
     hoverToolbar.appendChild(pinBtn);
 
@@ -112,9 +110,9 @@ function createHoverToolbar(msg: ChatMessage, isMine: boolean): HTMLDivElement {
     if (isMine) {
         if (msg.type === 'message') {
             const editBtn = document.createElement('button');
-            editBtn.innerHTML = '✏️';
+            editBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>';
             editBtn.title = 'Düzenle';
-            editBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:12px;padding:1px 4px;';
+            editBtn.style.cssText = 'background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text-muted);display:flex;align-items:center;';
             editBtn.onclick = (e) => {
                 e.stopPropagation();
                 window.initiateEdit(msg.id, btoa(encodeURIComponent(msg.content)));
@@ -123,9 +121,9 @@ function createHoverToolbar(msg: ChatMessage, isMine: boolean): HTMLDivElement {
         }
 
         const delBtn = document.createElement('button');
-        delBtn.innerHTML = '🗑️';
+        delBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
         delBtn.title = 'Sil';
-        delBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:12px;color:var(--accent-danger);padding:1px 4px;';
+        delBtn.style.cssText = 'background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--accent-danger);display:flex;align-items:center;';
         delBtn.onclick = () => window.deleteMessage(msg.id, msg.roomId);
         hoverToolbar.appendChild(delBtn);
     }
@@ -219,23 +217,28 @@ export function appendMessage(msg: ChatMessage): void {
         try {
             const fileObj = JSON.parse(msg.content);
             const fileSizeMB = (fileObj.size / 1024 / 1024).toFixed(2);
-            const isImage = fileObj.mimetype && fileObj.mimetype.startsWith('image/');
             const ext = (fileObj.filename || '').split('.').pop()!.toLowerCase();
-            const fileIcon = ['zip', 'rar', '7z', 'tar', 'gz'].includes(ext) ? '🗜️'
-                : ['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext) ? '🎬'
-                    : ['mp3', 'flac', 'wav', 'ogg', 'aac'].includes(ext) ? '🎵'
-                        : ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext) ? '🖼️'
-                            : ['pdf'].includes(ext) ? '📕'
-                                : ['doc', 'docx'].includes(ext) ? '📝'
-                                    : ['xls', 'xlsx'].includes(ext) ? '📊'
-                                        : '📦';
+            const isImage = (fileObj.mimetype && fileObj.mimetype.startsWith('image/')) ||
+                ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext);
+
+            const fileIcon = ['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)
+                ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>`
+                : ['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext)
+                ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`
+                : ['mp3', 'flac', 'wav', 'ogg', 'aac'].includes(ext)
+                ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>`
+                : isImage
+                ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`
+                : ['pdf'].includes(ext)
+                ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>`
+                : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>`;
 
             if (isMine) {
                 if (isImage && window.pendingP2PFiles && window.pendingP2PFiles[fileObj.fileId]) {
                     const localUrl = URL.createObjectURL(window.pendingP2PFiles[fileObj.fileId]);
                     safeContent = `<img src="${localUrl}" style="max-width:300px; width:100%; border-radius:8px; display:block; cursor:zoom-in;" onclick="window.previewMedia(this.src, 'image')" alt="${escapeHtml(fileObj.filename)}">`;
                 } else {
-                    safeContent = `<div class="p2p-file-box" style="border:1px solid rgba(99,179,237,0.25);border-radius:12px;background:linear-gradient(135deg,rgba(49,130,206,0.1),rgba(99,102,241,0.08));padding:12px;backdrop-filter:blur(6px);max-width:300px;white-space:normal;display:inline-block;margin-top:4px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:20px;">${fileIcon}</span><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(fileObj.filename)}</div><div style="font-size:11px;color:var(--text-muted);">${fileSizeMB} MB · P2P Transfer</div></div><span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;background:rgba(99,179,237,0.15);color:#63b3ed;border:1px solid rgba(99,179,237,0.3);text-transform:uppercase;">Paylaşan</span></div><div id="p2p-loading-box-${fileObj.fileId}" style="font-size:11px;color:var(--text-muted);background:rgba(0,0,0,0.25);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;line-height:1.3;"><span>⏳</span><span>${window.i18n ? window.i18n.t('p2p_loading') : 'Yükleniyor...'}</span></div><div id="p2p-progress-sender-${fileObj.fileId}" style="margin-top:8px;display:none;"><div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;"><div id="p2p-bar-sender-${fileObj.fileId}" style="width:0%;height:100%;background:linear-gradient(90deg,#4299e1,#667eea);transition:width 0.2s;border-radius:3px;"></div></div><div id="p2p-text-sender-${fileObj.fileId}" style="text-align:right;font-size:10px;margin-top:4px;color:var(--text-muted);font-weight:600;">Hazırlanıyor...</div></div></div>`;
+                    safeContent = `<div class="p2p-file-box" style="border:1px solid rgba(99,179,237,0.25);border-radius:12px;background:linear-gradient(135deg,rgba(49,130,206,0.1),rgba(99,102,241,0.08));padding:12px;backdrop-filter:blur(6px);max-width:300px;white-space:normal;display:inline-block;margin-top:4px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="display:flex;align-items:center;">${fileIcon}</span><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(fileObj.filename)}</div><div style="font-size:11px;color:var(--text-muted);">${fileSizeMB} MB · P2P Transfer</div></div><span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;background:rgba(99,179,237,0.15);color:#63b3ed;border:1px solid rgba(99,179,237,0.3);text-transform:uppercase;">Paylaşan</span></div><div id="p2p-loading-box-${fileObj.fileId}" style="font-size:11px;color:var(--text-muted);background:rgba(0,0,0,0.25);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;line-height:1.3;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><span>${window.i18n ? window.i18n.t('p2p_loading') : 'Yükleniyor...'}</span></div><div id="p2p-progress-sender-${fileObj.fileId}" style="margin-top:8px;display:none;"><div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;"><div id="p2p-bar-sender-${fileObj.fileId}" style="width:0%;height:100%;background:linear-gradient(90deg,#4299e1,#667eea);transition:width 0.2s;border-radius:3px;"></div></div><div id="p2p-text-sender-${fileObj.fileId}" style="text-align:right;font-size:10px;margin-top:4px;color:var(--text-muted);font-weight:600;">Hazırlanıyor...</div></div></div>`;
                 }
             } else {
                 if (isImage) {
@@ -244,7 +247,7 @@ export function appendMessage(msg: ChatMessage): void {
                         window.startP2PDownload(fileObj.fileId, fileObj.senderId, fileObj.filename, Number(fileObj.size), true);
                     }, 100);
                 } else {
-                    safeContent = `<div class="p2p-file-box" style="border:1px solid rgba(72,187,120,0.25);border-radius:12px;background:linear-gradient(135deg,rgba(56,161,105,0.08),rgba(99,102,241,0.06));padding:12px;backdrop-filter:blur(6px);max-width:300px;white-space:normal;display:inline-block;margin-top:4px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:20px;">${fileIcon}</span><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(fileObj.filename)}</div><div style="font-size:11px;color:var(--text-muted);">${fileSizeMB} MB · Güvenli P2P</div></div><span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;background:rgba(72,187,120,0.15);color:#68d391;border:1px solid rgba(72,187,120,0.3);text-transform:uppercase;">Gelen</span></div><button id="p2p-btn-${fileObj.fileId}" data-file-id="${fileObj.fileId}" data-sender-id="${fileObj.senderId}" data-filename="${escapeHtml(fileObj.filename)}" data-size="${fileObj.size}" onclick="(function(btn){window.startP2PDownload(btn.dataset.fileId, btn.dataset.senderId, btn.dataset.filename, Number(btn.dataset.size));})(this)" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:36px;background:linear-gradient(135deg,#38a169,#48bb78);border:none;border-radius:8px;color:white;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(56,161,105,0.25);transition:all 0.2s;" onmouseenter="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 15px rgba(56,161,105,0.3)';" onmouseleave="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(56,161,105,0.25)';"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>İndir</button><div id="p2p-progress-receiver-${fileObj.fileId}" style="display:none;margin-top:10px;"><div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-bottom:8px;"><div id="p2p-bar-receiver-${fileObj.fileId}" style="width:0%;height:100%;background:linear-gradient(90deg, #38a169, #68d391);transition:width 0.2s;border-radius:3px;"></div></div><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><div id="p2p-text-receiver-${fileObj.fileId}" style="font-size:10px;color:var(--text-muted);flex:1;font-weight:600;">Bağlanılıyor...</div><div style="display:flex;gap:4px;"><button id="p2p-pause-${fileObj.fileId}" style="padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text-primary);font-size:10px;font-weight:700;cursor:pointer;">⏸</button><button id="p2p-cancel-${fileObj.fileId}" style="padding:4px 8px;border-radius:6px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;font-size:10px;font-weight:700;cursor:pointer;">✕</button></div></div></div></div>`;
+                    safeContent = `<div class="p2p-file-box" style="border:1px solid rgba(72,187,120,0.25);border-radius:12px;background:linear-gradient(135deg,rgba(56,161,105,0.08),rgba(99,102,241,0.06));padding:12px;backdrop-filter:blur(6px);max-width:300px;white-space:normal;display:inline-block;margin-top:4px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="display:flex;align-items:center;">${fileIcon}</span><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(fileObj.filename)}</div><div style="font-size:11px;color:var(--text-muted);">${fileSizeMB} MB · Güvenli P2P</div></div><span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;background:rgba(72,187,120,0.15);color:#68d391;border:1px solid rgba(72,187,120,0.3);text-transform:uppercase;">Gelen</span></div><button id="p2p-btn-${fileObj.fileId}" data-file-id="${fileObj.fileId}" data-sender-id="${fileObj.senderId}" data-filename="${escapeHtml(fileObj.filename)}" data-size="${fileObj.size}" onclick="(function(btn){window.startP2PDownload(btn.dataset.fileId, btn.dataset.senderId, btn.dataset.filename, Number(btn.dataset.size));})(this)" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:36px;background:linear-gradient(135deg,#38a169,#48bb78);border:none;border-radius:8px;color:white;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(56,161,105,0.25);transition:all 0.2s;" onmouseenter="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 15px rgba(56,161,105,0.3)';" onmouseleave="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(56,161,105,0.25)';"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>İndir</button><div id="p2p-progress-receiver-${fileObj.fileId}" style="display:none;margin-top:10px;"><div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-bottom:8px;"><div id="p2p-bar-receiver-${fileObj.fileId}" style="width:0%;height:100%;background:linear-gradient(90deg, #38a169, #68d391);transition:width 0.2s;border-radius:3px;"></div></div><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><div id="p2p-text-receiver-${fileObj.fileId}" style="font-size:10px;color:var(--text-muted);flex:1;font-weight:600;">Bağlanılıyor...</div><div style="display:flex;gap:4px;"><button id="p2p-pause-${fileObj.fileId}" style="padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text-primary);font-size:10px;font-weight:700;cursor:pointer;">Duraklat</button><button id="p2p-cancel-${fileObj.fileId}" style="padding:4px 8px;border-radius:6px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;font-size:10px;font-weight:700;cursor:pointer;">✕</button></div></div></div></div>`;
                 }
             }
         } catch (_e) { /* ignore */ }
@@ -252,17 +255,26 @@ export function appendMessage(msg: ChatMessage): void {
         try {
             const fileObj = JSON.parse(msg.content);
             const serverPath = state.serverUrl.endsWith('/') ? state.serverUrl.slice(0, -1) : state.serverUrl;
-            const safeUrl = escapeHtml(fileObj.url);
+            let fileUrl = fileObj.url || '';
+            let fullUrl = fileUrl;
+            if (!fileUrl.startsWith('http://') && !fileUrl.startsWith('https://')) {
+                if (!fileUrl.startsWith('/')) fileUrl = '/' + fileUrl;
+                fullUrl = `${serverPath}${fileUrl}`;
+            }
 
-            if (fileObj.mimetype && fileObj.mimetype.startsWith('image/')) {
-                safeContent = `<img src="${serverPath}${safeUrl}" style="max-width:300px; width:100%; border-radius:8px; display:block; cursor:zoom-in;" onclick="window.previewMedia(this.src, 'image')" alt="${escapeHtml(fileObj.filename)}">`;
+            const ext = (fileObj.filename || fileUrl).split('.').pop()!.toLowerCase();
+            const isImg = (fileObj.mimetype && fileObj.mimetype.startsWith('image/')) ||
+                ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext);
+
+            if (isImg) {
+                safeContent = `<img src="${escapeHtml(fullUrl)}" style="max-width:300px; width:100%; border-radius:8px; display:block; cursor:zoom-in;" onclick="window.previewMedia(this.src, 'image')" alt="${escapeHtml(fileObj.filename)}">`;
             } else if (fileObj.mimetype && fileObj.mimetype.startsWith('video/')) {
-                safeContent = `<video src="${serverPath}${safeUrl}" style="max-width:300px; width:100%; border-radius:8px; display:block; cursor:zoom-in;" onclick="window.previewMedia(this.src, 'video')" controls></video>`;
+                safeContent = `<video src="${escapeHtml(fullUrl)}" style="max-width:300px; width:100%; border-radius:8px; display:block; cursor:zoom-in;" onclick="window.previewMedia(this.src, 'video')" controls></video>`;
             } else if (fileObj.mimetype && fileObj.mimetype.startsWith('audio/')) {
                 const audioId = 'voice-' + (msg.id || Date.now() + '-' + Math.floor(Math.random() * 1000));
-                safeContent = `<div class="voice-message-player" data-audio-src="${serverPath}${safeUrl}" data-audio-id="${audioId}"><button class="voice-msg-play-btn" onclick="window.toggleVoiceMsg('${audioId}', '${serverPath}${safeUrl}')" title="Oynat/Duraklat"><svg id="${audioId}-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg></button><div class="voice-msg-waveform-bar" onclick="window.seekVoiceMsg(event, '${audioId}')"><canvas id="${audioId}-waveform" width="160" height="28"></canvas></div></div>`;
+                safeContent = `<div class="voice-message-player" data-audio-src="${escapeHtml(fullUrl)}" data-audio-id="${audioId}"><button class="voice-msg-play-btn" onclick="window.toggleVoiceMsg('${audioId}', '${escapeHtml(fullUrl)}')" title="Oynat/Duraklat"><svg id="${audioId}-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg></button><div class="voice-msg-waveform-bar" onclick="window.seekVoiceMsg(event, '${audioId}')"><canvas id="${audioId}-waveform" width="160" height="28"></canvas></div></div>`;
             } else {
-                safeContent = `📎 <a href="${serverPath}${safeUrl}" target="_blank" style="color:var(--accent-primary);">${escapeHtml(fileObj.filename)}</a>`;
+                safeContent = `<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg><a href="${escapeHtml(fullUrl)}" target="_blank" style="color:var(--accent-primary);">${escapeHtml(fileObj.filename)}</a></span>`;
             }
         } catch (_e) { /* ignore */ }
     } else if (msg.type === 'poll') {
@@ -301,7 +313,7 @@ export function appendMessage(msg: ChatMessage): void {
             safeContent = `
                 <div class="poll-box" id="${pollHtmlId}" data-poll-json="${escapeHtml(JSON.stringify(pollData))}" style="border:1px solid rgba(255,255,255,0.08); border-radius:12px; background:linear-gradient(135deg,rgba(0,0,0,0.2),rgba(99,102,241,0.05)); padding:16px; max-width:320px; width:100%; margin-top:4px;">
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
-                        <span style="font-size:20px;">📊</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                         <div style="font-weight:700; font-size:15px; color:white; line-height:1.4;">${escapeHtml(pollData.question)}</div>
                     </div>
                     <div class="poll-options-list">
@@ -337,7 +349,7 @@ export function appendMessage(msg: ChatMessage): void {
 
                 if (msg.is_pinned) {
                     const pinBadge = document.createElement('div');
-                    pinBadge.innerHTML = '📌 <span data-lang-key="pinned_msg_badge" style="font-size:10px;">Sabitlendi</span>';
+                    pinBadge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg> <span data-lang-key="pinned_msg_badge" style="font-size:10px;">Sabitlendi</span>';
                     pinBadge.className = 'pinned-badge';
                     pinBadge.style.cssText = 'font-size:11px; color:var(--accent-warning); margin-bottom:4px; display:inline-flex; align-items:center; gap:4px; background:rgba(245,158,11,0.1); padding:2px 6px; border-radius:4px; font-weight:600;';
                     rowDiv.appendChild(pinBadge);
@@ -368,13 +380,14 @@ export function appendMessage(msg: ChatMessage): void {
     messageEl.className = 'message-group';
     messageEl.dataset.messageId = String(msg.id);
 
-    const avatarStyle = msg.profile_pic
-        ? `background-image: url('${msg.profile_pic}'); background-size: cover; background-position: center; color: transparent;`
+    const userPic = msg.profile_pic || msg.profilePic || (isMine ? state.profilePic : null);
+    const avatarStyle = userPic
+        ? `background-image: url('${userPic}'); background-size: cover; background-position: center; color: transparent;`
         : `background-color: ${msg.avatarColor || '#6366f1'}`;
 
-    const pinnedBadgeHtml = msg.is_pinned ? `<div class="pinned-badge" style="font-size:11px; color:var(--accent-warning); margin-bottom:4px; display:inline-flex; align-items:center; gap:4px; background:rgba(245,158,11,0.1); padding:2px 6px; border-radius:4px; font-weight:600;">📌 <span data-lang-key="pinned_msg_badge" style="font-size:10px;">Sabitlendi</span></div>` : '';
+    const pinnedBadgeHtml = msg.is_pinned ? `<div class="pinned-badge" style="font-size:11px; color:var(--accent-warning); margin-bottom:4px; display:inline-flex; align-items:center; gap:4px; background:rgba(245,158,11,0.1); padding:2px 6px; border-radius:4px; font-weight:600;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg> <span data-lang-key="pinned_msg_badge" style="font-size:10px;">Sabitlendi</span></div>` : '';
 
-    messageEl.innerHTML = `<div class="message-avatar" style="${avatarStyle}">${msg.profile_pic ? '' : initial}</div><div class="message-content"><div class="message-header"><div><span class="message-username" style="color: ${msg.avatarColor || '#5865F2'}">${escapeHtml(msg.username)}</span><span class="message-timestamp" style="font-size:11px;color:var(--text-muted);margin-left:8px;">${timeStr}</span></div></div>${replyHtml}<div class="msg-row-wrapper${isMentioned ? ' mentioned' : ''}" data-message-id="${msg.id}" style="position:relative;display:block;">${pinnedBadgeHtml}<div class="message-text" data-message-id="${msg.id}">${safeContent}</div><div class="reaction-bar">${buildReactionsHtml(msg.id, msg.reactions || '{}')}</div></div></div>`;
+    messageEl.innerHTML = `<div class="message-avatar" style="${avatarStyle}">${userPic ? '' : initial}</div><div class="message-content"><div class="message-header"><div><span class="message-username" style="color: ${msg.avatarColor || '#5865F2'}">${escapeHtml(msg.username)}</span><span class="message-timestamp" style="font-size:11px;color:var(--text-muted);margin-left:8px;">${timeStr}</span></div></div>${replyHtml}<div class="msg-row-wrapper${isMentioned ? ' mentioned' : ''}" data-message-id="${msg.id}" style="position:relative;display:block;">${pinnedBadgeHtml}<div class="message-text" data-message-id="${msg.id}">${safeContent}</div><div class="reaction-bar">${buildReactionsHtml(msg.id, msg.reactions || '{}')}</div></div></div>`;
 
     el.chatMessages.appendChild(messageEl);
 
@@ -399,8 +412,8 @@ export function appendMessage(msg: ChatMessage): void {
             menu.style.cssText = `position:fixed;left:${me.clientX}px;top:${me.clientY}px;z-index:9999;background:var(--bg-medium);border:1px solid var(--border-medium);border-radius:8px;padding:4px 0;box-shadow:0 8px 24px rgba(0,0,0,0.4);min-width:160px;`;
 
             const btnCopy = document.createElement('button');
-            btnCopy.textContent = window.i18n ? window.i18n.t('copy_image') : '📋 Resmi Kopyala';
-            btnCopy.style.cssText = 'display:block; width:100%; text-align:left; padding:8px 14px; background:none; border:none; color:var(--text-primary); cursor:pointer; font-size:13px;';
+            btnCopy.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>' + (window.i18n ? window.i18n.t('copy_image') : 'Resmi Kopyala');
+            btnCopy.style.cssText = 'display:flex; align-items:center; width:100%; text-align:left; padding:8px 14px; background:none; border:none; color:var(--text-primary); cursor:pointer; font-size:13px;';
             btnCopy.onclick = async () => {
                 menu.remove();
                 try {
@@ -414,8 +427,8 @@ export function appendMessage(msg: ChatMessage): void {
             };
 
             const btnSave = document.createElement('button');
-            btnSave.textContent = window.i18n ? window.i18n.t('save_image') : '💾 Resmi Kaydet';
-            btnSave.style.cssText = 'display:block; width:100%; text-align:left; padding:8px 14px; background:none; border:none; color:var(--text-primary); cursor:pointer; font-size:13px;';
+            btnSave.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>' + (window.i18n ? window.i18n.t('save_image') : 'Resmi Kaydet');
+            btnSave.style.cssText = 'display:flex; align-items:center; width:100%; text-align:left; padding:8px 14px; background:none; border:none; color:var(--text-primary); cursor:pointer; font-size:13px;';
             btnSave.onclick = () => {
                 menu.remove();
                 const a = document.createElement('a');
@@ -663,8 +676,6 @@ window.viewEditHistory = async (historyStr: string) => {
     try {
         const arr = JSON.parse(decodeURIComponent(atob(historyStr)));
         let html = '<div style="max-height:300px; overflow-y:auto; text-align: left; padding: 0 10px;">';
-        const { decryptMessage } = await import('./e2ee');
-        const { linkify, escapeHtml } = await import('./utils');
         
         for (let i = arr.length - 1; i >= 0; i--) {
             const item = arr[i];
@@ -687,13 +698,13 @@ window.viewEditHistory = async (historyStr: string) => {
         window.showConfirmModal(html, () => {}, true, true);
     } catch(e) {
         console.error(e);
-        if (window.showToast) window.showToast('Geçmiş okunamadı', 'error');
+        showToast('Geçmiş okunamadı', 'error');
     }
 };
 
-window.votePoll = (messageId: number, optionIndex: number, multiple: boolean) => {
+window.votePoll = (messageId: number | string, optionIndex: number, multiple: boolean) => {
     if (!state.socket) return;
-    state.socket.emit('vote-poll', { messageId, optionIndex, multiple });
+    state.socket.emit('vote-poll', { messageId: Number(messageId), optionIndex, multiple });
 };
 
 // ── Self Destruct Message ──
@@ -709,7 +720,6 @@ window.viewSelfDestruct = async (uniqueId: string, encryptedContent: string, mes
     const iconContainer = box.querySelector('.sd-icon');
     
     try {
-        const { decryptMessage } = await import('./e2ee');
         const rawContent = await decryptMessage(encryptedContent);
         if (textSpan) {
             textSpan.innerHTML = linkify(escapeHtml(rawContent)).replace(/\n/g, '<br>');

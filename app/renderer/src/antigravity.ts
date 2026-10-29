@@ -1,6 +1,22 @@
 /**
- * antigravity.js - Organic fluid particle system (Light Theme)
+ * antigravity.ts - Organic fluid particle system (Light Theme)
  */
+
+interface ParticleItem {
+    x: number;
+    y: number;
+    baseX: number;
+    baseY: number;
+    vx: number;
+    vy: number;
+    size: number;
+    color: string;
+    wanderOffsetX: number;
+    wanderOffsetY: number;
+    opacity: number;
+    update(time: number): void;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.createElement('canvas');
     canvas.id = 'antigravity-canvas';
@@ -16,6 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.prepend(canvas);
 
     const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
+
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
 
@@ -25,20 +43,32 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastMouseY = -1000;
     let mouseDisturbance = 0;
     let isAntigravityActive = false;
-    let animationFrameId = null;
+    let animationFrameId: number | null = null;
 
     // Google brand colors
-    const colors = ['#4285F4', '#EA4335', '#FBBC05', '#34A853'];
+    const colors: string[] = ['#4285F4', '#EA4335', '#FBBC05', '#34A853'];
 
-    let particles = [];
+    let particles: ParticleItem[] = [];
 
     // Pseudo-noise function for organic chaos
-    function getNoise(x, y, time) {
+    function getNoise(x: number, y: number, time: number): number {
         return Math.sin(x * 0.003 + time * 0.5) * Math.cos(y * 0.003 + time * 0.4) +
             Math.sin(y * 0.004 - time * 0.3) * Math.cos(x * 0.005 + time * 0.6);
     }
 
-    class Particle {
+    class Particle implements ParticleItem {
+        x: number;
+        y: number;
+        baseX: number;
+        baseY: number;
+        vx: number;
+        vy: number;
+        size: number;
+        color: string;
+        wanderOffsetX: number;
+        wanderOffsetY: number;
+        opacity: number;
+
         constructor() {
             this.x = Math.random() * width;
             this.y = Math.random() * height;
@@ -52,14 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // Unique offsets for organic wandering
             this.wanderOffsetX = Math.random() * 100;
             this.wanderOffsetY = Math.random() * 100;
-
             this.opacity = 0.15; // default subtle state
         }
 
-        update(time) {
+        update(time: number): void {
             // Organic wandering around the base point
-            let targetX = this.baseX + Math.sin(time * 0.5 + this.wanderOffsetX) * 30;
-            let targetY = this.baseY + Math.cos(time * 0.4 + this.wanderOffsetY) * 30;
+            const targetX = this.baseX + Math.sin(time * 0.5 + this.wanderOffsetX) * 30;
+            const targetY = this.baseY + Math.cos(time * 0.4 + this.wanderOffsetY) * 30;
 
             const dx = this.x - mouseX; // From mouse to particle
             const dy = this.y - mouseY;
@@ -74,23 +103,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const normalizedDist = dist / maxDist;
 
                 // Opacity increases significantly when affected
-                // It fades out smoothly towards the edges
                 targetOpacity = 0.15 + Math.pow(1 - normalizedDist, 1.2) * 0.85;
 
                 // Calculate base pushing force
                 let force = Math.pow(1 - normalizedDist, 1.8);
 
                 // Add wave propagation based on mouse movement speed (mouseDisturbance)
-                // The ripple moves outwards, making particles swell based on their distance
                 const ripple = Math.sin(normalizedDist * 8 - time * 4) * mouseDisturbance * 0.5;
-                force += ripple * Math.pow(1 - normalizedDist, 0.5); // ripple is stronger closer
+                force += ripple * Math.pow(1 - normalizedDist, 0.5);
 
                 if (dist > 1) {
-                    let dirX = dx / dist;
-                    let dirY = dy / dist;
+                    const dirX = dx / dist;
+                    const dirY = dy / dist;
 
-                    // Use noise to organically break perfect symmetry
-                    // It creates irregular, fluid-like vectors instead of straight outward rays
                     const noiseX = getNoise(this.x, this.y, time) * 1.5;
                     const noiseY = getNoise(this.y, this.x, time) * 1.5;
 
@@ -107,7 +132,6 @@ document.addEventListener('DOMContentLoaded', () => {
             this.vy += (targetY - this.y) * returnForce;
 
             // Fluid friction / damping
-            // A higher damping (0.88) allows particles to drift before stopping
             this.vx *= 0.88;
             this.vy *= 0.88;
 
@@ -119,22 +143,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function initParticles() {
+    function initParticles(): void {
         particles = [];
-        // Tanecik yoğunluğu artırıldı (bölen 600)
         const count = Math.floor((width * height) / 600);
         for (let i = 0; i < count; i++) {
             particles.push(new Particle());
         }
     }
 
-    window.addEventListener('mousemove', (e) => {
+    window.addEventListener('mousemove', (e: MouseEvent) => {
         if (!isAntigravityActive) return;
 
-        // Calculate mouse movement speed
         const speed = Math.sqrt(Math.pow(e.clientX - lastMouseX, 2) + Math.pow(e.clientY - lastMouseY, 2));
 
-        // Accumulate disturbance from speed (capped at 2.0)
         if (lastMouseX !== -1000) {
             mouseDisturbance = Math.min(2.0, mouseDisturbance + speed * 0.015);
         }
@@ -159,8 +180,8 @@ document.addEventListener('DOMContentLoaded', () => {
         initParticles();
     });
 
-    function draw() {
-        if (!isAntigravityActive) return;
+    function draw(): void {
+        if (!isAntigravityActive || !ctx) return;
 
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
@@ -170,15 +191,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Smoothly decay the mouse wave disturbance
         mouseDisturbance *= 0.94;
 
-        // Group particles by color and opacity to minimize ctx state changes (massive performance boost)
-        const groups = {};
+        // Group particles by color and opacity to minimize ctx state changes
+        const groups: Record<string, { color: string; opacity: number; list: ParticleItem[] }> = {};
 
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
             p.update(time);
 
-            // Bucket opacity into steps of 0.05 to batch draw them efficiently
-            let opBucket = Math.max(0.05, Math.min(1.0, Math.round(p.opacity * 20) / 20));
+            const opBucket = Math.max(0.05, Math.min(1.0, Math.round(p.opacity * 20) / 20));
             const binKey = p.color + '|' + opBucket;
 
             if (!groups[binKey]) {
@@ -205,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
         animationFrameId = requestAnimationFrame(draw);
     }
 
-    function checkTheme() {
+    function checkTheme(): void {
         const theme = document.documentElement.getAttribute('data-theme');
         if (theme === 'antigravity') {
             if (!isAntigravityActive) {
@@ -224,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isAntigravityActive) {
                 isAntigravityActive = false;
                 canvas.style.opacity = '0';
-                if (animationFrameId) {
+                if (animationFrameId !== null) {
                     cancelAnimationFrame(animationFrameId);
                     animationFrameId = null;
                 }
@@ -232,8 +252,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
+    const observer = new MutationObserver((mutations: MutationRecord[]) => {
+        mutations.forEach((mutation: MutationRecord) => {
             if (mutation.attributeName === 'data-theme') {
                 checkTheme();
             }

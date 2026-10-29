@@ -59,7 +59,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.invoke('set-screen-share-source', sourceId),
 
     // Admin token'ını al (sunucu sahibi için otomatik yetkilendirme)
-    getAdminToken: (): Promise<string | null> => ipcRenderer.invoke('get-admin-token')
+    getAdminToken: (): Promise<string | null> => ipcRenderer.invoke('get-admin-token'),
+
+    // Deep Link (haven://join) dinleyici
+    onDeepLink: (callback: (url: string) => void): void => {
+        ipcRenderer.on('deep-link:join', (_e, url) => callback(url));
+    }
 });
 
 // DOM yüklendiğinde Ctrl+Scroll ve Ctrl+Plus/Minus zoom'u engelle

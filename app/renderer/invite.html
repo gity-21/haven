@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Haven - Odaya Davet Edildiniz</title>
+    <link rel="icon" type="image/png" href="assets/icon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/soft-login.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #09090b;
+            color: #f4f4f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .invite-card {
+            background: rgba(24, 24, 27, 0.75);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 36px 32px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            margin: 20px;
+        }
+
+        .invite-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #818cf8;
+            box-shadow: 0 0 24px rgba(99, 102, 241, 0.25);
+        }
+
+        .room-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #e4e4e7;
+            margin: 12px 0 24px;
+        }
+
+        .btn-action {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            box-sizing: border-box;
+            margin-bottom: 12px;
+        }
+
+        .btn-desktop {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            border: none;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-desktop:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-web {
+            background: rgba(255, 255, 255, 0.04);
+            color: #f4f4f5;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-web:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .sec-note {
+            font-size: 11px;
+            color: #71717a;
+            margin-top: 16px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-bg-effects">
+        <div class="orb"></div>
+        <div class="orb"></div>
+    </div>
+
+    <div class="invite-card">
+        <div class="invite-icon" style="display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 4px;">
+            <img src="assets/icon.png" width="56" height="56" style="object-fit: contain; border-radius: 14px;" alt="Haven">
+        </div>
+
+        <h1 style="font-size: 22px; font-weight: 700; margin: 0 0 6px;">Haven Gizli Oda Daveti</h1>
+        <p style="font-size: 13px; color: #a1a1aa; margin: 0;">Uçtan Uca Şifreli ve Anonim İletişim Ağı</p>
+
+        <div class="room-badge" id="room-display">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span id="room-name">Oda Yükleniyor...</span>
+        </div>
+
+        <button class="btn-action btn-desktop" id="btn-open-desktop">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            <span>Masaüstü Uygulamasında Aç</span>
+        </button>
+
+        <button class="btn-action btn-web" id="btn-open-web">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            <span>Tarayıcıda Devam Et (Web)</span>
+        </button>
+
+        <p class="sec-note" id="status-note">
+            🔒 Bu oda E2EE (PBKDF2/AES-GCM) ile şifrelenmiştir. Şifreniz sunucuya iletilmeden sadece cihazınızda çözülür.
+        </p>
+    </div>
+
+    <script>
+        (function() {
+            // URL hash parametrelerini oku (Sunucuya gönderilmez - Tam E2EE güvenliği)
+            const rawHash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+            const params = new URLSearchParams(rawHash);
+            
+            const room = params.get('room') || 'Genel';
+            const server = params.get('server') || window.location.origin;
+            const pass = params.get('pass') || '';
+
+            const roomNameEl = document.getElementById('room-name');
+            if (roomNameEl) roomNameEl.textContent = 'Oda: ' + room;
+
+            const btnDesktop = document.getElementById('btn-open-desktop');
+            const btnWeb = document.getElementById('btn-open-web');
+            const statusNote = document.getElementById('status-note');
+
+            btnDesktop.addEventListener('click', function() {
+                // haven://join#... deep link protokolünü tetikle
+                const desktopUrl = 'haven://join#' + rawHash;
+                window.location.href = desktopUrl;
+
+                if (statusNote) {
+                    statusNote.innerHTML = 'Masaüstü uygulaması açılıyor... Eğer Haven yüklü değilse <b>Tarayıcıda Devam Et</b> seçeneğini kullanabilirsiniz.';
+                }
+            });
+
+            btnWeb.addEventListener('click', function() {
+                // Web modunda login sayfasına parametrelerle git
+                window.location.href = 'login.html#' + rawHash;
+            });
+        })();
+    </script>
+</body>
+</html>
+

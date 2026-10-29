@@ -25,6 +25,11 @@ function copyStaticAssets() {
         if (!existsSync(rendererAssetsDest)) mkdirSync(rendererAssetsDest, { recursive: true });
         cpSync(rendererAssetsSrc, rendererAssetsDest, { recursive: true });
         console.log('  ✓ renderer/assets/ → dist/assets_static/ kopyalandı');
+
+        const distAssets = resolve(distDir, 'assets');
+        if (!existsSync(distAssets)) mkdirSync(distAssets, { recursive: true });
+        cpSync(rendererAssetsSrc, distAssets, { recursive: true });
+        console.log('  ✓ renderer/assets/ → dist/assets/ kopyalandı');
       }
     }
   };
@@ -40,6 +45,7 @@ export default defineConfig({
       input: {
         login: resolve(__dirname, 'login.html'),
         chat: resolve(__dirname, 'chat.html'),
+        invite: resolve(__dirname, 'invite.html'),
       },
     },
   },

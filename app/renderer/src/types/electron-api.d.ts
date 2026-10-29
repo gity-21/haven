@@ -26,6 +26,9 @@ export interface ElectronAPI {
     getDesktopSources: (opts: { types: string[] }) => Promise<DesktopSource[]>;
     setScreenShareSource: (sourceId: string) => Promise<boolean>;
     getAdminToken: () => Promise<string | null>;
+    onUpdateStatus?: (callback: (status: any) => void) => void;
+    installUpdate?: () => void;
+    onDeepLink?: (callback: (url: string) => void) => void;
 }
 
 export interface I18n {
@@ -54,6 +57,12 @@ declare global {
         showAlertModal: (message: string, title?: string) => Promise<void>;
         initiateReply: (msgId: number | string, username: string, content: string) => void;
         cancelReply: () => void;
+        initiateEdit: (msgId: number | string, base64Content: string) => void;
+        cancelEdit: () => void;
+        viewEditHistory: (historyStr: string) => Promise<void>;
+        showToast?: (message: string, type?: 'info' | 'success' | 'warning' | 'error', durationMs?: number) => void;
+        votePoll: (messageId: number | string, optionIndex: number, multiple: boolean) => void;
+        viewSelfDestruct: (uniqueId: string, encryptedContent: string, messageId: number | string) => Promise<void>;
         deleteMessage: (messageId: number | string, roomId?: string) => void;
         sendReaction: (messageId: number | string, emoji: string) => void;
         toggleUserMute: (userId: string) => void;

@@ -622,26 +622,13 @@ a {
 
 /* Theme Backgrounds */
 [data-theme="space"] .app-container {
-    background: #050505;
+    background: transparent;
     position: relative;
     overflow: hidden;
 }
 
 [data-theme="space"] .app-container::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 65vh;
-    height: 65vh;
-    margin-top: -32.5vh;
-    margin-left: -32.5vh;
-    background: url('../../../assets/skull.png') no-repeat center center / contain;
-    opacity: 0.12;
-    z-index: 0;
-    pointer-events: none;
-    filter: invert(1) drop-shadow(0 0 30px rgba(255, 255, 255, 0.5));
-    animation: rotateSkull 45s linear infinite;
+    display: none;
 }
 
 @keyframes rotateSkull {

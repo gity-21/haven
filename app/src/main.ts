@@ -103,6 +103,10 @@ let selectedScreenSourceId: string | null = null; // Ekran paylaşımı için se
 // ── Ana pencere oluşturma ──
 
 function createWindow(): void {
+    const windowIcon = process.platform === 'win32' && fs.existsSync(path.join(__dirname, '..', '..', 'assets', 'icon.ico'))
+        ? path.join(__dirname, '..', '..', 'assets', 'icon.ico')
+        : path.join(__dirname, '..', '..', 'assets', 'icon.png');
+
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
@@ -110,7 +114,7 @@ function createWindow(): void {
         minHeight: 600,
         frame: false, // Özel başlık çubuğu
         backgroundColor: '#1a1a2e',
-        icon: path.join(__dirname, '..', '..', 'assets', 'icon.png'),
+        icon: windowIcon,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
@@ -130,10 +134,15 @@ function createWindow(): void {
     const rendererDir = path.join(__dirname, '..', 'renderer', 'dist');
     mainWindow.loadFile(path.join(rendererDir, 'login.html'));
 
-    // Zoom seviyesini kilitle
+    // Zoom seviyesini kilitle ve ilk açılış deep link kontrolü
     mainWindow.webContents.on('did-finish-load', () => {
         mainWindow?.webContents.setZoomFactor(1);
         mainWindow?.webContents.setZoomLevel(0);
+
+        const startupDeepLink = process.argv.find(arg => arg.startsWith('haven://'));
+        if (startupDeepLink) {
+            mainWindow?.webContents.send('deep-link:join', startupDeepLink);
+        }
     });
 
     // Dış linkleri varsayılan tarayıcıda aç
@@ -154,10 +163,13 @@ function createWindow(): void {
     //     }
     // });
 
-    // FIX: Kullanıcılar uygulamanın kapandığını düşünüp mikrofonlarının açık kalmasından şikayetçi.
-    // X tuşuna basıldığında uygulama doğrudan kapatılacak.
-    mainWindow.on('close', function (_event: Electron.Event) {
-        // Artık hide() yapmıyoruz, varsayılan Electron kapanma davranışına izin veriyoruz.
+    // Çarpı (X) butonuna basıldığında Discord gibi arka planda (System Tray) çalışmaya devam et
+    mainWindow.on('close', function (event: Electron.Event) {
+        if (!isQuiting) {
+            event.preventDefault();
+            mainWindow?.hide();
+            return false;
+        }
     });
 }
 
@@ -248,10 +260,20 @@ function spawnTunnel(
 
     let resolved = false;
 
+    const timer = setTimeout(() => {
+        if (!resolved) {
+            resolved = true;
+            console.log(`[Tunnel] Cloudflare tünel zaman aşımı (8s). Yerel sunucu adresiyle devam ediliyor: http://127.0.0.1:${port}`);
+            activeTunnelUrl = `http://127.0.0.1:${port}`;
+            resolve(activeTunnelUrl);
+        }
+    }, 8000);
+
     const handleOutput = (data: Buffer): void => {
         const output = data.toString();
         const match = output.match(/https:\/\/(?!api\.)[a-zA-Z0-9-]+\.trycloudflare\.com/);
         if (match && !resolved) {
+            clearTimeout(timer);
             resolved = true;
             activeTunnelUrl = match[0];
             resolve(activeTunnelUrl);
@@ -262,19 +284,25 @@ function spawnTunnel(
     activeTunnel.stderr?.on('data', handleOutput);
 
     activeTunnel.on('close', (code: number | null) => {
+        clearTimeout(timer);
         console.log(`Cloudflare process kapandı. Code: ${code}`);
         activeTunnel = null;
         activeTunnelUrl = null;
         if (!resolved) {
-            reject(new Error("Cloudflare tunnel başlatılamadı veya çok erken kapandı."));
+            // Hata vermek yerine yerel sunucu URL'si ile devam et
+            resolved = true;
+            resolve(`http://127.0.0.1:${port}`);
         }
     });
 
     activeTunnel.on('error', (err: Error) => {
+        clearTimeout(timer);
         activeTunnel = null;
         activeTunnelUrl = null;
         if (!resolved) {
-            reject(err);
+            resolved = true;
+            console.warn('[Tunnel] Cloudflare hatası, yerel mod ile devam ediliyor:', err.message);
+            resolve(`http://127.0.0.1:${port}`);
         }
     });
 }
@@ -445,6 +473,33 @@ ipcMain.handle('desktop-capturer-get-sources', async (_event: IpcMainInvokeEvent
     }
 });
 
+// ── haven:// Protokol Kaydı ve Tek Örnek (Single Instance) Kilidi ──
+if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient('haven', process.execPath, [path.resolve(process.argv[1])]);
+    }
+} else {
+    app.setAsDefaultProtocolClient('haven');
+}
+
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+    app.quit();
+} else {
+    app.on('second-instance', (_event, commandLine) => {
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.show();
+            mainWindow.focus();
+
+            const urlArg = commandLine.find(arg => arg.startsWith('haven://'));
+            if (urlArg) {
+                mainWindow.webContents.send('deep-link:join', urlArg);
+            }
+        }
+    });
+}
+
 app.whenReady().then(async () => {
     // FIX #3: Sadece gerekli izinler onaylanıyor.
     const ALLOWED_PERMISSIONS: Set<string> = new Set([
@@ -515,13 +570,17 @@ app.whenReady().then(async () => {
     }
 
     tray = new Tray(iconPath);
-    tray.setToolTip('Haven');
+    tray.setToolTip('Haven - Anonim İletişim');
     
     const contextMenu = Menu.buildFromTemplate([
         { label: 'Haven', enabled: false },
         { type: 'separator' },
-        { label: 'Göster', click: () => { mainWindow?.show(); } },
-        { label: 'Çıkış', click: () => { 
+        { label: 'Haven\'ı Göster', click: () => { 
+            mainWindow?.show();
+            mainWindow?.focus();
+        } },
+        { type: 'separator' },
+        { label: 'Çıkış Yap', click: () => { 
             isQuiting = true; 
             app.quit(); 
         } }
@@ -529,7 +588,17 @@ app.whenReady().then(async () => {
     tray.setContextMenu(contextMenu);
     
     tray.on('click', () => {
+        if (mainWindow?.isVisible()) {
+            mainWindow.focus();
+        } else {
+            mainWindow?.show();
+            mainWindow?.focus();
+        }
+    });
+
+    tray.on('double-click', () => {
         mainWindow?.show();
+        mainWindow?.focus();
     });
 
     app.on('activate', () => {
@@ -573,6 +642,10 @@ app.whenReady().then(async () => {
             console.error('[AutoUpdater] Kontrol hatası:', err);
         });
     }
+});
+
+app.on('before-quit', () => {
+    isQuiting = true;
 });
 
 app.on('window-all-closed', () => {

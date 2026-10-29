@@ -9,11 +9,17 @@
 import '../../css/style.css';
 import '../../css/soft-login.css';
 import '../../css/antigravity.css';
+import '../../css/corona.css';
+import '../../css/sky.css';
+import '../../css/xp.css';
 
 // ── Side-effect imports ──
 import '../i18n';
 import '../matrix';
 import '../antigravity';
+import '../kinetic-grid';
+import '../corona';
+import '../sky';
 
 // ── Alert Modal (login.html'de chat modals yok, kendi versiyonunu kullanıyoruz) ──
 
@@ -77,25 +83,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let savedRoom = localStorage.getItem('haven_room') || '';
     const savedColor = localStorage.getItem('haven_avatar') || '#6366f1';
 
-    // Sihirli link parametreleri
-    const urlParams = new URLSearchParams(window.location.search);
-    const invitePass = '';
-    if (urlParams.has('room')) {
-        savedRoom = urlParams.get('room') || '';
-        localStorage.setItem('haven_room', savedRoom); // Hemen kaydet ki refresh'te kaybolmasın
-    }
-    if (urlParams.has('name')) {
-        savedUsername = urlParams.get('name') || '';
-        localStorage.setItem('haven_nickname', savedUsername);
+    // İlk açılışta random nickname
+    let defaultName = localStorage.getItem('haven_nickname');
+    if (!defaultName) {
+        defaultName = `Kullanıcı_${Math.floor(1000 + Math.random() * 9000)}`;
+        localStorage.setItem('haven_nickname', defaultName);
     }
 
-    // Tema
+    // Tema elementleri ve başlangıç değeri
     const savedTheme = localStorage.getItem('haven_login_theme') || 'space';
     const loginThemeSelect = document.getElementById('login-theme-select') as HTMLSelectElement | null;
     if (loginThemeSelect) loginThemeSelect.value = savedTheme;
     document.documentElement.setAttribute('data-theme', savedTheme);
 
-    // Dil
+    // Dil elementleri
     const savedLang = localStorage.getItem('haven_app_lang') || 'tr';
     const loginLangSelect = document.getElementById('login-lang-select') as HTMLSelectElement | null;
     if (loginLangSelect) loginLangSelect.value = savedLang;
@@ -111,13 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('haven_server_url', savedServer);
     }
 
-    // İlk açılışta random nickname
-    let defaultName = localStorage.getItem('haven_nickname');
-    if (!defaultName) {
-        defaultName = `Kullanıcı_${Math.floor(1000 + Math.random() * 9000)}`;
-        localStorage.setItem('haven_nickname', defaultName);
-    }
-
     // Login hatası gösterme
     const loginError = localStorage.getItem('haven_login_error');
     if (loginError) {
@@ -127,20 +121,70 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 150);
     }
 
-    // Form alanlarını doldur
+    // Sihirli link ve Deep Link parametrelerini ayrıştırma fonksiyonu
+    const applyInviteParams = (rawStr: string): void => {
+        if (!rawStr) return;
+        let queryStr = rawStr;
+        if (queryStr.includes('#')) {
+            queryStr = queryStr.split('#')[1];
+        } else if (queryStr.includes('?')) {
+            queryStr = queryStr.split('?')[1];
+        }
+        const params = new URLSearchParams(queryStr);
+        const server = params.get('server');
+        const room = params.get('room');
+        const pass = params.get('pass');
+        const name = params.get('name');
+
+        if (server) {
+            inputServer.value = server;
+            localStorage.setItem('haven_server_url', server);
+        }
+        if (room) {
+            inputRoom.value = room;
+            localStorage.setItem('haven_room', room);
+        }
+        if (pass) {
+            inputPassword.value = pass;
+        }
+        if (name) {
+            inputUsername.value = name;
+            localStorage.setItem('haven_nickname', name);
+            if (colorPreviewText) colorPreviewText.textContent = name;
+        }
+
+        if (tabJoin) {
+            tabJoin.click();
+        }
+
+        // Eğer hem oda anahtarı hem şifre linkte varsa, otomatik bağlanarak direkt odaya gir
+        if (room && pass) {
+            setTimeout(() => {
+                const submitBtn = document.getElementById('login-submit');
+                submitBtn?.click();
+            }, 100);
+        }
+    };
+
+    // Form alanlarını varsayılan kayıtlı verilerle doldur
     inputServer.value = savedServer;
     inputUsername.value = savedUsername || defaultName;
     inputRoom.value = savedRoom;
-    if (invitePass) inputPassword.value = invitePass;
     inputColor.value = savedColor;
 
-    if (urlParams.has('room') && tabJoin) {
-        setTimeout(() => tabJoin.click(), 50);
+    // Sayfa yüklenirken URL Hash (#) veya URL Query (?) parametrelerini oku
+    if (window.location.hash) {
+        applyInviteParams(window.location.hash);
+    } else if (window.location.search) {
+        applyInviteParams(window.location.search);
     }
 
-    if (!window.electronAPI) {
-        if (tabCreate) tabCreate.style.display = 'none';
-        if (tabJoin) setTimeout(() => tabJoin.click(), 10);
+    // Masaüstü Electron Deep Link dinleyicisi (haven://join#...)
+    if (window.electronAPI?.onDeepLink) {
+        window.electronAPI.onDeepLink((url: string) => {
+            console.log('Deep link received:', url);
+            applyInviteParams(url);
+        });
     }
 
     if (savedProfilePic && avatarPreviewImg && avatarUploadIcon) {
@@ -362,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (container) container.style.display = 'none';
             if (bar) (bar as HTMLElement).style.width = '0%';
             const btn = document.getElementById('login-btn-test-mic');
-            if (btn) btn.textContent = '🎙️ Mikrofonu Test Et';
+            if (btn) btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path></svg> <span>${window.i18n ? window.i18n.t('btn_test_mic') : 'Mikrofonu Test Et'}</span>`;
         }
 
         const loginBtnTestMic = document.getElementById('login-btn-test-mic');
@@ -377,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const constraints: MediaStreamConstraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
                     loginMicTestStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-                    loginBtnTestMic.textContent = '⏹️ Testi Durdur';
+                    loginBtnTestMic.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> <span>${window.i18n ? window.i18n.t('btn_stop_test') : 'Testi Durdur'}</span>`;
                     const container = document.getElementById('login-mic-level-container');
                     const bar = document.getElementById('login-mic-level-bar') as HTMLElement | null;
                     if (container) container.style.display = 'block';
@@ -431,6 +475,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // ── Ayarları Aç ──
 
         btnSettings.addEventListener('click', () => {
+            const currentTheme = localStorage.getItem('haven_login_theme') || 'space';
+            if (loginThemeSelect) loginThemeSelect.value = currentTheme;
+            const currentLang = localStorage.getItem('haven_app_lang') || 'tr';
+            if (loginLangSelect) loginLangSelect.value = currentLang;
+
             loginSettingsTabs.forEach((t: Element) => {
                 t.classList.remove('active');
                 (t as HTMLElement).style.removeProperty('background');
@@ -486,7 +535,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (loginThemeSelect) {
         loginThemeSelect.addEventListener('change', (e: Event) => {
-            document.documentElement.setAttribute('data-theme', (e.target as HTMLSelectElement).value);
+            const selectedTheme = (e.target as HTMLSelectElement).value;
+            document.documentElement.setAttribute('data-theme', selectedTheme);
+            localStorage.setItem('haven_login_theme', selectedTheme);
         });
     }
 
@@ -509,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const submitBtn = document.getElementById('login-submit');
             if (submitBtn) {
                 submitBtn.setAttribute('data-lang-key', 'btn_create');
-                submitBtn.textContent = window.i18n ? window.i18n.t('btn_create') : 'Ağ Kur';
+                submitBtn.textContent = window.i18n ? window.i18n.t('btn_create') : 'Oda Oluştur';
             }
 
             if (inputRoom) {
@@ -517,6 +568,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 inputRoom.placeholder = window.i18n ? window.i18n.t('room_placeholder_create') : 'Yeni uçtan uca şifreli ağ bağlamı oluşturun';
             }
 
+            const expiresGroup = document.getElementById('expires-group');
+            if (expiresGroup) expiresGroup.style.display = 'block';
             if (serverGroup) serverGroup.style.display = 'none';
         });
 
@@ -527,7 +580,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const submitBtn = document.getElementById('login-submit');
             if (submitBtn) {
                 submitBtn.setAttribute('data-lang-key', 'btn_connect');
-                submitBtn.textContent = window.i18n ? window.i18n.t('btn_connect') : 'Bağlan';
+                submitBtn.textContent = window.i18n ? window.i18n.t('btn_connect') : 'Odaya Katıl';
             }
 
             if (inputRoom) {
@@ -535,6 +588,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 inputRoom.placeholder = window.i18n ? window.i18n.t('room_placeholder_join') : 'Kriptografik erişim odası anahtarı';
             }
 
+            const expiresGroup = document.getElementById('expires-group');
+            if (expiresGroup) expiresGroup.style.display = 'none';
             if (serverGroup) serverGroup.style.display = 'block';
         });
     }
@@ -568,8 +623,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Host Mode
-        if (tabCreate && tabCreate.classList.contains('active')) {
+        const isCreate = Boolean(tabCreate && tabCreate.classList.contains('active'));
+        const expiresSelect = document.getElementById('login-expires') as HTMLSelectElement | null;
+        const expiresInVal = (isCreate && expiresSelect) ? expiresSelect.value : '0';
+        localStorage.setItem('haven_expires_in', expiresInVal);
+
+        // Oda Oluşturma Modu (Host veya Web)
+        if (isCreate) {
             if (window.electronAPI?.startHost) {
                 try {
                     const submitBtn = document.getElementById('login-submit');
@@ -593,7 +653,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const inviteServerEl = document.getElementById('invite-server') as HTMLInputElement | null;
                     const inviteRoomEl = document.getElementById('invite-room') as HTMLInputElement | null;
                     const invitePasswordEl = document.getElementById('invite-password') as HTMLInputElement | null;
-                    if (inviteServerEl) inviteServerEl.value = tunnelUrl;
+                    const cleanBaseUrl = tunnelUrl.endsWith('/') ? tunnelUrl.slice(0, -1) : tunnelUrl;
+                    const magicInviteUrl = `${cleanBaseUrl}/invite.html#server=${encodeURIComponent(cleanBaseUrl)}&room=${encodeURIComponent(room)}&pass=${encodeURIComponent(passwordMatch)}`;
+                    if (inviteServerEl) inviteServerEl.value = magicInviteUrl;
                     if (inviteRoomEl) inviteRoomEl.value = room;
                     if (invitePasswordEl) invitePasswordEl.value = passwordMatch;
 
@@ -603,14 +665,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         setTimeout(() => inviteModal.style.opacity = '1', 10);
 
                         await new Promise<void>(resolve => {
-                            document.getElementById('btn-start-chat')!.onclick = () => {
-                                inviteModal.style.opacity = '0';
-                                setTimeout(() => { inviteModal.style.display = 'none'; resolve(); }, 300);
-                            };
+                            const btnStart = document.getElementById('btn-start-chat');
+                            if (btnStart) {
+                                btnStart.onclick = () => {
+                                    inviteModal.style.opacity = '0';
+                                    setTimeout(() => { inviteModal.style.display = 'none'; resolve(); }, 300);
+                                };
+                            } else {
+                                resolve();
+                            }
                         });
                     }
 
-                    if (submitBtn) submitBtn.textContent = 'Oda Kur';
+                    if (submitBtn) submitBtn.textContent = window.i18n ? window.i18n.t('btn_create') : 'Oda Oluştur';
 
                     if (window.electronAPI?.navigateToChat) {
                         window.electronAPI.navigateToChat();
@@ -622,16 +689,56 @@ document.addEventListener('DOMContentLoaded', () => {
                     const error = err as Error;
                     showError("Sunucu başlatılamadı: " + error.message);
                     const submitBtn = document.getElementById('login-submit');
-                    if (submitBtn) submitBtn.textContent = 'Oda Kur';
+                    if (submitBtn) submitBtn.textContent = window.i18n ? window.i18n.t('btn_create') : 'Oda Oluştur';
                     return;
                 }
             } else {
-                showError("Oda kurma özelliği sadece masaüstü uygulamasında etkindir.");
+                // Web modunda oda oluşturma: Mevcut web sunucusuna 'create' moduyla bağlan
+                localStorage.setItem('haven_server_url', serverUrl);
+                localStorage.setItem('haven_nickname', nickname);
+                localStorage.setItem('haven_room', room);
+                localStorage.setItem('haven_avatar', inputColor.value);
+                sessionStorage.setItem('haven_session_password', passwordMatch);
+                localStorage.setItem('haven_auth_key', authKey);
+                localStorage.setItem('haven_join_mode', 'create');
+
+                if (savedProfilePic) localStorage.setItem('haven_profile_pic', savedProfilePic);
+                else localStorage.removeItem('haven_profile_pic');
+
+                // Davet modalını göster
+                const inviteServerEl = document.getElementById('invite-server') as HTMLInputElement | null;
+                const inviteRoomEl = document.getElementById('invite-room') as HTMLInputElement | null;
+                const invitePasswordEl = document.getElementById('invite-password') as HTMLInputElement | null;
+                const cleanWebUrl = serverUrl.endsWith('/') ? serverUrl.slice(0, -1) : serverUrl;
+                const magicInviteUrlWeb = `${cleanWebUrl}/invite.html#server=${encodeURIComponent(cleanWebUrl)}&room=${encodeURIComponent(room)}&pass=${encodeURIComponent(passwordMatch)}`;
+                if (inviteServerEl) inviteServerEl.value = magicInviteUrlWeb;
+                if (inviteRoomEl) inviteRoomEl.value = room;
+                if (invitePasswordEl) invitePasswordEl.value = passwordMatch;
+
+                const inviteModal = document.getElementById('invite-modal') as HTMLElement | null;
+                if (inviteModal) {
+                    inviteModal.style.display = 'flex';
+                    setTimeout(() => inviteModal.style.opacity = '1', 10);
+
+                    await new Promise<void>(resolve => {
+                        const btnStart = document.getElementById('btn-start-chat');
+                        if (btnStart) {
+                            btnStart.onclick = () => {
+                                inviteModal.style.opacity = '0';
+                                setTimeout(() => { inviteModal.style.display = 'none'; resolve(); }, 300);
+                            };
+                        } else {
+                            resolve();
+                        }
+                    });
+                }
+
+                window.location.href = 'chat.html';
                 return;
             }
         }
 
-        // Client Mode — bilgileri sakla
+        // Katılma Modu (Client / Join)
         localStorage.setItem('haven_server_url', serverUrl);
         localStorage.setItem('haven_nickname', nickname);
         localStorage.setItem('haven_room', room);
@@ -716,11 +823,16 @@ document.addEventListener('DOMContentLoaded', () => {
         btnCopyAll?.addEventListener('click', () => {
             const serverVal = (document.getElementById('invite-server') as HTMLInputElement | null)?.value || '';
             const roomVal = (document.getElementById('invite-room') as HTMLInputElement | null)?.value || '';
+            const passVal = (document.getElementById('invite-password') as HTMLInputElement | null)?.value || '';
 
-            const cleanUrl = serverVal.endsWith('/') ? serverVal.slice(0, -1) : serverVal;
-            const inviteLink = `${cleanUrl}/?room=${encodeURIComponent(roomVal)}`;
+            // invite-server zaten magic link içeriyor olabilir veya temel url olabilir
+            let magicLink = serverVal;
+            if (!magicLink.includes('#')) {
+                const cleanUrl = serverVal.endsWith('/') ? serverVal.slice(0, -1) : serverVal;
+                magicLink = `${cleanUrl}/invite.html#server=${encodeURIComponent(cleanUrl)}&room=${encodeURIComponent(roomVal)}&pass=${encodeURIComponent(passVal)}`;
+            }
 
-            const inviteText = `Haven Gizli Oda Daveti!\n\n🚀 Oda bağlantısı:\n${inviteLink}\n\nOda Anahtarı: ${roomVal}\n\n⚠️ Şifreyi bu mesajla birlikte göndermeyin.\nŞifreyi ayrı bir kanaldan (SMS vb.) paylaşın.`;
+            const inviteText = `Haven Gizli Oda Daveti!\n\nTek tıkla doğrudan odaya katılın:\n${magicLink}\n\nOda Anahtarı: ${roomVal}\nOda Şifresi: ${passVal}`;
             copyToClipboard(inviteText, btnCopyAll!);
         });
     }

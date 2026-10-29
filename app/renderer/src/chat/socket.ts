@@ -13,9 +13,11 @@ import { decryptMessage, getE2EEReadyPromise, setE2EEKey, isPendingE2EEInit, set
 import { playRoomJoinSound, playRoomLeaveSound, playVoiceJoinSound, playVoiceLeaveSound } from './sounds';
 import { showToast } from './ui/toast';
 import { renderUsersModal } from './ui/users';
-import { updateActiveCallBanner, createMediaElement, setupVolumeMeter, updateScreenShareBadge, enterTheaterMode, exitTheaterMode, isTheaterActive, addCamBubble, removeCamBubble } from './ui/voice-ui';
+import { updateActiveCallBanner, createMediaElement, setupVolumeMeter, updateScreenShareBadge, enterTheaterMode, exitTheaterMode, isTheaterActive, addCamBubble, removeCamBubble, updateMicStatusUI } from './ui/voice-ui';
 import { appendMessage, scrollToBottom, updateStatus, buildReactionsHtml } from './messages';
 import { createPeerConnection, removePeerConnection, joinVoiceRoom, leaveVoiceRoom, rtcConfig, screenSharingPeers } from './voice';
+import { loadAdminRooms } from './ui/admin';
+import { setPinnedMessages, updatePinnedMessage, deletePinnedMessage, updatePinnedMessageContent } from './ui/pinned';
 
 /**
  * Socket.IO bağlantısını başlatır ve tüm olayları dinler.
@@ -76,7 +78,8 @@ export function connectSocket(): void {
             avatarColor: state.avatarColor,
             profilePic: state.profilePic,
             authKey: state.authKey,
-            mode: state.joinMode
+            mode: state.joinMode,
+            expiresIn: Number(localStorage.getItem('haven_expires_in') || '0')
         });
     });
 
@@ -169,12 +172,12 @@ export function connectSocket(): void {
             && settingsModal && settingsModal.style.display !== 'none'
             && panelAdmin && panelAdmin.style.display !== 'none';
         if (isAdminPanelVisible) {
-            import('./ui/admin').then(m => m.loadAdminRooms());
+            loadAdminRooms();
         }
     });
 
     state.socket.on('user-mic-state', ({ userId, isMicOn }: { userId: string, isMicOn: boolean }) => {
-        import('./ui/voice-ui').then(m => m.updateMicStatusUI(userId, isMicOn));
+        updateMicStatusUI(userId, isMicOn);
     });
 
     state.socket.on('message-pinned', ({ messageId, isPinned }: { messageId: number, isPinned: boolean }) => {
@@ -184,7 +187,7 @@ export function connectSocket(): void {
             const badge = messageRow.querySelector('.pinned-badge');
             if (isPinned && !badge) {
                 const pinBadge = document.createElement('div');
-                pinBadge.innerHTML = '📌 <span data-lang-key="pinned_msg_badge" style="font-size:10px;">Sabitlendi</span>';
+                pinBadge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg> <span data-lang-key="pinned_msg_badge" style="font-size:10px;">Sabitlendi</span>';
                 pinBadge.className = 'pinned-badge';
                 pinBadge.style.cssText = 'font-size:11px; color:var(--accent-warning); margin-bottom:4px; display:inline-flex; align-items:center; gap:4px; background:rgba(245,158,11,0.1); padding:2px 6px; border-radius:4px; font-weight:600;';
                 messageRow.insertBefore(pinBadge, messageRow.querySelector('.message-text'));
@@ -199,15 +202,13 @@ export function connectSocket(): void {
         const msgEl = document.querySelector(`.message-text[data-message-id='${messageId}']`);
         const usernameEl = msgEl?.closest('.message-content')?.querySelector('.message-username');
         if (msgEl && usernameEl) {
-            import('./ui/pinned').then(m => {
-                m.updatePinnedMessage({
-                    id: messageId,
-                    content: msgEl.innerHTML,
-                    username: usernameEl.textContent || 'Bilinmeyen',
-                    is_pinned: isPinned,
-                    created_at: new Date().toISOString() // Fallback if not found
-                }, isPinned);
-            });
+            updatePinnedMessage({
+                id: messageId,
+                content: msgEl.innerHTML,
+                username: usernameEl.textContent || 'Bilinmeyen',
+                is_pinned: isPinned,
+                created_at: new Date().toISOString()
+            }, isPinned);
         }
     });
 
@@ -289,7 +290,7 @@ export function connectSocket(): void {
 
     // ── Message Delete ──
     state.socket.on('message-deleted', (messageId: string | number) => {
-        import('./ui/pinned').then(m => m.deletePinnedMessage(messageId));
+        deletePinnedMessage(messageId);
 
         if (!el.chatMessages) return;
         const rowWrapper = document.querySelector(`.msg-row-wrapper[data-message-id="${messageId}"]`);
@@ -332,7 +333,6 @@ export function connectSocket(): void {
             const textDiv = messageRow.querySelector('.message-text');
             if (textDiv) {
                 try {
-                    const { decryptMessage } = await import('./e2ee');
                     const raw = await decryptMessage(data.newContent);
                     let newHtml = linkify(escapeHtml(raw)).replace(/\n/g, '<br>');
                     if (data.isEdited) {
@@ -340,7 +340,7 @@ export function connectSocket(): void {
                     }
                     textDiv.innerHTML = newHtml;
                     
-                    import('./ui/pinned').then(m => m.updatePinnedMessageContent(data.messageId, newHtml));
+                    updatePinnedMessageContent(data.messageId, newHtml);
                 } catch (e) {
                     console.error('Mesaj güncellenirken hata:', e);
                 }
@@ -461,27 +461,25 @@ export function connectSocket(): void {
             }));
 
             // Pass to pinned messages state
-            import('./ui/pinned').then(m => {
-                const parsedMsgs = messages.map(msg => ({
-                    id: msg.id,
-                    roomId: msg.room_key,
-                    username: msg.username,
-                    content: msg.content,
-                    avatarColor: msg.avatar_color,
-                    profile_pic: msg.profile_pic,
-                    type: msg.type,
-                    reply_to: msg.reply_to,
-                    reply_username: msg.reply_username,
-                    reply_content: msg.reply_content,
-                    reactions: msg.reactions,
-                    created_at: msg.created_at,
-                    user_id: msg.user_id,
-                    is_edited: msg.is_edited,
-                    edit_history: msg.edit_history,
-                    is_pinned: msg.is_pinned
-                }));
-                m.setPinnedMessages(parsedMsgs);
-            });
+            const parsedMsgs = messages.map(msg => ({
+                id: msg.id,
+                roomId: msg.room_key,
+                username: msg.username,
+                content: msg.content,
+                avatarColor: msg.avatar_color,
+                profile_pic: msg.profile_pic,
+                type: msg.type,
+                reply_to: msg.reply_to,
+                reply_username: msg.reply_username,
+                reply_content: msg.reply_content,
+                reactions: msg.reactions,
+                created_at: msg.created_at,
+                user_id: msg.user_id,
+                is_edited: msg.is_edited,
+                edit_history: msg.edit_history,
+                is_pinned: msg.is_pinned
+            }));
+            setPinnedMessages(parsedMsgs);
             
             scrollToBottom();
         } else {
@@ -519,7 +517,7 @@ export function connectSocket(): void {
         playVoiceJoinSound();
         if (!voiceState.isInVoice) return;
         createMediaElement(data.userId, data.username, data.avatarColor, false, null, data.profilePic || null);
-        import('./ui/voice-ui').then(m => m.updateMicStatusUI(data.userId, !!data.isMicOn));
+        updateMicStatusUI(data.userId, !!data.isMicOn);
         await createPeerConnection(data.userId, true);
 
         // Theater Mode: Aktifse bu katılımcı için kamera balonu oluştur
@@ -599,7 +597,7 @@ export function connectSocket(): void {
         pc.ondatachannel = (e) => {
             const dc = e.channel;
             dc.binaryType = 'arraybuffer';
-            dc.onopen = async () => {
+            const startSending = async () => {
                 const pBox = document.getElementById(`p2p-progress-sender-${fileMeta.fileId}`);
                 if (pBox) pBox.style.display = 'block';
                 const bar = document.getElementById(`p2p-bar-sender-${fileMeta.fileId}`);
@@ -630,6 +628,12 @@ export function connectSocket(): void {
                     if (txt) txt.textContent = window.i18n ? window.i18n.t('send_complete') : 'Gönderim Tamamlandı';
                 }
             };
+
+            if (dc.readyState === 'open') {
+                startSending();
+            } else {
+                dc.onopen = startSending;
+            }
         };
 
         pc.onicecandidate = e => {

@@ -39,7 +39,7 @@ window.addEventListener('DOMContentLoaded', () => {
                         btnCancel.parentNode?.replaceChild(newBtnCancel, btnCancel);
                         
                         newBtnOk.addEventListener('click', () => {
-                            window.electronAPI.installUpdate();
+                            window.electronAPI?.installUpdate?.();
                             confirmModal.style.display = 'none';
                         });
                         
@@ -52,7 +52,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 } else {
                     // Fallback
                     if (confirm(title + "\n\n" + msg)) {
-                        window.electronAPI.installUpdate();
+                        window.electronAPI?.installUpdate?.();
                     }
                 }
             } else if (status.type === 'error') {
